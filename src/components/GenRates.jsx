@@ -1,10 +1,10 @@
 const img = [
+  "assets/rates/november2025/gen.JPG",
   "assets/rates/october2025/gen.jpg",
   "assets/rates/september2025/gen.JPG",
-  "assets/rates/august2025/gen.JPG",
 ];
 
-const months = ["October", "September", "August"];
+const months = ["November", "October", "September"];
 
 const Rates = () => {
   return (

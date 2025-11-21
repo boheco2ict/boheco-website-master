@@ -1,10 +1,10 @@
 import RatesTable from "./RatesTable";
 
 const img = [
-  "assets/rates/october2025/slide1.jpg",
-  "assets/rates/october2025/slide2.jpg",
-  "assets/rates/october2025/slide3.jpg",
-  "assets/rates/october2025/slide4.jpg",
+  "assets/rates/november2025/Slide1.JPG",
+  "assets/rates/november2025/Slide2.JPG",
+  "assets/rates/november2025/Slide3.JPG",
+  "assets/rates/november2025/Slide4.JPG",
 ];
 
 const thead2025 = [
@@ -87,9 +87,9 @@ const tbody2025 = [
   "11.4375",
   "12.4851",
   "11.9606",
+  "12.3215",
   "",
-  "",
-  "11.8562",
+  "11.8985",
 ];
 
 const tbody2024 = [
