@@ -39,6 +39,18 @@ const BillInquiry = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const formatValue = (value) => {
+    let digits = value.replace(/\D/g, "").slice(0, 6);
+
+    if (digits.length >= 2) {
+      const month = digits.slice(0, 2);
+      if (+month < 1 || +month > 12) return digits.slice(0, 1);
+    }
+
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  };
+
   const handleInquiry = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -143,15 +155,14 @@ const BillInquiry = () => {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   id="billMonth"
                   name="billMonth"
                   required
                   maxLength="7"
                   placeholder="01-2026"
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  onChange={(e) =>
-                    setBillMonth(e.target.value.replace(/[^0-9-]/g, ""))
-                  }
+                  onChange={(e) => setBillMonth(formatValue(e.target.value))}
                   value={billMonth}
                   disabled={!status}
                 />
