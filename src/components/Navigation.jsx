@@ -16,7 +16,7 @@ const Navigation = () => {
     { id: 6, name: "LIFELINE RATE", link: "lifeline" },
     { id: 7, name: "PAYMENT PARTNERS", link: "partners" },
     { id: 8, name: "BILL INQUIRIES", link: "inquiries" },
-    { id: 9, name: "PRIVACY NOTICE", link: "privacy-notice" },
+    { id: 10, name: "PRIVACY NOTICE", link: "privacy-notice" },
   ];
 
   const [open, setOpen] = useState(false);
