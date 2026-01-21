@@ -91,7 +91,7 @@ const BillInquiry = () => {
   };
   return (
     <>
-      <div className="bg-image2 flex flex-col items-center justify-center pt-24">
+      <div className="bg-image2 flex flex-col items-center justify-center h-screen">
         <form action="POST" onSubmit={handleInquiry}>
           <div className="rounded-lg shadow-md p-12 bg-white bg-opacity-40 mb-6">
             <div className="text-2xl font-bold">BOHECO II - Bill Inquiry</div>

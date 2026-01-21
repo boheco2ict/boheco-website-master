@@ -1,10 +1,76 @@
 import RatesTable from "./RatesTable";
 
 const img = [
-  "assets/rates/december2025/1.jpg",
-  "assets/rates/december2025/2.jpg",
-  "assets/rates/december2025/3.jpg",
-  "assets/rates/december2025/4.jpg",
+  "assets/rates/january2026/Slide1.JPG",
+  "assets/rates/january2026/Slide2.JPG",
+  "assets/rates/january2026/Slide3.JPG",
+  "assets/rates/january2026/Slide4.JPG",
+];
+
+const v26 = [
+  12.7371,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+];
+
+const v25 = [
+  12.1276, 12.1722, 12.1571, 12.2459, 11.7797, 10.8995, 11.2969, 11.4375,
+  12.4851, 11.9606, 12.3215, 12.1927,
+];
+
+const v24 = [
+  10.3272, 10.2636, 10.2951, 10.9064, 11.7569, 9.4893, 10.2697, 13.9642,
+  13.3436, 11.9938, 12.2191, 12.0691,
+];
+
+const v23 = [
+  11.5472, 13.3037, 12.3968, 12.4197, 12.2549, 13.2443, 13.6768, 13.8465,
+  14.1532, 12.3757, 13.9001, 10.795,
+];
+
+const v22 = [
+  11.7628, 19.2901, 15.4101, 11.6674, 12.998, 13.1694, 13.919, 13.1891, 13.8792,
+  13.8352, 14.0901, 13.6085,
+];
+
+const calculateAndAppendAverage = (array) => {
+  const nonNullValues = array.filter((val) => val !== null);
+  const average = (
+    nonNullValues.reduce((acc, val) => acc + val, 0) / nonNullValues.length
+  ).toFixed(4);
+  array.push(average);
+};
+
+calculateAndAppendAverage(v26);
+calculateAndAppendAverage(v25);
+calculateAndAppendAverage(v24);
+calculateAndAppendAverage(v23);
+calculateAndAppendAverage(v22);
+
+const thead2026 = [
+  "RATE CLASS",
+  "JAN 2026",
+  "FEB 2026",
+  "MAR 2026",
+  "APR 2026",
+  "MAY 2026",
+  "JUN 2026",
+  "JUL 2026",
+  "AUG 2026",
+  "SEP 2026",
+  "OCT 2026",
+  "NOV 2026",
+  "DEC 2026",
+  "AVERAGE 2026",
 ];
 
 const thead2025 = [
@@ -75,74 +141,6 @@ const thead2022 = [
   "AVERAGE 2022",
 ];
 
-const tbody2025 = [
-  "RESIDENTIAL",
-  "12.1276",
-  "12.1722",
-  "12.1571",
-  "12.2459",
-  "11.7797",
-  "10.8995",
-  "11.2969",
-  "11.4375",
-  "12.4851",
-  "11.9606",
-  "12.3215",
-  "12.1927",
-  "11.9230",
-];
-
-const tbody2024 = [
-  "RESIDENTIAL",
-  "10.3272",
-  "10.2636",
-  "10.2951",
-  "10.9064",
-  "11.7569",
-  "9.4893",
-  "10.2697",
-  "13.9642",
-  "13.3436",
-  "11.9938",
-  "12.2191",
-  "12.0691",
-  "11.4082",
-];
-
-const tbody2023 = [
-  "RESIDENTIAL",
-  "11.5472",
-  "13.3037",
-  "12.3968",
-  "12.4197",
-  "12.2549",
-  "13.2443",
-  "13.6768",
-  "13.8465",
-  "14.1532",
-  "12.3757",
-  "13.9001",
-  "10.7950",
-  "12.8262",
-];
-
-const tbody2022 = [
-  "RESIDENTIAL",
-  "11.7628",
-  "19.2901",
-  "15.4101",
-  "11.6674",
-  "12.9980",
-  "13.1694",
-  "13.9190",
-  "13.1891",
-  "13.8792",
-  "13.8352",
-  "14.0901",
-  "13.6085",
-  "13.9016",
-];
-
 const Rates = () => {
   return (
     <>
@@ -152,9 +150,18 @@ const Rates = () => {
         </div>
         <hr />
         <RatesTable
+          year={"2026"}
+          thead={thead2026}
+          tbody={v26}
+          url={
+            "https://drive.google.com/file/d/1ryeVnQ9zFAS_OxVy_D8ghoazWhXpMzj5/view?usp=sharing"
+          }
+        />
+        <hr />
+        <RatesTable
           year={"2025"}
           thead={thead2025}
-          tbody={tbody2025}
+          tbody={v25}
           url={
             "https://drive.google.com/file/d/1ryeVnQ9zFAS_OxVy_D8ghoazWhXpMzj5/view?usp=sharing"
           }
@@ -163,7 +170,7 @@ const Rates = () => {
         <RatesTable
           year={"2024"}
           thead={thead2024}
-          tbody={tbody2024}
+          tbody={v24}
           url={
             "https://drive.google.com/file/d/1EnfEQhjvfBhcOaDS2S94_QOOOqc1tj9H/view?usp=sharing"
           }
@@ -172,7 +179,7 @@ const Rates = () => {
         <RatesTable
           year={"2023"}
           thead={thead2023}
-          tbody={tbody2023}
+          tbody={v23}
           url={
             "https://drive.google.com/file/d/1gHc-snjlUD_XSU-OCC3ebZAZ_T_j1vRN/view?usp=sharing"
           }
@@ -181,7 +188,7 @@ const Rates = () => {
         <RatesTable
           year={"2022"}
           thead={thead2022}
-          tbody={tbody2022}
+          tbody={v22}
           url={
             "https://drive.google.com/file/d/1GJTuPViBtxkwIefzy_qDOI8I7btFhWs6/view?usp=sharing"
           }

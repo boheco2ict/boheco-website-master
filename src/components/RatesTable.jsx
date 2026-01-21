@@ -36,6 +36,7 @@ const RatesTable = ({ year, thead, tbody, url }) => {
             </thead>
             <tbody className="text-gray-600">
               <tr className="hover:bg-gray-100 transition">
+                <td>Residential</td>
                 {tbody.map((item, index) => (
                   <td className="px-4 py-2 border border-gray-300" key={index}>
                     {item}
