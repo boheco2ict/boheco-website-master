@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useState } from "react";
 import axios from "axios";
 import { extractBillDetails } from "../utils";
@@ -14,30 +13,6 @@ const BillInquiry = () => {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(true);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    async function initSession() {
-      try {
-        const response = await axios.get(
-          "https://bill-inquiry-api.onrender.com/api/v1/session-init",
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            withCredentials: true,
-          }
-        );
-        return response;
-      } catch (error) {
-        setStatus(false);
-        console.error("Error initializing session: ", error);
-      }
-    }
-    // Initialize session and set an interval to refresh
-    initSession();
-    const interval = setInterval(initSession, 90 * 1000); // Refresh session every 90s
-    return () => clearInterval(interval);
-  }, []);
 
   const formatValue = (value) => {
     let digits = value.replace(/\D/g, "").slice(0, 6);
@@ -61,26 +36,23 @@ const BillInquiry = () => {
         billMonth.split("-")[0] + "/01/" + billMonth.split("-")[1],
     };
     try {
-      const response = await axios.post(
-        "https://bill-inquiry-api.onrender.com/api/v1/bill",
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post(process.env.REACT_APP_API_URL, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
 
       const { error, data: extractedData } = extractBillDetails(
         response.data.msg
       );
       setBillingDetails({ error, data: extractedData });
     } catch (error) {
+      setStatus(false);
       setBillingDetails({
-        error: new Error("Something went wrong. Please try again."),
+        error: "Something went wrong. Please try again.",
+        data: null,
       });
-      console.error(error);
     } finally {
       setLoading(false);
       setAccountNumber("");
