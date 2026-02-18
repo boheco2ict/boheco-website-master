@@ -3,7 +3,6 @@ import axios from "axios";
 import { extractBillDetails } from "../utils";
 
 const BillInquiry = () => {
-  const [consumerName, setConsumerName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [billMonth, setBillMonth] = useState("");
   const [billingDetails, setBillingDetails] = useState({
@@ -30,7 +29,6 @@ const BillInquiry = () => {
     e.preventDefault();
     setLoading(true);
     const data = {
-      ConsumerName: consumerName,
       AccountNumber: accountNumber,
       ServicePeriodEnd:
         billMonth.split("-")[0] + "/01/" + billMonth.split("-")[1],
@@ -43,9 +41,7 @@ const BillInquiry = () => {
         withCredentials: true,
       });
 
-      const { error, data: extractedData } = extractBillDetails(
-        response.data.msg
-      );
+      const { error, data: extractedData } = extractBillDetails(response.data);
       setBillingDetails({ error, data: extractedData });
     } catch (error) {
       setStatus(false);
@@ -56,7 +52,6 @@ const BillInquiry = () => {
     } finally {
       setLoading(false);
       setAccountNumber("");
-      setConsumerName("");
       setBillMonth("");
     }
     setOpen(true);
@@ -75,25 +70,6 @@ const BillInquiry = () => {
               )}
             </small>
             <div className="mb-4 ">
-              <div className="mb-4 ">
-                <label
-                  htmlFor="consumerName"
-                  className="block text-gray-700 font-bold mb-2"
-                >
-                  Consumer Name:
-                </label>
-                <input
-                  type="text"
-                  id="consumerName"
-                  name="consumerName"
-                  required
-                  maxLength="20"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  onChange={(e) => setConsumerName(e.target.value)}
-                  value={consumerName}
-                  disabled={!status}
-                />
-              </div>
               <div className="mb-4">
                 <label
                   htmlFor="accountNumber"
@@ -184,6 +160,9 @@ const BillInquiry = () => {
               ) : (
                 <div>
                   <div className="flex flex-col gap-3 text-center">
+                    <div className="text-2xl font-bold">
+                      {billingDetails.data.consumerName}
+                    </div>
                     <div className="text-2xl font-bold text-green-600">
                       ₱{billingDetails.data.amount}
                     </div>
