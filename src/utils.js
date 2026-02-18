@@ -1,5 +1,17 @@
-function extractBillDetails(dataArray) {
-  if (!Array.isArray(dataArray) || dataArray.length < 8) {
+function extractBillDetails(response) {
+  // If backend return string message
+
+  if (typeof response === "string") {
+    if (response.includes("You don't have a bill")) {
+      return {
+        error: new Error(response),
+        data: null,
+      };
+    }
+  }
+
+  // If backend returns an array
+  if (!Array.isArray(response) || response.length < 8) {
     return {
       error: new Error("Invalid bill data format"),
       data: null,
@@ -15,7 +27,7 @@ function extractBillDetails(dataArray) {
     dueDate,
     billStatus,
     kWhUsed,
-  ] = dataArray;
+  ] = response;
 
   return {
     error: null,
