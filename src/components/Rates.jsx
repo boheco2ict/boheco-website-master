@@ -1,10 +1,11 @@
 import RatesTable from "./RatesTable";
 
 const img = [
-  "assets/rates/february2026/Slide1.JPG",
-  "assets/rates/february2026/Slide2.JPG",
-  "assets/rates/february2026/Slide3.JPG",
-  "assets/rates/february2026/Slide4.JPG",
+  "assets/rates/february2026/Slide1.png",
+  "assets/rates/february2026/Slide2.png",
+  "assets/rates/february2026/Slide3.png",
+  "assets/rates/february2026/Slide4.png",
+  "assets/rates/february2026/Slide5.png",
 ];
 
 const v26 = [
