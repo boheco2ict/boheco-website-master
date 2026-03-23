@@ -1,7 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
 import { extractBillDetails } from "../utils";
-import { useEffect } from "react";
 
 const BillInquiry = () => {
   const [accountNumber, setAccountNumber] = useState("");
@@ -13,22 +12,6 @@ const BillInquiry = () => {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(true);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const hasReloaded = sessionStorage.getItem("billPageReloaded");
-
-    if (!hasReloaded) {
-      sessionStorage.setItem("billPageReloaded", "true");
-      window.location.reload();
-    }
-
-    // Refresh every 1 minute
-    const interval = setInterval(() => {
-      window.location.reload();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const formatValue = (value) => {
     let digits = value.replace(/\D/g, "").slice(0, 6);
