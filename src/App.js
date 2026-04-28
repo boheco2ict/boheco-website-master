@@ -11,6 +11,8 @@ import Footer from "./components/Footer";
 import Privacy from "./pages/Privacy";
 import DdpPspp from "./pages/DdpPspp";
 import BillInquiry from "./pages/BillInquiry";
+import Policy from "./pages/Policy";
+import Login from "./components/Login";
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
           <Route path="inquiries" element={<BillInquiry />} />
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="privacy-notice" element={<Privacy />} />
+          <Route path="coop-policies/login" element={<Login />} />
+          <Route path="coop-policies" element={<Policy />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
