@@ -2,16 +2,12 @@ import React from "react";
 import axios from "axios";
 import ListComponent from "../components/ListComponent";
 import { useEffect, useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 const policyData = [
   {
     year: 2026,
     title: "Policy No. 187 - Gate Pass Policy",
     url: "https://drive.google.com/file/d/1bdXLFWXgDyLhf7G7kH5CsQysOzvFuqTB/view?usp=drive_link",
-  },
-  {
-    year: 2026,
-    title: "Policy No. 188 - Meal Allowances and DTE",
-    url: "https://drive.google.com/file/d/1sCaWkMVgKQevmsQeQebz1RUeKYEyzYAZ/view?usp=drive_link",
   },
   {
     year: 2026,
@@ -122,12 +118,6 @@ const policyData = [
     url: "https://drive.google.com/file/d/1y_2RFtHvmpbW-e25ZXFOGKCGD3Cmxrvp/view?usp=drive_link",
   },
   {
-    year: 2022,
-    title:
-      "Policy No. 162A - Creation of Position, Selection of Personnel, Hiring, Promotion, etc. [amended]",
-    url: "https://drive.google.com/file/d/1y_2RFtHvmpbW-e25ZXFOGKCGD3Cmxrvp/view?usp=drive_link",
-  },
-  {
     year: 2020,
     title:
       "Policy No. 168 - Standard Connection Facilities for Electrical Connection",
@@ -218,11 +208,6 @@ const policyData = [
     year: "Compilation of Old Policies",
     title: "Policy No. 5-2A - Use of Cooperative Vehicle",
     url: "https://drive.google.com/file/d/1JDAi00clZn43L87Bzp-u7ZJjc0DstC9h/view?usp=drive_link",
-  },
-  {
-    year: "Compilation of Old Policies",
-    title: "Policy No. 5-3 - Securing Right of Way",
-    url: "https://drive.google.com/file/d/13MMzujyWy1jnGi-3385ignZPt97NHP4p/view?usp=drive_link",
   },
   {
     year: "Compilation of Old Policies",
@@ -600,6 +585,7 @@ function Policy() {
   const [pwd, setPwd] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
+  const [show, setShow] = useState(true);
 
   // Check Auth on Mount
   useEffect(() => {
@@ -757,15 +743,26 @@ function Policy() {
                     value={user}
                   />
                 </div>
-                <div className="w-full bg-gray-800 p-2 rounded-xl">
+                <div className="w-full bg-gray-800 p-2 rounded-xl flex justify-between items-center">
                   <input
-                    type="password"
+                    type={show ? "password" : "text"}
                     name="password"
                     placeholder="Password"
                     className="bg-transparent border-0 w-full outline-none text-white"
                     onChange={(e) => setPwd(e.target.value)}
                     value={pwd}
                   />
+                  {show ? (
+                    <FaEyeSlash
+                      className="text-white cursor-pointer"
+                      onClick={() => setShow(!show)}
+                    />
+                  ) : (
+                    <FaEye
+                      className="text-white cursor-pointer"
+                      onClick={() => setShow(!show)}
+                    />
+                  )}
                 </div>
                 {msg && <span className="text-red-500">{msg}</span>}
                 <div className="flex gap-2">
