@@ -12,7 +12,8 @@ import Privacy from "./pages/Privacy";
 import DdpPspp from "./pages/DdpPspp";
 import BillInquiry from "./pages/BillInquiry";
 import Policy from "./pages/Policy";
-import Login from "./components/Login";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -30,8 +31,15 @@ function App() {
           <Route path="inquiries" element={<BillInquiry />} />
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="privacy-notice" element={<Privacy />} />
-          <Route path="coop-policies/login" element={<Login />} />
-          <Route path="coop-policies" element={<Policy />} />
+          <Route path="login" element={<Login />} />
+          <Route
+            path="coop-policies"
+            element={
+              <ProtectedRoute>
+                <Policy />
+              </ProtectedRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
