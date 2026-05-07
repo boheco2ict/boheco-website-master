@@ -7,6 +7,8 @@ import { useLocation } from "react-router-dom";
 const img = ["assets/l.png"];
 
 const Navigation = () => {
+  const token = localStorage.getItem("token");
+  const auth = !!token;
   const Links = [
     { id: 1, name: "HOME", link: "/" },
     { id: 2, name: "ABOUT", link: "about" },
@@ -17,8 +19,13 @@ const Navigation = () => {
     { id: 7, name: "PAYMENT PARTNERS", link: "partners" },
     { id: 8, name: "BILL INQUIRIES", link: "inquiries" },
     { id: 10, name: "PRIVACY NOTICE", link: "privacy-notice" },
-    { id: 11, name: "COOP-POLICIES", link: "coop-policies" },
   ];
+
+  const AuthLink = [{ id: 11, name: "COOP POLICIES", link: "coop-policies" }];
+
+  const GuestLink = [{ id: 12, name: "LOGIN", link: "login" }];
+
+  const menuLink = auth ? [...Links, ...AuthLink] : [...Links, ...GuestLink];
 
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -53,7 +60,7 @@ const Navigation = () => {
               : "top-[-490px] 2xl:opacity-100 opacity-0"
           }`}
         >
-          {Links.map((link) => (
+          {menuLink.map((link) => (
             <li key={link.id} className="ml-7 text-xl py-2">
               <NavLink
                 to={link.link}

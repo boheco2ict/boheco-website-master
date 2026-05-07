@@ -1,17 +1,10 @@
 import React from "react";
-import axios from "axios";
 import ListComponent from "../components/ListComponent";
-import { useEffect, useState } from "react";
 const policyData = [
   {
     year: 2026,
     title: "Policy No. 187 - Gate Pass Policy",
     url: "https://drive.google.com/file/d/1bdXLFWXgDyLhf7G7kH5CsQysOzvFuqTB/view?usp=drive_link",
-  },
-  {
-    year: 2026,
-    title: "Policy No. 188 - Meal Allowances and DTE",
-    url: "https://drive.google.com/file/d/1sCaWkMVgKQevmsQeQebz1RUeKYEyzYAZ/view?usp=drive_link",
   },
   {
     year: 2026,
@@ -122,12 +115,6 @@ const policyData = [
     url: "https://drive.google.com/file/d/1y_2RFtHvmpbW-e25ZXFOGKCGD3Cmxrvp/view?usp=drive_link",
   },
   {
-    year: 2022,
-    title:
-      "Policy No. 162A - Creation of Position, Selection of Personnel, Hiring, Promotion, etc. [amended]",
-    url: "https://drive.google.com/file/d/1y_2RFtHvmpbW-e25ZXFOGKCGD3Cmxrvp/view?usp=drive_link",
-  },
-  {
     year: 2020,
     title:
       "Policy No. 168 - Standard Connection Facilities for Electrical Connection",
@@ -218,11 +205,6 @@ const policyData = [
     year: "Compilation of Old Policies",
     title: "Policy No. 5-2A - Use of Cooperative Vehicle",
     url: "https://drive.google.com/file/d/1JDAi00clZn43L87Bzp-u7ZJjc0DstC9h/view?usp=drive_link",
-  },
-  {
-    year: "Compilation of Old Policies",
-    title: "Policy No. 5-3 - Securing Right of Way",
-    url: "https://drive.google.com/file/d/13MMzujyWy1jnGi-3385ignZPt97NHP4p/view?usp=drive_link",
   },
   {
     year: "Compilation of Old Policies",
@@ -594,192 +576,45 @@ const policyData = [
 ];
 
 function Policy() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [auth, setAuth] = useState(false);
-  const [user, setUser] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  // Check Auth on Mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setIsLoggedIn(false);
-          setAuth(false);
-          setLoading(false);
-          return;
-        }
-
-        const response = await axios.post(
-          "https://bill-inquiry-api.onrender.com/api/v1/login/auth",
-          {},
-          {
-            headers: {
-              "x-access-token": token,
-            },
-          }
-        );
-
-        if (response.data.message === "Unauthorized") {
-          localStorage.clear();
-          setIsLoggedIn(false);
-          setAuth(false);
-        } else {
-          setIsLoggedIn(true);
-          setAuth(response.data.auth);
-        }
-      } catch (error) {
-        console.error("Auth Error", error);
-        setIsLoggedIn(false);
-        setAuth(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validRegEx = /^[^\\&']*$/;
-    if (!user.match(validRegEx)) {
-      setMsg("Unauthorized");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await axios.post(
-        "https://bill-inquiry-api.onrender.com/api/v1/login",
-        { user, pwd },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.auth) {
-        localStorage.setItem("token", response.data.token);
-        setIsLoggedIn(true);
-        setAuth(true);
-      } else {
-        setMsg("Unauthorized");
-      }
-    } catch (error) {
-      // console.error(error);
-      if (error.message === "Network Error") {
-        setMsg("Network Error");
-      } else {
-        setMsg(error?.response?.data || "Login failed");
-      }
-      setIsLoggedIn(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.clear();
-    setIsLoggedIn(false);
+    window.location.replace("/");
   };
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="bg-image2 h-screen flex justify-center items-center text-4xl">
-        Please Wait...
-      </div>
-    );
-  }
 
   return (
     <>
       <div className="bg-image2 flex flex-col items-center justify-center">
-        {isLoggedIn && auth ? (
-          <section className="container px-5 py-24 mx-auto">
-            <button
-              className="bg-red-500 p-2 rounded-lg font-bold text-white hover:bg-red-600 duration-300"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-            <div className="text-center mb-12">
-              <div className="text-4xl font-extrabold py-2">Coop Policies</div>
-              <div className="text-4xl font-extrabold py-2">
-                <div className="flex flex-col justify-center items-center">
-                  <ul className="space-y-4">
-                    {policyData.map((item, index) => {
-                      const isNewYear =
-                        index === 0 || policyData[index - 1].year !== item.year;
-                      return (
-                        <React.Fragment key={index}>
-                          {isNewYear && <li>{item.year}</li>}
-                          <ListComponent
-                            key={index}
-                            title={item.title}
-                            url={item.url}
-                          />
-                        </React.Fragment>
-                      );
-                    })}
-                  </ul>
-                </div>
+        <section className="container px-5 py-24 mx-auto">
+          <button
+            className="bg-red-500 p-2 rounded-lg font-bold text-white hover:bg-red-600 duration-300"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+          <div className="text-center mb-12">
+            <div className="text-4xl font-extrabold py-2">Coop Policies</div>
+            <div className="text-4xl font-extrabold py-2">
+              <div className="flex flex-col justify-center items-center">
+                <ul className="space-y-4">
+                  {policyData.map((item, index) => {
+                    const isNewYear =
+                      index === 0 || policyData[index - 1].year !== item.year;
+                    return (
+                      <React.Fragment key={index}>
+                        {isNewYear && <li>{item.year}</li>}
+                        <ListComponent
+                          key={index}
+                          title={item.title}
+                          url={item.url}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+                </ul>
               </div>
             </div>
-          </section>
-        ) : (
-          <section className="container h-screen px-5 py-24 mx-auto flex justify-center items-center">
-            <div className="flex flex-col justify-center items-center gap-3">
-              <form
-                method="POST"
-                className="p-5 bg-gray-900 shadow-lg rounded-xl shadow-slate-500 flex flex-col gap-2"
-                onSubmit={handleSubmit}
-              >
-                <div className="text-white font-bold text-center text-xl py-2">
-                  Login
-                </div>
-                <span className="text-xs text-red-400 text-center font-semibold">
-                  FOR BOHECO II EMPLOYEE ONLY
-                </span>
-                <div className="w-full bg-gray-800 p-2 rounded-xl">
-                  <input
-                    type="text"
-                    name="username"
-                    placeholder="Username"
-                    className="bg-transparent border-0 w-full outline-none text-white"
-                    onChange={(e) => setUser(e.target.value)}
-                    value={user}
-                  />
-                </div>
-                <div className="w-full bg-gray-800 p-2 rounded-xl">
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    className="bg-transparent border-0 w-full outline-none text-white"
-                    onChange={(e) => setPwd(e.target.value)}
-                    value={pwd}
-                  />
-                </div>
-                {msg && <span className="text-red-500">{msg}</span>}
-                <div className="flex gap-2">
-                  <button
-                    className="bg-green-500 p-2 rounded-md w-full"
-                    type="submit"
-                  >
-                    Login
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-        )}
+          </div>
+        </section>
       </div>
     </>
   );
