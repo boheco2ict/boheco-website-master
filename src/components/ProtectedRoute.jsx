@@ -28,6 +28,12 @@ function ProtectedRoute({ children }) {
         if (response.data.message === "Unauthorized") {
           localStorage.clear();
           setAuth(false);
+        } else if (response.data.message === "Incorrect Auth") {
+          localStorage.clear();
+          setAuth(false);
+        } else if (response.data.auth === false) {
+          localStorage.clear();
+          setAuth(false);
         } else {
           setAuth(true);
         }
