@@ -50,7 +50,11 @@ function Award() {
               onClick={() => setOpenModal(true)}
               className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded=xl shadow-lg transition duration-300"
             >
+<<<<<<< HEAD
               Click to Read More!
+=======
+              Read More
+>>>>>>> origin/main
             </button>
           </div>
         </section>
