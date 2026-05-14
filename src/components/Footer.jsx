@@ -44,10 +44,11 @@ const Footer = () => {
         </div>
       </div>
       <div className="md:flex flex-col items-center justify-center text-center">
-        <p>© 2024 | BOHOL II ELECTRIC COOPERATIVE, INC.</p>
         <p>
-          Developed by:{" "}
-          <span className="text-orange-400">BOHECO II Webmaster</span>
+          © {new Date().getFullYear()} | BOHOL II ELECTRIC COOPERATIVE, INC.
+        </p>
+        <p>
+          Developed by: <span className="text-orange-400">BOHECO II</span>
         </p>
       </div>
     </div>

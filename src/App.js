@@ -14,6 +14,7 @@ import BillInquiry from "./pages/BillInquiry";
 import Policy from "./pages/Policy";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Award from "./pages/Award";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="inquiries" element={<BillInquiry />} />
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="privacy-notice" element={<Privacy />} />
+          <Route path="awards" element={<Award />} />
           <Route path="login" element={<Login />} />
           <Route
             path="coop-policies"

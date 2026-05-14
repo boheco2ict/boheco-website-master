@@ -19,11 +19,12 @@ const Navigation = () => {
     { id: 7, name: "PAYMENT PARTNERS", link: "partners" },
     { id: 8, name: "BILL INQUIRIES", link: "inquiries" },
     { id: 10, name: "PRIVACY NOTICE", link: "privacy-notice" },
+    { id: 11, name: "AWARDS", link: "awards" },
   ];
 
-  const AuthLink = [{ id: 11, name: "COOP POLICIES", link: "coop-policies" }];
+  const AuthLink = [{ id: 12, name: "COOP POLICIES", link: "coop-policies" }];
 
-  const GuestLink = [{ id: 12, name: "LOGIN", link: "login" }];
+  const GuestLink = [{ id: 13, name: "LOGIN", link: "login" }];
 
   const menuLink = auth ? [...Links, ...AuthLink] : [...Links, ...GuestLink];
 
