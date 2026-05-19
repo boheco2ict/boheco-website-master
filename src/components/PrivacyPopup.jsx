@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useState } from "react";
 
-const corseal = "assets/privacy/CORSeal_BOHECOII.png";
+const corseal =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/CORSEAL/CORSeal_BOHECOII.png";
 
 function PrivacyPopup() {
   const [showPopup, setShowPopup] = useState(false);

@@ -1,13 +1,14 @@
-import React from "react";
+const url =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
 
-function BCards({ img, title, name, address, position }) {
+function BCards({ path, title, name, address, position }) {
   return (
     <div className="p-12">
       <div className="block p-2 rounded-lg shadow-lg bg-white max-w-sm w-72 h-auto">
         <div className="flex items-center justify-center">
           <img
             draggable={false}
-            src={img}
+            src={url + path}
             alt={title}
             className="h-full w-full"
           />

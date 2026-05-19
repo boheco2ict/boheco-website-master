@@ -1,4 +1,5 @@
-import React from "react";
+const url =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
 const NoticeComponent = ({ title, path }) => {
   return (
     <div>
@@ -11,7 +12,7 @@ const NoticeComponent = ({ title, path }) => {
             <img
               className="md:h-[960px] h-[720]"
               draggable={false}
-              src={path}
+              src={url + path}
               alt={title}
             />
           </div>

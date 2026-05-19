@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AiOutlineVerticalRight, AiOutlineVerticalLeft } from "react-icons/ai";
 
+const url =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
+
 const img = [
-  "assets/lifeline/Slide2.jpg",
-  "assets/lifeline/Slide3.jpg",
-  "assets/lifeline/Slide4.jpg",
-  "assets/lifeline/Slide5.jpg",
-  "assets/lifeline/Slide6.jpg",
-  "assets/lifeline/Slide7.jpg",
-  "assets/lifeline/Slide8.jpg",
-  "assets/lifeline/Slide9.jpg",
-  "assets/lifeline/Slide10.jpg",
-  "assets/lifeline/Slide11.jpg",
-  "assets/lifeline/Slide12.jpg",
-  "assets/lifeline/Slide13.jpg",
-  "assets/lifeline/Slide14.jpg",
-  "assets/lifeline/Slide15.jpg",
+  "LIFELINE/Slide2.jpg",
+  "LIFELINE/Slide3.jpg",
+  "LIFELINE/Slide4.jpg",
+  "LIFELINE/Slide5.jpg",
+  "LIFELINE/Slide6.jpg",
+  "LIFELINE/Slide7.jpg",
+  "LIFELINE/Slide8.jpg",
+  "LIFELINE/Slide9.jpg",
+  "LIFELINE/Slide10.jpg",
+  "LIFELINE/Slide11.jpg",
+  "LIFELINE/Slide12.jpg",
+  "LIFELINE/Slide13.jpg",
+  "LIFELINE/Slide14.jpg",
+  "LIFELINE/Slide15.jpg",
 ];
 
 const featureRates = [
@@ -68,25 +71,25 @@ const Lifeline = () => {
           <img
             draggable={false}
             className="py-6"
-            src={img[10]}
+            src={url + img[10]}
             alt="advisory1"
           />
           <img
             draggable={false}
             className="py-6"
-            src={img[11]}
+            src={url + img[11]}
             alt="advisory2"
           />
           <img
             draggable={false}
             className="py-6"
-            src={img[12]}
+            src={url + img[12]}
             alt="advisory3"
           />
           <img
             draggable={false}
             className="py-6"
-            src={img[13]}
+            src={url + img[13]}
             alt="advisory4"
           />
         </div>
@@ -96,7 +99,11 @@ const Lifeline = () => {
         className="w-full select-one py-32 flex justify-center items-center relative"
       >
         <div className="aspect-w-16 aspect-h-9">
-          <img draggable={false} src={featureRates[currentIndex]} alt="rate" />
+          <img
+            draggable={false}
+            src={url + featureRates[currentIndex]}
+            alt="rate"
+          />
         </div>
         <div className="absolute w-full top-1/2 trasform translate-y-1/2 py-2 flex justify-between items-center">
           <button

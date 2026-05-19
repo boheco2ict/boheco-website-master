@@ -1,6 +1,7 @@
-import React from "react";
+const url =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
 
-function Cards({ img, name, title }) {
+function Cards({ path, name, title }) {
   return (
     <div className="p-12">
       <div className="block p-2 rounded-lg shadow-lg bg-white max-w-sm w-72 h-auto">
@@ -8,7 +9,7 @@ function Cards({ img, name, title }) {
           {/* specific size from picture */}
           <img
             draggable={false}
-            src={img}
+            src={url + path}
             alt={name}
             className="h-full w-full"
           />

@@ -4,11 +4,13 @@ import NoticeComponent from "../components/NoticeComponent";
 const noticeData = [
   {
     title: "RECOGNIZING EXCELLENCE POWERING PROGRESS",
-    path: "assets/awards/award2025.jpg",
+    path: "AWARDS/award2025.jpg",
   },
-  { path: "assets/awards/Nea-1.jpg" },
-  { path: "assets/awards/Nea-2.jpg" },
-  { path: "assets/awards/philreca.jpg" },
+  {
+    path: "AWARDS/Nea-1.jpg",
+  },
+  { path: "AWARDS/Nea-2.jpg" },
+  { path: "AWARDS/philreca.jpg" },
 ];
 
 function Award() {
