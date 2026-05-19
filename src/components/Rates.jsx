@@ -1,11 +1,14 @@
 import RatesTable from "./RatesTable";
 
+const url =
+  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
+
 const img = [
-  "assets/rates/april2026/Slide1.jpg",
-  "assets/rates/april2026/Slide2.jpg",
-  "assets/rates/april2026/Slide3.jpg",
-  "assets/rates/april2026/Slide4.jpg",
-  "assets/rates/april2026/Slide5.jpg",
+  "RATES/POWER/Power1.jpg",
+  "RATES/POWER/Power2.jpg",
+  "RATES/POWER/Power3.jpg",
+  "RATES/POWER/Power4.jpg",
+  "RATES/POWER/Power5.jpg",
 ];
 
 const v26 = [
@@ -206,7 +209,7 @@ const Rates = () => {
               key={index}
               className="bg-white p-2 rounded-md shadow-lg md:w-3/5"
               draggable={false}
-              src={img}
+              src={url + img}
               alt="rate"
             />
           ))}

@@ -14,9 +14,7 @@ function DdpPspp() {
                   <li>
                     <NoticeComponent
                       title={"Distribution Development Plan 2025"}
-                      path={
-                        "assets/annex/BOHECO II 2025-2034 DPP_page-0001.jpg"
-                      }
+                      path={"ANNEX/BOHECO II 2025-2034 DPP.jpg"}
                     />
                     <ListComponent
                       title={"BOHECO II 2025-2034 DPP"}
@@ -34,9 +32,7 @@ function DdpPspp() {
                   <li>
                     <NoticeComponent
                       title={"Distribution Development Plan 2024"}
-                      path={
-                        "assets/annex/BOHECO II 2024-2033 DPP_page-0001.jpg"
-                      }
+                      path={"ANNEX/BOHECO II 2024-2033 DPP.jpg"}
                     />
                     <ListComponent
                       title={"BOHECO II 2024-2033 DPP"}

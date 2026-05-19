@@ -8,19 +8,19 @@ import NeaAdvisory from "./pages/Notice";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
-import Privacy from "./pages/Privacy";
 import DdpPspp from "./pages/DdpPspp";
 import BillInquiry from "./pages/BillInquiry";
 import Policy from "./pages/Policy";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Award from "./pages/Award";
+import PrivacyPopup from "./components/PrivacyPopup";
 
 function App() {
   return (
     <div>
       <Navigation />
-      {/* {isPopupVisible && <PopupComponent />} */}
+      <PrivacyPopup />
       <Routes>
         <Route path="/">
           <Route index element={<Home />} />
@@ -31,7 +31,6 @@ function App() {
           <Route path="partners" element={<Partners />} />
           <Route path="inquiries" element={<BillInquiry />} />
           <Route path="lifeline" element={<LifelineAdvisory />} />
-          <Route path="privacy-notice" element={<Privacy />} />
           <Route path="awards" element={<Award />} />
           <Route path="login" element={<Login />} />
           <Route

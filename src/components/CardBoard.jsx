@@ -1,17 +1,16 @@
-import React from "react";
 import BCards from "./BCards";
 
-const img = [
-  "assets/bod/BOD1-d.jpg",
-  "assets/bod/BOD2-d.jpg",
-  "assets/bod/BOD3-d.jpg",
-  "assets/bod/BOD4-d.jpg",
-  "assets/bod/BOD5-d.jpg",
-  "assets/bod/BOD6-d.jpg",
-  "assets/bod/BOD7-d.jpg",
-  "assets/bod/BOD8-d.jpg",
-  "assets/bod/BOD9-d.jpg",
-  "assets/pe.png",
+const path = [
+  "BOD/BOD1-d.jpg",
+  "BOD/BOD2-d.jpg",
+  "BOD/BOD3-d.jpg",
+  "BOD/BOD4-d.jpg",
+  "BOD/BOD5-d.jpg",
+  "BOD/BOD6-d.jpg",
+  "BOD/BOD7-d.jpg",
+  "BOD/BOD8-d.jpg",
+  "BOD/BOD9-d.jpg",
+  "BOD/pe.png",
 ];
 
 const CardBoard = () => {
@@ -23,7 +22,7 @@ const CardBoard = () => {
       </div>
       <section className="flex justify-center items-center">
         <BCards
-          img={img[4]}
+          path={path[4]}
           title={"DISTRICT V REPRESENTATIVE"}
           name={"Noel D. Villanueva"}
           address={"UBAY & CPG ISLAND"}
@@ -32,28 +31,28 @@ const CardBoard = () => {
       </section>
       <section className="flex justify-center 2xl:flex-row flex-col gap-6 items-center">
         <BCards
-          img={img[7]}
+          path={path[7]}
           title={"DISTRICT VIII REPRESENTATIVE"}
           name={"ROBERTO O. LANGAMEN"}
           address={"TRINIDAD, BIEN-UNIDO & TALIBON"}
           position={"1ST VICE-PRESIDENT"}
         />
         <BCards
-          img={img[3]}
+          path={path[3]}
           title={"DISTRICT IV REPRESENTATIVE"}
           name={"SIXTO B. BUDIONGAN JR"}
           address={"CANDIJAY, MABINI & ALICIA"}
           position={"2ND VICE-PRESIDENTCHIEF PRO"}
         />
         <BCards
-          img={img[1]}
+          path={path[1]}
           title={"DISTRICT II REPRESENTATIVE"}
           name={"GENARO D. MENDE"}
           address={"JAGNA & DUERO"}
           position={"SECRETARY"}
         />
         <BCards
-          img={img[2]}
+          path={path[2]}
           title={"DISTRICT III REPRESENTATIVE"}
           name={"CHRISTINE G. LAGURA"}
           address={"GUINDULMAN & ANDA"}
@@ -62,28 +61,28 @@ const CardBoard = () => {
       </section>
       <section className="flex justify-center 2xl:flex-row flex-col gap-6 items-center">
         <BCards
-          img={img[5]}
+          path={path[5]}
           title={"DISTRICT VI REPRESENTATIVE"}
           name={"RUEL E. MABAQUIAO"}
           address={"PILAR & SIERRA-BULLONES"}
           position={"AUDITOR"}
         />
         <BCards
-          img={img[6]}
+          path={path[6]}
           title={"DISTRICT VII REPRESENTATIVE"}
           name={"CRISTITA A. CERICOS"}
           address={"SAN MIGUEL, DAGOHOY & DANAO"}
           position={"CHIEF PRO"}
         />
         <BCards
-          img={img[8]}
+          path={path[8]}
           title={"DISTRICT IX REPRESENTATIVE"}
           name={"ARNULDO S. LUGOD"}
           address={"GETAFE & BUENAVISTA"}
           position={"PRO I"}
         />
         <BCards
-          img={img[9]}
+          path={path[9]}
           title={"DISTRICT II REPRESENTATIVE"}
           name={"Danilo C. Cadiz"}
           address={"G-HERNARDEZ, VALENCIA"}
