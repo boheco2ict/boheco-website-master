@@ -156,7 +156,7 @@ const BillInquiry = () => {
               className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm"
             >
               {billingDetails.error ? (
-                <div>{billingDetails.error}</div>
+                <div>{billingDetails.error.message}</div>
               ) : (
                 <div>
                   <div className="flex flex-col gap-3 text-center">
