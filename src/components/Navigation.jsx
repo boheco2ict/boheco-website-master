@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { BsFacebook } from "react-icons/bs";
 import { FaTimes, FaBars } from "react-icons/fa";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const img = ["assets/l.png"];
 
@@ -21,9 +21,12 @@ const Navigation = () => {
     { id: 9, name: "AWARDS", link: "awards" },
   ];
 
-  const AuthLink = [{ id: 10, name: "COOP POLICIES", link: "coop-policies" }];
+  const AuthLink = [
+    { id: 10, name: "COOP POLICIES", link: "coop-policies" },
+    { id: 11, name: "LOGOUT", type: "action", action: "logout" },
+  ];
 
-  const GuestLink = [{ id: 11, name: "LOGIN", link: "login" }];
+  const GuestLink = [{ id: 12, name: "LOGIN", link: "login" }];
 
   const menuLink = auth ? [...Links, ...AuthLink] : [...Links, ...GuestLink];
 
@@ -33,6 +36,13 @@ const Navigation = () => {
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   return (
     <div className="shadow-md w-full top-0 left-0 fixed z-50">
@@ -60,20 +70,39 @@ const Navigation = () => {
               : "top-[-490px] 2xl:opacity-100 opacity-0"
           }`}
         >
-          {menuLink.map((link) => (
-            <li key={link.id} className="ml-7 text-xl py-2">
-              <NavLink
-                to={link.link}
-                className={({ isActive }) =>
-                  isActive
-                    ? "active text-gray-800 hover:text-red-600"
-                    : "text-gray-800 hover:text-red-600"
-                }
-              >
-                {link.name}
-              </NavLink>
-            </li>
-          ))}
+          {menuLink.map((link) => {
+            const isAction = link.type === "action" || !link.link;
+
+            if (isAction) {
+              return (
+                <li key={link.id} className="ml-7 text-xl py-2">
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-800 hover:text-red-600"
+                  >
+                    {link.name}
+                  </button>
+                </li>
+              );
+            }
+
+            if (!link.link) return null;
+
+            return (
+              <li key={link.id} className="ml-7 text-xl py-2">
+                <NavLink
+                  to={link.link}
+                  className={({ isActive }) =>
+                    isActive
+                      ? "active text-gray-800 hover:text-red-600"
+                      : "text-gray-800 hover:text-red-600"
+                  }
+                >
+                  {link.name}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
