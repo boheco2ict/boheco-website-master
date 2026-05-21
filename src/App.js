@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Award from "./pages/Award";
 import PrivacyPopup from "./components/PrivacyPopup";
+import Dashboard from "./pages/auth/Dashboard";
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="awards" element={<Award />} />
           <Route path="login" element={<Login />} />
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="coop-policies"
             element={

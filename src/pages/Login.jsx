@@ -1,50 +1,42 @@
 import { useState } from "react";
-import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
 
 function Login() {
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(true);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     const validRegEx = /^[^\\&']*$/;
-    if (!user.match(validRegEx)) {
+    if (!email.match(validRegEx)) {
       setMsg("Unauthorized");
       return;
     }
 
     try {
-      const response = await axios.post(
-        "https://bill-inquiry-api.onrender.com/api/v1/login",
-        { user, pwd },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: pwd,
+      });
 
-      if (response.data.auth) {
-        localStorage.setItem("token", response.data.token);
-        window.location.replace("/");
-      } else {
-        setMsg("Unauthorized");
+      if (error) {
+        setMsg(error.message);
         setLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        navigate("/dashboard");
       }
     } catch (error) {
-      // console.error(error);
-      if (error.message === "Network Error") {
-        setMsg("Network Error");
-        setLoading(false);
-      } else {
-        setMsg(error?.response?.data || "Login failed");
-        setLoading(false);
-      }
+      setMsg("Login failed");
     } finally {
       setLoading(false);
     }
@@ -63,12 +55,12 @@ function Login() {
           </span>
           <div className="w-full bg-gray-800 p-2 rounded-xl">
             <input
-              type="text"
-              name="username"
-              placeholder="Username"
+              type="email"
+              name="email"
+              placeholder="Email"
               className="bg-transparent border-0 w-full outline-none text-white"
-              onChange={(e) => setUser(e.target.value)}
-              value={user}
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
             />
           </div>
           <div className="w-full bg-gray-800 p-2 rounded-xl flex justify-between items-center">

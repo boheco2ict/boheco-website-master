@@ -1,59 +1,17 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children }) {
-  const [auth, setAuth] = useState(null);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setAuth(false);
-          return;
-        }
-
-        const response = await axios.post(
-          "https://bill-inquiry-api.onrender.com/api/v1/login/auth",
-          {},
-          {
-            headers: {
-              "x-access-token": token,
-            },
-          }
-        );
-
-        if (response.data.message === "Unauthorized") {
-          localStorage.clear();
-          setAuth(false);
-        } else if (response.data.message === "Incorrect Auth") {
-          localStorage.clear();
-          setAuth(false);
-        } else if (response.data.auth === false) {
-          localStorage.clear();
-          setAuth(false);
-        } else {
-          setAuth(true);
-        }
-      } catch (error) {
-        console.error(error);
-        setAuth(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const { user, loading } = useAuth();
   // Loading
-  if (auth === null) {
+  if (loading) {
     return (
       <div className="h-screen flex justify-center items-center text-4xl">
         Please Wait...
       </div>
     );
   }
-  if (!auth) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
