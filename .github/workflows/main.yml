@@ -23,6 +23,9 @@ jobs:
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
           REACT_APP_API_SESSION_INIT: ${{ secrets.REACT_APP_API_SESSION_INIT }}
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          REACT_APP_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_SUPABASE_PUBLISHABLE_KEY }}
+          REACT_APP_URL: ${{ secrets.REACT_APP_URL }}
 
       - name: List output files
         run: find build/ -print
