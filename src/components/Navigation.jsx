@@ -3,12 +3,14 @@ import { NavLink } from "react-router-dom";
 import { BsFacebook } from "react-icons/bs";
 import { FaTimes, FaBars } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../supabase";
 
 const img = ["assets/l.png"];
 
 const Navigation = () => {
-  const token = localStorage.getItem("token");
-  const auth = !!token;
+  const { user } = useAuth();
+  const auth = !!user;
   const Links = [
     { id: 1, name: "HOME", link: "/" },
     { id: 2, name: "ABOUT", link: "about" },
@@ -39,8 +41,8 @@ const Navigation = () => {
 
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
   };
 
