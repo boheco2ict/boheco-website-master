@@ -1,28 +1,11 @@
-import { useState, useEffect } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../supabase";
 
-function Login() {
+function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkStatus = async () => {
-      const { data } = await supabase.auth.getSession();
-
-      if (data.session) {
-        navigate("/dashboard");
-        return;
-      }
-    };
-
-    checkStatus();
-  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,26 +16,17 @@ function Login() {
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: pwd,
-      });
+    const redirectUrl = process.env.REACT_APP_URL;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
 
-      if (error) {
-        setMsg(error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        navigate("/dashboard");
-      }
-    } catch (error) {
-      setMsg("Login failed");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setMsg(error.message);
+    } else {
+      setMsg("Password reset email sent!");
     }
+    setLoading(false);
   };
   return (
     <>
@@ -62,7 +36,9 @@ function Login() {
           className="p-5 bg-gray-900 shadow-lg rounded-lg shadow-slate-500 flex flex-col gap-2"
           onSubmit={handleSubmit}
         >
-          <div className="text-white font-bold text-center">Login</div>
+          <div className="text-white font-bold text-center">
+            Forgot Password
+          </div>
           <span className="w-full text-red-400 text-center font-semibold">
             FOR BOHECO II EMPLOYEE ONLY
           </span>
@@ -75,24 +51,6 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
-          </div>
-          <div className="w-full bg-gray-800 p-2 rounded-xl flex justify-between items-center">
-            <input
-              type={show ? "password" : "text"}
-              name="password"
-              placeholder="Password"
-              className="bg-transparent border-0 w-full outline-none text-white"
-              onChange={(e) => setPwd(e.target.value)}
-              value={pwd}
-            />
-            {show ? (
-              <FaEyeSlash
-                className="text-white"
-                onClick={() => setShow(!show)}
-              />
-            ) : (
-              <FaEye className="text-white" onClick={() => setShow(!show)} />
-            )}
           </div>
           {msg && <span className="text-red-500">{msg}</span>}
           {loading ? (
@@ -111,12 +69,12 @@ function Login() {
                 type="submit"
                 className="bg-green-500 p-2 rounded-md w-full"
               >
-                Login
+                Submit
               </button>
             </div>
           )}
-          <Link to="/forgot-password" className="text-blue-400">
-            Forgot Password?
+          <Link to="/login" className="text-blue-400">
+            Go Back!
           </Link>
         </form>
       </div>
@@ -124,4 +82,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default ForgotPassword;

@@ -16,6 +16,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Award from "./pages/Award";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="awards" element={<Award />} />
           <Route path="login" element={<Login />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route
             path="dashboard"
             element={
