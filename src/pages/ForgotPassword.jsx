@@ -67,14 +67,20 @@ function ForgotPassword() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="bg-green-500 p-2 rounded-md w-full"
+                className="bg-green-500 p-2 rounded-md w-full hover:bg-green-600 transition duration-300"
               >
                 Submit
               </button>
             </div>
           )}
-          <Link to="/login" className="text-blue-400">
-            Go Back!
+          <Link
+            to="/login"
+            className="group inline-flex items-center text-blue-400"
+          >
+            <span className="relative inline-block">
+              ← Go Back!
+              <span className="absolute right-0 bottom-0 h-[2px] w-full scale-x-0 origin-right bg-blue-400 transition-transform duration-300 group-hover:scale-x-100"></span>
+            </span>
           </Link>
         </form>
       </div>

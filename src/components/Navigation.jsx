@@ -24,11 +24,12 @@ const Navigation = () => {
   ];
 
   const AuthLink = [
-    { id: 10, name: "COOP POLICIES", link: "coop-policies" },
-    { id: 11, name: "LOGOUT", type: "action", action: "logout" },
+    { id: 10, name: "DASHBOARD", link: "dashboard" },
+    { id: 11, name: "COOP POLICIES", link: "coop-policies" },
+    { id: 12, name: "LOGOUT", type: "action", action: "logout" },
   ];
 
-  const GuestLink = [{ id: 12, name: "LOGIN", link: "login" }];
+  const GuestLink = [{ id: 13, name: "LOGIN", link: "login" }];
 
   const menuLink = auth ? [...Links, ...AuthLink] : [...Links, ...GuestLink];
 
