@@ -109,14 +109,20 @@ function Login() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="bg-green-500 p-2 rounded-md w-full"
+                className="bg-green-500 p-2 rounded-md w-full hover:bg-green-600 transition duration-300"
               >
                 Login
               </button>
             </div>
           )}
-          <Link to="/forgot-password" className="text-blue-400">
-            Forgot Password?
+          <Link
+            to="/forgot-password"
+            className="group inline-flex items-center text-blue-400"
+          >
+            <span className="relative inline-block">
+              Forgot Password? →
+              <span className="absolute left-0 -bottom-0.5 h-[2px] w-0 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
+            </span>
           </Link>
         </form>
       </div>

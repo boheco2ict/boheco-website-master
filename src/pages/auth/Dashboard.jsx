@@ -6,12 +6,19 @@ function Dashboard() {
   const [employee, setEmployee] = useState(null);
   const [activeTab, setActiveTab] = useState("tab1");
 
+  const [show, setShow] = useState(false);
+  const hour = new Date().getHours();
+
+  const greeting =
+    hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+
   const tabs = [
     { id: "tab1", label: "Profile" },
     { id: "tab2", label: "Leave Credits" },
     { id: "tab3", label: "Memo" },
     { id: "tab4", label: "Office Order" },
   ];
+
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -20,8 +27,6 @@ function Dashboard() {
 
       if (!user) return;
 
-      // Users can view their own employee data
-      // (auth.uid() = user_id)
       const { data, error } = await supabase
         .from("employees")
         .select(
@@ -61,6 +66,7 @@ function Dashboard() {
         setEmployee(data);
       }
     };
+    setShow(true);
     fetchUser();
   }, []);
 
@@ -87,10 +93,13 @@ function Dashboard() {
     <>
       <div className="bg-image2 h-screen flex flex-col p-2">
         <div className="pt-24">
-          <h2 className="text-lg">
-            Hi {capitalizeFullName(employee?.firstname)},
-          </h2>
-          <h1 className="text-3xl font-bold">Welcome back!</h1>
+          <h1
+            className={`text-3xl font-bold transition-all duration-500 ${
+              show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+            }`}
+          >
+            {greeting}, {capitalizeFullName(employee?.firstname)}
+          </h1>
         </div>
         <div className="w-full mx-auto">
           {/* Tab Buttons*/}
@@ -112,7 +121,7 @@ function Dashboard() {
           {/* Tab Content*/}
           <div className="p-4">
             {activeTab === "tab1" && (
-              <div className="h-[50vh] overflow-y-auto bg-white shadow rounded-lg p-4">
+              <div className="h-[60vh] overflow-y-auto bg-white shadow rounded-lg p-4">
                 <h2 className="text-xl font-semibold mb-4">Employee Profile</h2>
                 <div className="overflow-x-auto">
                   <table>
@@ -129,7 +138,10 @@ function Dashboard() {
                       <Row label={"Postion"} value={employee?.position} />
                       <Row label={"Status"} value={employee?.empstatus} />
                       <Row label={"Address"} value={employee?.address} />
-                      <Row label={"Mobile Number"} value={employee?.phone1} />
+                      <Row
+                        label={"Mobile Number"}
+                        value={`+63${employee?.phone1}`}
+                      />
                       <Row
                         label={"Telephone Number"}
                         value={employee?.phone2}
