@@ -17,6 +17,23 @@ const policyData = [
     url: "https://drive.google.com/file/d/1VkODMRVSulvSQBsHBNI2rzH6GrXHagHx/view?usp=drive_link",
   },
   {
+    year: 2026,
+    title: "Policy No. 191 - Automatic Office-in-Charge (OIC) Protocol",
+    url: "https://drive.google.com/file/d/10uaoCUrWR2zVtP2nxZHtsDabtAuZB8f9/view?usp=drive_link",
+  },
+  {
+    year: 2026,
+    title:
+      "Policy No. 192 - Billing-Related Fees, Penalties, and Other Charges",
+    url: "https://drive.google.com/file/d/1Ih3avgwaVSjX68q21D54368e0ztmLP9n/view?usp=drive_link",
+  },
+  {
+    year: 2026,
+    title:
+      "Policy No. 193 - Transformer Rental Policy for Community and Special Events",
+    url: "https://drive.google.com/file/d/1t3aC7ruEuei5_7HyINWEHnDwzZ29r1Nm/view?usp=drive_link",
+  },
+  {
     year: 2025,
     title: "Policy No. 172 - No MCT, No Issuance Policy",
     url: "https://drive.google.com/file/d/1Q4N0k6b6qz10gcVaWpbwlSTPZawvw4G2/view?usp=drive_link",
