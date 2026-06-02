@@ -5,7 +5,6 @@ import {
   FaFilePdf,
   FaFolderOpen,
   FaSearch,
-  FaSyncAlt,
 } from "react-icons/fa";
 import { supabase } from "../supabase";
 
