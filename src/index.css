@@ -17,14 +17,10 @@ code {
 }
 
 .bg-image2 {
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 0, 1) 0%,
-    rgba(255, 179, 0, 1) 79%,
-    rgb(255, 100, 50) 100%
-  );
-  background-size: 200% 200%;
-  animation: gradientMove 6s ease infinite;
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.28), transparent 32%),
+    linear-gradient(135deg, #fffdf4 0%, #f8fafc 50%, #eef6ff 100%);
+  background-attachment: fixed;
 }
 
 @keyframes gradientMove {

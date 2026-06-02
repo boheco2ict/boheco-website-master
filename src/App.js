@@ -21,7 +21,7 @@ import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
-    <div>
+    <div className="pt-[76px]">
       <Navigation />
       <PrivacyPopup />
       <Routes>
