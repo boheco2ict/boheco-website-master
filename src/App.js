@@ -18,12 +18,14 @@ import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import InstallPrompt from "./components/InstallPrompt";
 
 function App() {
   return (
     <div className="pt-[76px]">
       <Navigation />
       <PrivacyPopup />
+      <InstallPrompt />
       <Routes>
         <Route path="/">
           <Route index element={<Home />} />
