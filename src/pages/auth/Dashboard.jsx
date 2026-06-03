@@ -176,6 +176,7 @@ function Dashboard() {
           datehired,
           basicrate,
           riceallowance,
+          role,
           employee_ledger (
             leave_type,
             leave_balance
@@ -329,6 +330,14 @@ function Dashboard() {
 
             {!isLoading && activeTab === "memo" && (
               <MemoTab
+                isAdmin={
+                  (employee?.role &&
+                    (String(employee.role).toLowerCase() === "admin" ||
+                      String(employee.role).toLowerCase() === "administrator" ||
+                      String(employee.role).toLowerCase() === "admin_user")) ||
+                  (employee?.position &&
+                    String(employee.position).toLowerCase().includes("admin"))
+                }
                 memoMode={memoMode}
                 setMemoMode={setMemoMode}
                 memoUrl={memoUrl}
@@ -438,6 +447,7 @@ function Badge({ icon: Icon, text }) {
 }
 
 function MemoTab({
+  isAdmin,
   memoMode,
   setMemoMode,
   memoUrl,
@@ -463,13 +473,15 @@ function MemoTab({
             Paste a Google Drive memo image URL, then choose a specific employee or a batch to send.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setMemoMode("add")}
-          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-        >
-          Add Memo
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setMemoMode("add")}
+            className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+          >
+            Add Memo
+          </button>
+        )}
       </div>
 
       {memoMessage && (
@@ -478,7 +490,13 @@ function MemoTab({
         </div>
       )}
 
-      {memoMode === "add" ? (
+      {memoMode === "add" && !isAdmin ? (
+        <EmptyState
+          icon={FaRegFileAlt}
+          title="Access denied"
+          message="Only administrators can add memos."
+        />
+      ) : memoMode === "add" ? (
         <form onSubmit={onSendMemo} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="space-y-4">
             <div>
