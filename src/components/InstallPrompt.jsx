@@ -5,14 +5,32 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [promptShown, setPromptShown] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    try {
+      return localStorage.getItem('boheco-installed') === 'true';
+    } catch (error) {
+      return false;
+    }
+  });
 
   useEffect(() => {
     const beforeInstallPromptHandler = (event) => {
+      if (isInstalled) {
+        return;
+      }
       event.preventDefault();
       setDeferredPrompt(event);
     };
 
     const appInstalledHandler = () => {
+      setIsInstalled(true);
+      setPromptShown(true);
+      setDeferredPrompt(null);
+      try {
+        localStorage.setItem('boheco-installed', 'true');
+      } catch (error) {
+        // ignore localStorage failures
+      }
       Swal.fire({
         title: 'Installed!',
         text: 'BOHECO II has been added to your device.',
@@ -22,6 +40,16 @@ function InstallPrompt() {
       });
     };
 
+    const standaloneCheck = () => {
+      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandaloneMode) {
+        setIsInstalled(true);
+        setPromptShown(true);
+        setDeferredPrompt(null);
+      }
+    };
+
+    standaloneCheck();
     window.addEventListener('beforeinstallprompt', beforeInstallPromptHandler);
     window.addEventListener('appinstalled', appInstalledHandler);
 
@@ -32,7 +60,7 @@ function InstallPrompt() {
   }, []);
 
   useEffect(() => {
-    if (deferredPrompt && !promptShown) {
+    if (deferredPrompt && !promptShown && !isInstalled) {
       const timer = window.setTimeout(() => {
         setPromptShown(true);
         promptInstall();
@@ -41,19 +69,21 @@ function InstallPrompt() {
       return () => window.clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deferredPrompt]);
+  }, [deferredPrompt, isInstalled]);
+
+  const isIosDevice = () => {
+    return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  };
 
   useEffect(() => {
-    if (!deferredPrompt && !promptShown) {
+    if (!deferredPrompt && !promptShown && !isInstalled && isIosDevice()) {
       const fallbackTimer = window.setTimeout(() => {
         setPromptShown(true);
         Swal.fire({
           title: 'Install BOHECO II',
-          text: 'If the browser install prompt is not available, use your browser menu and choose Add to Home Screen.',
+          text: 'Safari on iOS does not show the PWA install prompt. Use Share > Add to Home Screen to install it as an app.',
           icon: 'info',
-          confirmButtonText: 'Install',
-          cancelButtonText: 'Later',
-          showCancelButton: true,
+          confirmButtonText: 'OK',
           buttonsStyling: false,
           background: '#f8fafc',
           color: '#111827',
@@ -61,19 +91,18 @@ function InstallPrompt() {
             container: 'swal2-bottom-right',
             popup: 'swal2-border-radius swal2-small-popup',
             confirmButton: 'swal2-confirm-custom',
-            cancelButton: 'swal2-cancel-custom',
           },
         });
       }, 5000);
 
       return () => window.clearTimeout(fallbackTimer);
     }
-  }, [deferredPrompt, promptShown]);
+  }, [deferredPrompt, promptShown, isInstalled]);
 
   const promptInstall = async () => {
     const result = await Swal.fire({
-      title: 'Install BOHECO II?',
-      text: 'Add this app to your home screen for faster access and offline support.',
+      title: 'Install BOHECO II as an app?',
+      text: 'Add this app to your device for faster access and offline support.',
       icon: 'info',
       showCancelButton: true,
       confirmButtonText: 'Install',
@@ -131,6 +160,10 @@ function InstallPrompt() {
       setDeferredPrompt(null);
     }
   };
+
+  if (isInstalled) {
+    return null;
+  }
 
   return deferredPrompt ? (
     <button
