@@ -10,7 +10,6 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
@@ -29,7 +28,6 @@ self.addEventListener('activate', (event) => {
       )
     )
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -43,7 +41,9 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy))
+            );
             return response;
           }
           return caches.match('/index.html');
@@ -64,7 +64,9 @@ self.addEventListener('fetch', (event) => {
             return networkResponse;
           }
           const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone))
+          );
           return networkResponse;
         })
         .catch(() => caches.match('/index.html'));

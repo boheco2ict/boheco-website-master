@@ -1,6 +1,7 @@
 {
   "short_name": "BOHECO II",
   "name": "BOHECO II ELECTRIC COOPERATIVE, INC.",
+  "description": "BOHECO II Progressive Web App for fast access and offline support.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -29,6 +30,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "prefer_related_applications": false,
   "theme_color": "#000000",
   "background_color": "#ffffff"
 }

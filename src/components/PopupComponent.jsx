@@ -1,14 +1,21 @@
+import { useState } from 'react';
+
 function PopupComponent() {
   const privacyNotice = "assets/privacy/CORSeal_BOHECOII.png";
+  const [visible, setVisible] = useState(true);
 
   const handleAccept = () => {
     // Logic to handle acceptance of the privacy notice
     localStorage.setItem("privacyAccepted", "true");
-    window.location.reload(); // Reload the page to hide the popup
+    setVisible(false);
   };
 
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <div className="h-full w-full fixed top-0 left-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="popup-component h-full w-full fixed top-0 left-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-16 rounded-lg shadow-lg flex max-w-6xl flex-col items-center">
         <div className="flex items-center">
           <img
