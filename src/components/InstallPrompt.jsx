@@ -32,34 +32,6 @@ function InstallPrompt() {
   }, []);
 
   useEffect(() => {
-    if (!promptShown) {
-      const fallbackTimer = window.setTimeout(() => {
-        if (!deferredPrompt) {
-          setPromptShown(true);
-          Swal.fire({
-            title: 'Install BOHECO II',
-            text: 'To install this app, use your browser menu and select Add to Home Screen. If this prompt appears again, tap Install.',
-            icon: 'info',
-            confirmButtonText: 'Install',
-            cancelButtonText: 'Later',
-            showCancelButton: true,
-            buttonsStyling: false,
-            background: '#f8fafc',
-            color: '#111827',
-            customClass: {
-              popup: 'swal2-border-radius',
-              confirmButton: 'swal2-confirm-custom',
-              cancelButton: 'swal2-cancel-custom',
-            },
-          });
-        }
-      }, 3500);
-
-      return () => window.clearTimeout(fallbackTimer);
-    }
-  }, [deferredPrompt, promptShown]);
-
-  useEffect(() => {
     if (deferredPrompt && !promptShown) {
       const timer = window.setTimeout(() => {
         setPromptShown(true);
@@ -71,11 +43,34 @@ function InstallPrompt() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deferredPrompt]);
 
-  const promptInstall = async () => {
-    if (!deferredPrompt) {
-      return;
-    }
+  useEffect(() => {
+    if (!deferredPrompt && !promptShown) {
+      const fallbackTimer = window.setTimeout(() => {
+        setPromptShown(true);
+        Swal.fire({
+          title: 'Install BOHECO II',
+          text: 'If the browser install prompt is not available, use your browser menu and choose Add to Home Screen.',
+          icon: 'info',
+          confirmButtonText: 'Install',
+          cancelButtonText: 'Later',
+          showCancelButton: true,
+          buttonsStyling: false,
+          background: '#f8fafc',
+          color: '#111827',
+          customClass: {
+            container: 'swal2-bottom-right',
+            popup: 'swal2-border-radius swal2-small-popup',
+            confirmButton: 'swal2-confirm-custom',
+            cancelButton: 'swal2-cancel-custom',
+          },
+        });
+      }, 5000);
 
+      return () => window.clearTimeout(fallbackTimer);
+    }
+  }, [deferredPrompt, promptShown]);
+
+  const promptInstall = async () => {
     const result = await Swal.fire({
       title: 'Install BOHECO II?',
       text: 'Add this app to your home screen for faster access and offline support.',
@@ -87,12 +82,31 @@ function InstallPrompt() {
       background: '#f8fafc',
       color: '#111827',
       customClass: {
-        popup: 'swal2-border-radius',
+        container: 'swal2-bottom-right',
+        popup: 'swal2-border-radius swal2-small-popup',
         confirmButton: 'swal2-confirm-custom',
         cancelButton: 'swal2-cancel-custom',
       },
       allowOutsideClick: false,
     });
+
+    if (!deferredPrompt) {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: 'Install Instructions',
+          html: 'Open your browser menu and choose <strong>Add to Home Screen</strong>.',
+          icon: 'info',
+          confirmButtonText: 'OK',
+          buttonsStyling: false,
+          customClass: {
+            container: 'swal2-bottom-right',
+            popup: 'swal2-border-radius swal2-small-popup',
+            confirmButton: 'swal2-confirm-custom',
+          },
+        });
+      }
+      return;
+    }
 
     if (result.isConfirmed) {
       deferredPrompt.prompt();

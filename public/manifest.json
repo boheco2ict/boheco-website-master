@@ -1,6 +1,6 @@
 {
   "short_name": "BOHECO II",
-  "name": "BOHOL II ELECTRIC COOPERATIVE, INC.",
+  "name": "BOHECO II ELECTRIC COOPERATIVE, INC.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -26,8 +26,8 @@
       "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
