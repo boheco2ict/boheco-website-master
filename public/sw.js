@@ -10,7 +10,6 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
@@ -29,7 +28,6 @@ self.addEventListener('activate', (event) => {
       )
     )
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {

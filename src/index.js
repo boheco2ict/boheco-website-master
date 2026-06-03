@@ -16,16 +16,13 @@ root.render(
   </React.StrictMode>
 );
 
+// Unregister any existing service workers to avoid stale caching and unexpected page reloads.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
-    navigator.serviceWorker
-      .register(swUrl)
-      .then((registration) => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch((error) => {
-        console.warn('Service Worker registration failed:', error);
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister().catch(() => {});
       });
+    });
   });
 }
