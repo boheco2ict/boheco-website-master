@@ -58,7 +58,8 @@ function InstallPrompt() {
           background: '#f8fafc',
           color: '#111827',
           customClass: {
-            popup: 'swal2-border-radius',
+            container: 'swal2-bottom-right',
+            popup: 'swal2-border-radius swal2-small-popup',
             confirmButton: 'swal2-confirm-custom',
             cancelButton: 'swal2-cancel-custom',
           },
@@ -81,7 +82,8 @@ function InstallPrompt() {
       background: '#f8fafc',
       color: '#111827',
       customClass: {
-        popup: 'swal2-border-radius',
+        container: 'swal2-bottom-right',
+        popup: 'swal2-border-radius swal2-small-popup',
         confirmButton: 'swal2-confirm-custom',
         cancelButton: 'swal2-cancel-custom',
       },
@@ -97,6 +99,8 @@ function InstallPrompt() {
           confirmButtonText: 'OK',
           buttonsStyling: false,
           customClass: {
+            container: 'swal2-bottom-right',
+            popup: 'swal2-border-radius swal2-small-popup',
             confirmButton: 'swal2-confirm-custom',
           },
         });

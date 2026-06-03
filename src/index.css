@@ -73,6 +73,27 @@ code {
   border-radius: 0.75rem !important;
 }
 
+.swal2-bottom-right {
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  padding: 1rem !important;
+}
+
+.swal2-small-popup {
+  width: 420px !important;
+  max-width: 95vw !important;
+  min-height: 170px !important;
+  padding: 1rem 1.2rem !important;
+  font-size: 0.95rem !important;
+}
+
+.swal2-small-popup .swal2-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  margin-top: 1rem !important;
+}
+
 .swal2-border-radius {
   border-radius: 1rem !important;
 }
