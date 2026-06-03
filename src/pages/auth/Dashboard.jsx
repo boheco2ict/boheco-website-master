@@ -11,6 +11,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../context/AuthContext";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -91,6 +92,7 @@ function formatValue(employee, field) {
 }
 
 function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const [employee, setEmployee] = useState(null);
   const [employeeUserId, setEmployeeUserId] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
@@ -146,28 +148,19 @@ function Dashboard() {
   useEffect(() => {
     let isMounted = true;
 
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      setErrorMessage("No active user session was found.");
+      setIsLoading(false);
+      return;
+    }
+
     const fetchUser = async () => {
       setIsLoading(true);
       setErrorMessage("");
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (!isMounted) return;
-
-      if (userError) {
-        setErrorMessage("We could not verify your account. Please sign in again.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!user) {
-        setErrorMessage("No active user session was found.");
-        setIsLoading(false);
-        return;
-      }
 
       const { data, error } = await supabase
         .from("employees")
@@ -221,7 +214,7 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authLoading, user]);
 
   const handleOpenEdit = () => {
     setEditError("");
@@ -250,13 +243,8 @@ function Dashboard() {
 
     setIsSaving(true);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user?.id) {
-      console.error(userError || "No authenticated user.");
+    if (!user?.id) {
+      console.error("No authenticated user.");
       setEditError("Unable to identify your account. Please reload and try again.");
       setIsSaving(false);
       return;
