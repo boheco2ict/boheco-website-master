@@ -1,0 +1,26 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="outer" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffec3d" />
+      <stop offset="100%" stop-color="#f7b500" />
+    </linearGradient>
+    <linearGradient id="inner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff9d1" />
+      <stop offset="100%" stop-color="#fff0a3" />
+    </linearGradient>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d1d5db" />
+      <stop offset="100%" stop-color="#6b7280" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#ffffff" />
+  <circle cx="256" cy="224" r="180" fill="url(#outer)" />
+  <ellipse cx="256" cy="240" rx="152" ry="160" fill="url(#inner)" />
+  <path d="M266 260c16-10 34-38 34-58 0-32-22-54-47-54-17 0-34 6-44 18-8 10-35 54-36 86-1 24 16 42 36 42 22 0 45-17 57-34z" fill="#ffffff" opacity="0.15" />
+  <path d="M154 170c16-20 46-30 75-26 18 2 42 11 54 22 14 13 22 36 22 55 0 33-20 70-40 96-14 18-26 32-38 46-22 16-44 18-61 10-22-9-32-30-32-54 0-23 10-48 23-65 12-15 18-24 7-24-24 0-64 92-31 146 32 50 126 52 211-41 20-20 34-38 44-58 26-54 22-120-26-152-33-22-91-17-128 12-21 17-24 22-24 33 0 20 4 19 0 0z" fill="#f21717" />
+  <path d="M180 295c12 0 22 8 22 18 0 10-10 18-22 18s-22-8-22-18c0-10 10-18 22-18z" fill="#d30f0f" />
+  <path d="M228 345h56c8 0 14 6 14 14v32c0 8-6 14-14 14h-56c-8 0-14-6-14-14v-32c0-8 6-14 14-14z" fill="url(#metal)" />
+  <path d="M208 393h96c8 0 14 6 14 14v8c0 8-6 14-14 14h-96c-8 0-14-6-14-14v-8c0-8 6-14 14-14z" fill="#9ca3af" />
+  <circle cx="345" cy="146" r="16" fill="#d30f0f" />
+  <circle cx="167" cy="160" r="14" fill="#d30f0f" />
+</svg>

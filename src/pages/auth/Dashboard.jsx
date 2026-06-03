@@ -96,6 +96,7 @@ function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [show, setShow] = useState(false);
   const [memoMode, setMemoMode] = useState("view");
+  const [memoName, setMemoName] = useState("");
   const [memoUrl, setMemoUrl] = useState("");
   const [recipientType, setRecipientType] = useState("employee");
   const [employeeTarget, setEmployeeTarget] = useState("");
@@ -207,10 +208,12 @@ function Dashboard() {
   }, []);
 
   const canSendMemo =
+    memoName.trim().length > 0 &&
     memoUrl.trim().length > 0 &&
     (recipientType !== "employee" || employeeTarget.trim().length > 0);
 
   const resetMemoForm = () => {
+    setMemoName("");
     setMemoUrl("");
     setRecipientType("employee");
     setEmployeeTarget("");
@@ -230,7 +233,7 @@ function Dashboard() {
         ? "All employees"
         : batchTarget;
 
-    setMemoMessage(`Memo URL sent to ${recipient}.`);
+    setMemoMessage(`Memo "${memoName.trim()}" sent to ${recipient}.`);
     setMemoMode("view");
     resetMemoForm();
   };
@@ -340,6 +343,8 @@ function Dashboard() {
                 }
                 memoMode={memoMode}
                 setMemoMode={setMemoMode}
+                memoName={memoName}
+                setMemoName={setMemoName}
                 memoUrl={memoUrl}
                 setMemoUrl={setMemoUrl}
                 recipientType={recipientType}
@@ -450,6 +455,8 @@ function MemoTab({
   isAdmin,
   memoMode,
   setMemoMode,
+  memoName,
+  setMemoName,
   memoUrl,
   setMemoUrl,
   recipientType,
@@ -499,6 +506,18 @@ function MemoTab({
       ) : memoMode === "add" ? (
         <form onSubmit={onSendMemo} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">
+                Memo Name
+              </label>
+              <input
+                type="text"
+                value={memoName}
+                onChange={(event) => setMemoName(event.target.value)}
+                placeholder="Enter memo name"
+                className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700">
                 Memo Image URL
