@@ -28,24 +28,24 @@ const Rates = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 pb-1">
+        <div className="flex flex-wrap items-center justify-center gap-2 pb-1 sm:gap-3 sm:justify-end">
           <button
             type="button"
             onClick={handlePrevPage}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-700 transition hover:bg-amber-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-700 text-base transition hover:bg-amber-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:h-10 sm:w-10"
             aria-label="Previous generation charge page"
           >
             <FaChevronLeft />
           </button>
 
-          <div className="min-w-[110px] rounded-md bg-slate-900 px-3 py-2 text-center text-sm font-bold text-white">
+          <div className="min-w-[100px] rounded-md bg-slate-900 px-3 py-1.5 text-center text-sm font-bold text-white sm:min-w-[120px] sm:px-4 sm:py-2">
             Page {activePage + 1}
           </div>
 
           <button
             type="button"
             onClick={handleNextPage}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-700 transition hover:bg-amber-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-700 text-base transition hover:bg-amber-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:h-10 sm:w-10"
             aria-label="Next generation charge page"
           >
             <FaChevronRight />

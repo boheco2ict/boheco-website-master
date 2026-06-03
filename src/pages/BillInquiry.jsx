@@ -43,14 +43,20 @@ const BillInquiry = () => {
   }, [accountNumber, billMonth]);
 
   const formatMonthValue = (value) => {
-    const digits = value.replace(/\D/g, "").slice(0, 6);
+    const raw = value.replace(/[^\d-]/g, "");
+    const parts = raw.split("-");
+    const monthPart = parts[0].slice(0, 2);
+    const yearPart = parts.slice(1).join("").slice(0, 4);
 
-    if (digits.length >= 2) {
-      const month = digits.slice(0, 2);
-      if (+month < 1 || +month > 12) return digits.slice(0, 1);
+    if (raw.includes("-")) {
+      return `${monthPart}${monthPart || yearPart ? "-" : ""}${yearPart}`;
     }
 
-    if (digits.length <= 2) return digits;
+    const digits = raw.slice(0, 6);
+    if (digits.length <= 2) {
+      return digits;
+    }
+
     return `${digits.slice(0, 2)}-${digits.slice(2)}`;
   };
 

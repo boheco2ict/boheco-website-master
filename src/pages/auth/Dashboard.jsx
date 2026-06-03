@@ -95,6 +95,13 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [show, setShow] = useState(false);
+  const [memoMode, setMemoMode] = useState("view");
+  const [memoName, setMemoName] = useState("");
+  const [memoUrl, setMemoUrl] = useState("");
+  const [recipientType, setRecipientType] = useState("employee");
+  const [employeeTarget, setEmployeeTarget] = useState("");
+  const [batchTarget, setBatchTarget] = useState("all");
+  const [memoMessage, setMemoMessage] = useState("");
 
   const hour = new Date().getHours();
   const greeting =
@@ -170,6 +177,7 @@ function Dashboard() {
           datehired,
           basicrate,
           riceallowance,
+          role,
           employee_ledger (
             leave_type,
             leave_balance
@@ -198,6 +206,37 @@ function Dashboard() {
       isMounted = false;
     };
   }, []);
+
+  const canSendMemo =
+    memoName.trim().length > 0 &&
+    memoUrl.trim().length > 0 &&
+    (recipientType !== "employee" || employeeTarget.trim().length > 0);
+
+  const resetMemoForm = () => {
+    setMemoName("");
+    setMemoUrl("");
+    setRecipientType("employee");
+    setEmployeeTarget("");
+    setBatchTarget("all");
+    setMemoMessage("");
+  };
+
+  const handleSendMemo = (event) => {
+    event.preventDefault();
+
+    if (!canSendMemo) return;
+
+    const recipient =
+      recipientType === "employee"
+        ? `Employee ${employeeTarget.trim() || "(unknown)"}`
+        : batchTarget === "all"
+        ? "All employees"
+        : batchTarget;
+
+    setMemoMessage(`Memo "${memoName.trim()}" sent to ${recipient}.`);
+    setMemoMode("view");
+    resetMemoForm();
+  };
 
   return (
     <div className="bg-image2 min-h-screen px-4 pb-8 pt-28 sm:px-6 lg:px-10">
@@ -293,10 +332,35 @@ function Dashboard() {
             )}
 
             {!isLoading && activeTab === "memo" && (
-              <EmptyState
-                icon={FaRegFileAlt}
-                title="No memo posted"
-                message="New employee memos will appear here once they are available."
+              <MemoTab
+                isAdmin={
+                  (employee?.role &&
+                    (String(employee.role).toLowerCase() === "admin" ||
+                      String(employee.role).toLowerCase() === "administrator" ||
+                      String(employee.role).toLowerCase() === "admin_user")) ||
+                  (employee?.position &&
+                    String(employee.position).toLowerCase().includes("admin"))
+                }
+                memoMode={memoMode}
+                setMemoMode={setMemoMode}
+                memoName={memoName}
+                setMemoName={setMemoName}
+                memoUrl={memoUrl}
+                setMemoUrl={setMemoUrl}
+                recipientType={recipientType}
+                setRecipientType={setRecipientType}
+                employeeTarget={employeeTarget}
+                setEmployeeTarget={setEmployeeTarget}
+                batchTarget={batchTarget}
+                setBatchTarget={setBatchTarget}
+                memoMessage={memoMessage}
+                setMemoMessage={setMemoMessage}
+                onSendMemo={handleSendMemo}
+                onCancelMemo={() => {
+                  resetMemoForm();
+                  setMemoMode("view");
+                }}
+                canSendMemo={canSendMemo}
               />
             )}
 
@@ -384,6 +448,170 @@ function Badge({ icon: Icon, text }) {
       <Icon className="text-amber-600" />
       {text}
     </span>
+  );
+}
+
+function MemoTab({
+  isAdmin,
+  memoMode,
+  setMemoMode,
+  memoName,
+  setMemoName,
+  memoUrl,
+  setMemoUrl,
+  recipientType,
+  setRecipientType,
+  employeeTarget,
+  setEmployeeTarget,
+  batchTarget,
+  setBatchTarget,
+  memoMessage,
+  onSendMemo,
+  onCancelMemo,
+  canSendMemo,
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500">Memos</p>
+          <h2 className="text-xl font-bold text-slate-900">Employee Memo Management</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Paste a Google Drive memo image URL, then choose a specific employee or a batch to send.
+          </p>
+        </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setMemoMode("add")}
+            className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+          >
+            Add Memo
+          </button>
+        )}
+      </div>
+
+      {memoMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {memoMessage}
+        </div>
+      )}
+
+      {memoMode === "add" && !isAdmin ? (
+        <EmptyState
+          icon={FaRegFileAlt}
+          title="Access denied"
+          message="Only administrators can add memos."
+        />
+      ) : memoMode === "add" ? (
+        <form onSubmit={onSendMemo} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">
+                Memo Name
+              </label>
+              <input
+                type="text"
+                value={memoName}
+                onChange={(event) => setMemoName(event.target.value)}
+                placeholder="Enter memo name"
+                className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">
+                Memo Image URL
+              </label>
+              <input
+                type="url"
+                value={memoUrl}
+                onChange={(event) => setMemoUrl(event.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-700">Send memo to</p>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    checked={recipientType === "employee"}
+                    onChange={() => setRecipientType("employee")}
+                    className="h-4 w-4"
+                  />
+                  Specific employee
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    checked={recipientType === "batch"}
+                    onChange={() => setRecipientType("batch")}
+                    className="h-4 w-4"
+                  />
+                  Batch send
+                </label>
+              </div>
+
+              {recipientType === "employee" ? (
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Employee Number
+                  </label>
+                  <input
+                    type="text"
+                    value={employeeTarget}
+                    onChange={(event) => setEmployeeTarget(event.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter employee number"
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Batch target
+                  </label>
+                  <select
+                    value={batchTarget}
+                    onChange={(event) => setBatchTarget(event.target.value)}
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  >
+                    <option value="all">All employees</option>
+                    <option value="management">Management team</option>
+                    <option value="support">Support staff</option>
+                    <option value="field">Field staff</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onCancelMemo}
+              className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!canSendMemo}
+              className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            >
+              Send memo
+            </button>
+          </div>
+        </form>
+      ) : (
+        <EmptyState
+          icon={FaRegFileAlt}
+          title="No memo posted"
+          message="Add a memo link on the right and send it to a specific employee or by batch."
+        />
+      )}
+    </div>
   );
 }
 
