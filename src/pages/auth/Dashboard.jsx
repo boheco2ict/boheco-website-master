@@ -3,6 +3,7 @@ import {
   FaBriefcase,
   FaCalendarAlt,
   FaClipboardList,
+  FaEdit,
   FaFileAlt,
   FaIdBadge,
   FaInfoCircle,
@@ -10,6 +11,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../context/AuthContext";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -23,9 +25,9 @@ const profileFields = [
   { label: "Department", key: "department" },
   { label: "Position", key: "position" },
   { label: "Status", key: "empstatus" },
-  { label: "Address", key: "address", wide: true },
-  { label: "Mobile Number", key: "phone1", type: "mobile" },
-  { label: "Telephone Number", key: "phone2" },
+  { label: "Address", key: "address", wide: true, editable: true },
+  { label: "Mobile Number", key: "phone1", type: "mobile", editable: true },
+  { label: "Telephone Number", key: "phone2", editable: true },
   { label: "Birthdate", key: "birthdate", type: "date" },
   { label: "TIN", key: "tin" },
   { label: "SSS", key: "sss" },
@@ -90,10 +92,24 @@ function formatValue(employee, field) {
 }
 
 function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const [employee, setEmployee] = useState(null);
+  const [employeeUserId, setEmployeeUserId] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [editError, setEditError] = useState("");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastUpdateResult, setLastUpdateResult] = useState(null);
+  const [editData, setEditData] = useState({
+    firstname: "",
+    middlename: "",
+    lastname: "",
+    address: "",
+    phone1: "",
+    phone2: "",
+  });
   const [show, setShow] = useState(false);
   const [memoMode, setMemoMode] = useState("view");
   const [memoName, setMemoName] = useState("");
@@ -132,28 +148,19 @@ function Dashboard() {
   useEffect(() => {
     let isMounted = true;
 
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      setErrorMessage("No active user session was found.");
+      setIsLoading(false);
+      return;
+    }
+
     const fetchUser = async () => {
       setIsLoading(true);
       setErrorMessage("");
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (!isMounted) return;
-
-      if (userError) {
-        setErrorMessage("We could not verify your account. Please sign in again.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!user) {
-        setErrorMessage("No active user session was found.");
-        setIsLoading(false);
-        return;
-      }
 
       const { data, error } = await supabase
         .from("employees")
@@ -178,6 +185,7 @@ function Dashboard() {
           basicrate,
           riceallowance,
           role,
+          user_id,
           employee_ledger (
             leave_type,
             leave_balance
@@ -194,6 +202,7 @@ function Dashboard() {
         setErrorMessage("We could not load your employee record right now.");
       } else {
         setEmployee(data);
+        setEmployeeUserId(user.id);
       }
 
       setIsLoading(false);
@@ -205,7 +214,161 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authLoading, user]);
+
+  const handleOpenEdit = () => {
+    setEditError("");
+    setEditData({
+      firstname: employee?.firstname || "",
+      middlename: employee?.middlename || "",
+      lastname: employee?.lastname || "",
+      address: employee?.address || "",
+      phone1: employee?.phone1 || "",
+      phone2: employee?.phone2 || "",
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditChange = (event) => {
+    const { name, value } = event.target;
+    setEditData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveEdit = async (event) => {
+    event.preventDefault();
+    setEditError("");
+
+    setIsSaving(true);
+
+    if (!user?.id) {
+      console.error("No authenticated user.");
+      setEditError("Unable to identify your account. Please reload and try again.");
+      setIsSaving(false);
+      return;
+    }
+
+    // Build payload only with non-empty values to avoid overwriting existing data
+    const updatePayload = {};
+    const fieldsToUpdate = ["firstname", "middlename", "lastname", "address", "phone1", "phone2"];
+    
+    fieldsToUpdate.forEach((field) => {
+      const trimmedValue = editData[field].trim();
+      if (trimmedValue) {
+        updatePayload[field] = trimmedValue;
+      }
+    });
+
+    // If no fields changed, show a message and return
+    if (Object.keys(updatePayload).length === 0) {
+      setEditError("Please enter at least one field to update.");
+      setIsSaving(false);
+      return;
+    }
+
+    const { data: updatedData, error: updateError } = await supabase
+      .from("employees")
+      .update(updatePayload)
+      .eq("user_id", user.id)
+      .select(
+        `
+          empnumber,
+          firstname,
+          middlename,
+          lastname,
+          department,
+          position,
+          empstatus,
+          address,
+          phone1,
+          phone2,
+          birthdate,
+          tin,
+          sss,
+          pagibig,
+          philhealth,
+          datehired,
+          basicrate,
+          riceallowance,
+          role,
+          user_id
+        `
+      );
+
+    // record the raw update response for debugging
+    setLastUpdateResult({ updatedData: updatedData ?? null, updateError: updateError ?? null });
+
+    if (updateError) {
+      console.error(updateError);
+      const errMsg = updateError.message || "Unable to save profile changes. Please try again.";
+      const rlsPattern = /permission|policy|row level security|rls|not authorized|permission denied/i;
+      if (rlsPattern.test(errMsg)) {
+        setEditError(
+          "Permission denied while updating profile. Ensure RLS policies allow authenticated users to update their own employee record. See docs/SUPABASE_RLS_INSTRUCTIONS.md"
+        );
+      } else {
+        setEditError(errMsg);
+      }
+      setIsSaving(false);
+      return;
+    }
+
+    let updatedEmployee = Array.isArray(updatedData) ? updatedData[0] : updatedData;
+
+    // Always fetch the latest employee row to ensure the UI reflects DB state
+    const { data: refreshedEmployee, error: fetchError } = await supabase
+      .from("employees")
+      .select(
+          `
+            empnumber,
+            firstname,
+            middlename,
+            lastname,
+            department,
+            position,
+            empstatus,
+            address,
+            phone1,
+            phone2,
+            birthdate,
+            tin,
+            sss,
+            pagibig,
+            philhealth,
+            datehired,
+            basicrate,
+            riceallowance,
+            role,
+            user_id,
+            employee_ledger (
+              leave_type,
+              leave_balance
+            )
+          `
+      )
+      .eq("user_id", user.id)
+      .single();
+
+    // write debug info
+    setLastUpdateResult((prev) => ({ ...prev, refreshedEmployee: refreshedEmployee ?? null, fetchError: fetchError ?? null }));
+
+    if (fetchError || !refreshedEmployee) {
+      console.error(fetchError);
+      setEditError(
+        fetchError?.message ||
+          "Profile update succeeded but we could not refresh the saved data. Please reload the page."
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    setEmployee({ ...employee, ...refreshedEmployee });
+    setEmployeeUserId(user.id);
+    setIsSaving(false);
+    setIsEditOpen(false);
+  };
 
   const canSendMemo =
     memoName.trim().length > 0 &&
@@ -289,13 +452,6 @@ function Dashboard() {
           </div>
         </section>
 
-        {errorMessage && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            <FaInfoCircle className="mt-0.5 flex-none" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
         <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="grid grid-cols-2 gap-2 border-b border-slate-200 bg-slate-50 p-2 md:grid-cols-4">
             {tabs.map((tab) => {
@@ -324,7 +480,11 @@ function Dashboard() {
             {isLoading && <DashboardLoading />}
 
             {!isLoading && activeTab === "profile" && (
-              <ProfileTab employee={employee} fullName={fullName} />
+              <ProfileTab
+                employee={employee}
+                fullName={fullName}
+                onEditClick={handleOpenEdit}
+              />
             )}
 
             {!isLoading && activeTab === "leave" && (
@@ -374,6 +534,130 @@ function Dashboard() {
           </div>
         </section>
       </div>
+
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Edit Profile</h3>
+                <p className="text-sm text-slate-600">
+                  Update your full name, address, and phone numbers.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(false)}
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700">First Name</label>
+                  <input
+                    name="firstname"
+                    value={editData.firstname}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700">Middle Name</label>
+                  <input
+                    name="middlename"
+                    value={editData.middlename}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700">Last Name</label>
+                  <input
+                    name="lastname"
+                    value={editData.lastname}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700">Address</label>
+                  <input
+                    name="address"
+                    value={editData.address}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700">Mobile Number</label>
+                  <input
+                    name="phone1"
+                    value={editData.phone1}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700">Telephone Number</label>
+                  <input
+                    name="phone2"
+                    value={editData.phone2}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              </div>
+
+              {editError && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {editError}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {process.env.NODE_ENV === "development" && (
+        <div className="fixed bottom-4 right-4 z-50 w-96 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
+          <div className="mb-2 font-semibold text-sm">Debug</div>
+          <div>
+            <strong>auth user id:</strong> {employeeUserId || "(none)"}
+          </div>
+          <div>
+            <strong>employee.user_id:</strong> {employee?.user_id || "(none)"}
+          </div>
+          <div className="mt-2">
+            <strong>editData:</strong>
+            <pre className="whitespace-pre-wrap">{JSON.stringify(editData, null, 2)}</pre>
+          </div>
+          <div className="mt-2">
+            <strong>lastUpdateResult:</strong>
+            <pre className="whitespace-pre-wrap">{JSON.stringify(lastUpdateResult, null, 2)}</pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -392,7 +676,7 @@ function SummaryItem({ icon: Icon, label, value }) {
   );
 }
 
-function ProfileTab({ employee, fullName }) {
+function ProfileTab({ employee, fullName, onEditClick }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 rounded-lg bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -402,9 +686,20 @@ function ProfileTab({ employee, fullName }) {
             {fullName || "Employee"}
           </h2>
         </div>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Badge icon={FaBriefcase} text={employee?.position || "Position N/A"} />
-          <Badge icon={FaCalendarAlt} text={`Hired ${formatDate(employee?.datehired)}`} />
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onEditClick}
+            title="Edit profile"
+            aria-label="Edit profile"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+          >
+            <FaEdit className="h-4 w-4" />
+          </button>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Badge icon={FaBriefcase} text={employee?.position || "Position N/A"} />
+            <Badge icon={FaCalendarAlt} text={`Hired ${formatDate(employee?.datehired)}`} />
+          </div>
         </div>
       </div>
 
@@ -423,14 +718,27 @@ function ProfileTab({ employee, fullName }) {
   );
 }
 
-function InfoCard({ label, value, wide, highlight }) {
+function InfoCard({ label, value, wide, highlight, onEdit }) {
   return (
     <div
       className={`rounded-lg border border-slate-200 bg-white p-4 ${
         wide ? "sm:col-span-2 lg:col-span-3" : ""
       }`}
     >
-      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            title={`Edit ${label}`}
+            aria-label={`Edit ${label}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
+          >
+            <FaEdit className="h-4 w-4" />
+          </button>
+        )}
+      </div>
       <p
         className={`mt-1 break-words text-base font-semibold ${
           highlight ? "text-emerald-700" : "text-slate-900"
