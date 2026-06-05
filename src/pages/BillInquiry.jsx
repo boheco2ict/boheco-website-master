@@ -298,7 +298,9 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
           <div className="flex items-center gap-3">
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-md ${
-                hasError ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                hasError
+                  ? "bg-red-100 text-red-700"
+                  : "bg-emerald-100 text-emerald-700"
               }`}
             >
               {hasError ? <FaExclamationCircle /> : <FaReceipt />}
@@ -308,7 +310,9 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
                 {hasError ? "Inquiry Result" : "Bill Details"}
               </h2>
               <p className="text-sm text-slate-500">
-                {hasError ? "Please review the message below." : "Here is your bill summary."}
+                {hasError
+                  ? "Please review the message below."
+                  : "Here is your bill summary."}
               </p>
             </div>
           </div>
@@ -331,7 +335,9 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
           ) : (
             <div className="space-y-4">
               <div className="rounded-lg bg-slate-50 p-4 text-center">
-                <p className="text-sm font-medium text-slate-500">Consumer Name</p>
+                <p className="text-sm font-medium text-slate-500">
+                  Consumer Name
+                </p>
                 <p className="mt-1 text-xl font-bold text-slate-900">
                   {data.consumerName || "N/A"}
                 </p>
@@ -345,7 +351,10 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <ResultItem label="Account No." value={data.accountNumber} />
-                <ResultItem label="Reference No." value={data.referenceNumber} />
+                <ResultItem
+                  label="Reference No."
+                  value={data.referenceNumber}
+                />
                 <ResultItem label="Billing Month" value={data.billingMonth} />
                 <ResultItem label="Due Date" value={data.dueDate} warning />
                 <ResultItem label="kWh Used" value={data.kWhUsed} />
@@ -385,7 +394,7 @@ function ResultItem({ label, value, warning }) {
           warning ? "text-red-700" : "text-slate-900"
         }`}
       >
-        {value || "N/A"}
+        {value === undefined || value === null ? "N/A" : String(value)}
       </p>
     </div>
   );
