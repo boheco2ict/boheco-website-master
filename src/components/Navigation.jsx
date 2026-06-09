@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaTachometerAlt, FaFileInvoiceDollar, FaFolderOpen, FaPowerOff, FaBars, FaTimes, FaSignOutAlt, FaHome, FaInfoCircle, FaChartLine, FaBell, FaFileAlt, FaHeartbeat, FaHandshake, FaTrophy, FaSignInAlt } from "react-icons/fa";
+import { FaTachometerAlt, FaFileInvoiceDollar, FaFolderOpen, FaPowerOff, FaBars, FaTimes, FaSignOutAlt, FaHome, FaInfoCircle, FaChartLine, FaBell, FaFileAlt, FaHeartbeat, FaHandshake, FaTrophy, FaSignInAlt, FaCog } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import ConfirmModal from "./ConfirmModal";
 
-const img = ["/assets/logo.png"];
+const img = ["/assets/l.png"];
 
 const Navigation = () => {
   const { user } = useAuth();
@@ -26,6 +26,7 @@ const Navigation = () => {
 
   const AuthLink = [
     { id: 10, name: "DASHBOARD", link: "dashboard" },
+    { id: 14, name: "SETTINGS", link: "settings" },
     { id: 12, name: "LOGOUT", type: "action", action: "logout" },
   ];
 
@@ -52,9 +53,10 @@ const Navigation = () => {
     const dash = byLink("dashboard");
     const inquiries = byLink("inquiries");
     const coopPolicies = byLink("coop-policies");
+    const settings = byLink("settings");
     const logout = menuLink.find((l) => l.type === "action" && l.action === "logout") || menuLink.find((l) => l.name === "LOGOUT");
 
-    sidebarLinks = [dash, inquiries, coopPolicies, logout].filter(Boolean);
+    sidebarLinks = [dash, inquiries, coopPolicies, settings, logout].filter(Boolean);
   } else {
     sidebarLinks = menuLink.filter(
       (link) =>
@@ -152,6 +154,7 @@ const Navigation = () => {
                         if (lnk.link === "dashboard") return FaTachometerAlt;
                         if (lnk.link === "inquiries") return FaFileInvoiceDollar;
                         if (lnk.link === "coop-policies") return FaFolderOpen;
+                        if (lnk.link === "settings") return FaCog;
                         return null;
                       };
 
@@ -161,7 +164,15 @@ const Navigation = () => {
                       return (
                         <div key={link.id} className="flex items-center justify-between gap-2">
                           <NavLink
-                            to={link.link === "/" ? "/" : link.link === "coop-policies" ? "/coop-policies" : `/${link.link}`}
+                            to={
+                              link.link === "/"
+                                ? "/"
+                                : link.link === "coop-policies"
+                                ? "/coop-policies"
+                                : link.link === "settings"
+                                ? "/reset-password"
+                                : `/${link.link}`
+                            }
                             end={link.link === "/" || link.link === "dashboard" || link.link === "coop-policies"}
                             className={({ isActive }) => {
                               const shouldHighlight = link.link === "coop-policies" ? isCOOPActive : isActive;
@@ -334,7 +345,15 @@ const Navigation = () => {
               return (
                 <li key={link.id} className="flex items-center justify-between gap-2">
                   <NavLink
-                    to={link.link === "/" ? "/" : link.link === "coop-policies" ? "/coop-policies" : `/${link.link}`}
+                    to={
+                      link.link === "/"
+                        ? "/"
+                        : link.link === "coop-policies"
+                        ? "/coop-policies"
+                        : link.link === "settings"
+                        ? "/reset-password"
+                        : `/${link.link}`
+                    }
                     end={link.link === "/" || link.link === "dashboard" || link.link === "coop-policies"}
                     className={({ isActive }) =>
                       `group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition-all ${isActive ? 'bg-amber-100 text-amber-900 shadow-sm' : 'hover:bg-slate-100'}`
@@ -362,10 +381,12 @@ const Navigation = () => {
                             return FaFileInvoiceDollar;
                           case "awards":
                             return FaTrophy;
-                          case "dashboard":
+                            case "dashboard":
                             return FaTachometerAlt;
                           case "coop-policies":
                             return FaFolderOpen;
+                          case "settings":
+                            return FaCog;
                           case "login":
                             return FaSignInAlt;
                           default:

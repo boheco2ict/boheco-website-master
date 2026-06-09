@@ -1,16 +1,16 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-const img = ["/assets/logo.png"];
+const img = ["/assets/bohecslog.png"];
 
 const LandingPage = () => {
   return (
-    <header className="container px-5 py-12 mx-auto min-h-[56vh] flex items-center justify-center flex-col text-center">
+    <header className="container px-5 pt-4 pb-12 mx-auto min-h-[56vh] flex items-center justify-center flex-col text-center">
       <img
         draggable={false}
         src={img[0]}
         alt="BOHECO II logo"
-        className="w-48 h-48 md:w-72 md:h-72 mb-4 bg-transparent drop-shadow-[0_0_28px_rgba(252,211,77,0.65)]"
+        className="w-40 h-auto md:w-56 md:h-auto mb-4 bg-transparent drop-shadow-[0_0_24px_rgba(252,211,77,0.6)] object-contain"
       />
 
       <h1 className="font-extrabold md:text-6xl text-3xl text-slate-900 leading-tight">

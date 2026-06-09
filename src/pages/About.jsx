@@ -26,7 +26,7 @@ const About = () => {
         description: "A highly competitive utility focused on MCO satisfaction",
       },
       {
-        src: "/assets/logo.png",
+        src: "/assets/l.png",
         title: "BOHECO II Identity",
         description: "A cooperative serving member-consumer-owners",
         fit: "object-contain",

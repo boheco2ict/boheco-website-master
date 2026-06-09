@@ -5,7 +5,6 @@ import {
   FaBriefcase,
   FaCalendarAlt,
   FaClipboardList,
-  FaCog,
   FaEdit,
   FaFileAlt,
   FaRegFileAlt,
@@ -754,6 +753,7 @@ function Dashboard() {
 }
 
 function ProfileTab({ employee, fullName, onEditClick }) {
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
   return (
     <div className="space-y-6">
@@ -777,16 +777,6 @@ function ProfileTab({ employee, fullName, onEditClick }) {
         </div>
 
         <div className="flex flex-col gap-3 items-start justify-start lg:flex-row lg:items-center lg:justify-between">
-          <button
-            type="button"
-            onClick={() => navigate("/reset-password")}
-            title="Open settings"
-            aria-label="Open settings"
-            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            <FaCog className="mr-2 h-4 w-4 text-slate-500" />
-            Settings
-          </button>
           <button
             type="button"
             onClick={onEditClick}

@@ -1,6 +1,6 @@
 import React from "react";
 
-const img = ["/assets/logo.png", "/assets/m2.jpg"];
+const img = ["/assets/l.png", "/assets/m2.jpg"];
 
 const Profile = ({ members, household, consumers, employees }) => {
   return (

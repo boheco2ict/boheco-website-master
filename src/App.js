@@ -18,6 +18,7 @@ import Dashboard from "./pages/auth/Dashboard";
 import Policy from "./pages/Policy";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Settings from "./pages/Settings";
 import InstallPrompt from "./components/InstallPrompt";
 
 function App() {
@@ -52,6 +53,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />
