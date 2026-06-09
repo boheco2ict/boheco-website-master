@@ -1418,37 +1418,166 @@ function OfficeOrderTab({
 }
 
 function LeaveCreditsTab({ leaveCredits }) {
-  if (!leaveCredits.length) {
-    return (
-      <EmptyState
-        icon={FaClipboardList}
-        title="No leave credits found"
-        message="Your leave balances will appear here after they are recorded."
-      />
-    );
-  }
+  const [isApplying, setIsApplying] = useState(false);
+  const [applicationType, setApplicationType] = useState(leaveCredits[0]?.leave_type || "");
+  const [appStart, setAppStart] = useState("");
+  const [appEnd, setAppEnd] = useState("");
+  const [appReason, setAppReason] = useState("");
+  const [appError, setAppError] = useState("");
+  const [appSuccess, setAppSuccess] = useState("");
+  const [pendingApplications, setPendingApplications] = useState([]);
+
+  const resetApplicationForm = useCallback(() => {
+    setApplicationType(leaveCredits[0]?.leave_type || "");
+    setAppStart("");
+    setAppEnd("");
+    setAppReason("");
+    setAppError("");
+    setAppSuccess("");
+  }, [leaveCredits]);
+
+  const validateApplication = useCallback(() => {
+    setAppError("");
+    if (!applicationType) return "Please choose a leave type.";
+    if (!appStart) return "Please choose a start date.";
+    if (!appEnd) return "Please choose an end date.";
+    if (new Date(appStart) > new Date(appEnd)) return "Start date cannot be after end date.";
+    if (!appReason.trim()) return "Please provide a reason for your leave.";
+    return "";
+  }, [applicationType, appStart, appEnd, appReason]);
+
+  const handleSubmitApplication = useCallback(
+    (e) => {
+      e.preventDefault();
+      const err = validateApplication();
+      if (err) {
+        setAppError(err);
+        return;
+      }
+
+      // Since backend is in development, simulate success and keep locally
+      const newApp = {
+        id: `local-${Date.now()}`,
+        leave_type: applicationType,
+        start_date: appStart,
+        end_date: appEnd,
+        reason: appReason,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      };
+
+      setPendingApplications((prev) => [newApp, ...prev]);
+      setAppSuccess("Application submitted (local pending). We'll post it when the API is ready.");
+      setIsApplying(false);
+      resetApplicationForm();
+    },
+    [validateApplication, applicationType, appStart, appEnd, appReason, resetApplicationForm]
+  );
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {leaveCredits.map((ledger, index) => (
-        <div
-          key={`${ledger.leave_type}-${index}`}
-          className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md"
-        >
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-500">Leave Type</p>
-            <p className="truncate text-lg font-bold text-slate-900">
-              {ledger.leave_type || "Leave"}
-            </p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-sm font-medium text-slate-500">Leave Balances</p>
+          <p className="text-lg font-bold text-slate-900">Apply for leave and review balances</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setIsApplying(true);
+              setAppError("");
+              setAppSuccess("");
+            }}
+            className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+          >
+            Apply for leave
+          </button>
+        </div>
+      </div>
+
+      {appError && (
+        <div className="rounded-md px-4 py-3 text-sm" style={{ border: '1px solid var(--muted)', background: '#fff6f6', color: '#7f1d1d' }}>
+          {appError}
+        </div>
+      )}
+
+      {appSuccess && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {appSuccess}
+        </div>
+      )}
+
+      {isApplying && (
+        <form onSubmit={handleSubmitApplication} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-semibold themed-muted">Leave Type</label>
+              <select value={applicationType} onChange={(e) => setApplicationType(e.target.value)} className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text" style={{ border: '1px solid var(--muted)' }}>
+                {leaveCredits.map((l) => (
+                  <option key={l.leave_type} value={l.leave_type}>{l.leave_type} ({l.leave_balance ?? 0})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold themed-muted">Start Date</label>
+              <input type="date" value={appStart} onChange={(e) => setAppStart(e.target.value)} className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text" style={{ border: '1px solid var(--muted)' }} />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold themed-muted">End Date</label>
+              <input type="date" value={appEnd} onChange={(e) => setAppEnd(e.target.value)} className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text" style={{ border: '1px solid var(--muted)' }} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold themed-muted">Reason</label>
+              <textarea value={appReason} onChange={(e) => setAppReason(e.target.value)} className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text" rows={3} style={{ border: '1px solid var(--muted)' }} />
+            </div>
           </div>
-          <div className="flex h-16 w-16 flex-none flex-col items-center justify-center rounded-lg bg-amber-50 text-center">
-            <span className="text-xl font-bold text-slate-900">
-              {ledger.leave_balance ?? 0}
-            </span>
-            <span className="text-xs font-medium text-amber-700">Balance</span>
+
+          <div className="mt-4 flex justify-end gap-3">
+            <button type="button" onClick={() => { setIsApplying(false); resetApplicationForm(); }} className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition hover:bg-slate-100" style={{ border: '1px solid var(--muted)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+              Cancel
+            </button>
+            <button type="submit" className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+              Submit application
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {leaveCredits.map((ledger, index) => (
+          <div key={`${ledger.leave_type}-${index}`} className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-amber-300 hover:shadow-md">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500">Leave Type</p>
+              <p className="truncate text-lg font-bold text-slate-900">{ledger.leave_type || "Leave"}</p>
+            </div>
+            <div className="flex h-16 w-16 flex-none flex-col items-center justify-center rounded-lg bg-amber-50 text-center">
+              <span className="text-xl font-bold text-slate-900">{ledger.leave_balance ?? 0}</span>
+              <span className="text-xs font-medium text-amber-700">Balance</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {pendingApplications.length > 0 && (
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900">Pending Applications</h3>
+          <div className="mt-4 space-y-3">
+            {pendingApplications.map((a) => (
+              <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">{a.leave_type}</p>
+                    <p className="font-semibold">{a.start_date} → {a.end_date}</p>
+                    <p className="text-sm text-slate-600 mt-1">{a.reason}</p>
+                  </div>
+                  <div className="text-sm font-medium text-amber-700">{a.status}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
