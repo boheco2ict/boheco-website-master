@@ -26,9 +26,10 @@ const About = () => {
         description: "A highly competitive utility focused on MCO satisfaction",
       },
       {
-        src: "/assets/l.png",
+        src: "/assets/logo.png",
         title: "BOHECO II Identity",
         description: "A cooperative serving member-consumer-owners",
+        fit: "object-contain",
       },
       {
         src: "/assets/m2.jpg",
@@ -90,7 +91,7 @@ const About = () => {
             <img
               src={currentSlide.src}
               alt={currentSlide.title}
-              className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[520px]"
+              className={`h-[300px] w-full ${currentSlide.fit || "object-cover"} sm:h-[420px] lg:h-[520px]`}
               draggable={false}
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-950/45 to-transparent p-4 text-white sm:p-5">

@@ -1,12 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import {
-  FaBolt,
   FaCalendarAlt,
-  FaCheckCircle,
   FaExclamationCircle,
   FaHashtag,
-  FaInfoCircle,
   FaReceipt,
   FaTimes,
 } from "react-icons/fa";
@@ -25,22 +22,6 @@ const BillInquiry = () => {
 
   const canSubmit =
     accountNumber.length === 10 && /^\d{2}-\d{4}$/.test(billMonth) && !loading;
-
-  const helperText = useMemo(() => {
-    if (!accountNumber && !billMonth) {
-      return "Enter your 10-digit account number and billing month.";
-    }
-
-    if (accountNumber.length > 0 && accountNumber.length < 10) {
-      return "Account number must be 10 digits.";
-    }
-
-    if (billMonth.length > 0 && !/^\d{2}-\d{4}$/.test(billMonth)) {
-      return "Billing month must follow MM-YYYY format.";
-    }
-
-    return "Ready to check your bill.";
-  }, [accountNumber, billMonth]);
 
   const formatMonthValue = (value) => {
     const raw = value.replace(/[^\d-]/g, "");
@@ -105,122 +86,103 @@ const BillInquiry = () => {
   };
 
   return (
-    <div className="bg-image2 min-h-screen px-4 pb-10 pt-28 sm:px-6 lg:px-10">
-      <main className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[1fr_420px] lg:items-start">
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-          <div className="border-b border-slate-200 bg-slate-900 px-5 py-3 text-white sm:px-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <span className="w-fit rounded-md bg-amber-300 px-2.5 py-1 text-sm font-bold text-slate-950">
-                Bill Inquiry
+    <div className="bg-slate-50 min-h-screen px-4 pb-12 pt-20 sm:px-6 lg:px-10">
+      <main className="mx-auto max-w-4xl">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+          <div className="grid gap-6 px-6 py-8 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
+            <div className="space-y-5">
+              <span className="inline-flex rounded-full bg-amber-100 px-4 py-1 text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
+                Bill inquiry
               </span>
-              <ServiceBadge online={serviceOnline} />
+
+              <div className="space-y-3">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                  Retrieve your BOHECO II bill instantly
+                </h1>
+                <p className="max-w-2xl text-base leading-7 text-slate-600">
+                  Enter your account number and billing month to see your amount due, due date, and billing status quickly.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl font-semibold text-slate-950">Check your bill</h2>
+                <ServiceBadge online={serviceOnline} />
+              </div>
+
+              <form onSubmit={handleInquiry} className="mt-4 space-y-4">
+                <InputField
+                  icon={FaHashtag}
+                  label="Account number"
+                  helper="Enter the 10-digit account number printed on your bill."
+                  inputProps={{
+                    type: "text",
+                    inputMode: "numeric",
+                    pattern: "[0-9]*",
+                    id: "accountNumber",
+                    name: "accountNumber",
+                    required: true,
+                    maxLength: "10",
+                    placeholder: "1234567890",
+                    value: accountNumber,
+                    disabled: loading,
+                    onChange: (event) =>
+                      setAccountNumber(event.target.value.replace(/\D/g, "")),
+                  }}
+                />
+
+                <InputField
+                  icon={FaCalendarAlt}
+                  label="Billing month"
+                  helper="Use MM-YYYY format, for example 01-2026."
+                  inputProps={{
+                    type: "text",
+                    inputMode: "numeric",
+                    id: "billMonth",
+                    name: "billMonth",
+                    required: true,
+                    maxLength: "7",
+                    placeholder: "MM-YYYY",
+                    value: billMonth,
+                    disabled: loading,
+                    onChange: (event) =>
+                      setBillMonth(formatMonthValue(event.target.value)),
+                  }}
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Checking bill...
+                      </>
+                    ) : (
+                      <>
+                        <FaReceipt />
+                        Check bill
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={clearForm}
+                    disabled={loading}
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-
-          <div className="p-5 sm:p-6">
-            <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
-              BOHECO II Online Service
-            </p>
-            <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
-              Check your latest bill details
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-              Use your account number and billing month to view the amount due,
-              due date, bill status, and kWh usage.
-            </p>
-
-            <form onSubmit={handleInquiry} className="mt-6 space-y-5">
-              <InputField
-                icon={FaHashtag}
-                label="Account Number"
-                helper="Enter the 10-digit account number printed on your bill."
-                inputProps={{
-                  type: "text",
-                  inputMode: "numeric",
-                  pattern: "[0-9]*",
-                  id: "accountNumber",
-                  name: "accountNumber",
-                  required: true,
-                  maxLength: "10",
-                  placeholder: "Example: 1234567890",
-                  value: accountNumber,
-                  disabled: loading,
-                  onChange: (event) =>
-                    setAccountNumber(event.target.value.replace(/\D/g, "")),
-                }}
-              />
-
-              <InputField
-                icon={FaCalendarAlt}
-                label="Billing Month"
-                helper="Use month and year format, for example 01-2026."
-                inputProps={{
-                  type: "text",
-                  inputMode: "numeric",
-                  id: "billMonth",
-                  name: "billMonth",
-                  required: true,
-                  maxLength: "7",
-                  placeholder: "MM-YYYY",
-                  value: billMonth,
-                  disabled: loading,
-                  onChange: (event) =>
-                    setBillMonth(formatMonthValue(event.target.value)),
-                }}
-              />
-
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
-                <div className="flex gap-2">
-                  <FaInfoCircle className="mt-0.5 flex-none text-amber-700" />
-                  <span>{helperText}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-md bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  {loading ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Checking bill...
-                    </>
-                  ) : (
-                    <>
-                      <FaReceipt />
-                      Check Bill
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={clearForm}
-                  disabled={loading}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Clear
-                </button>
-              </div>
-            </form>
-          </div>
         </section>
-
-        <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-amber-100 text-amber-700">
-            <FaBolt size={22} />
-          </div>
-          <h2 className="mt-4 text-lg font-bold text-slate-900">
-            Before you search
-          </h2>
-          <div className="mt-4 space-y-3 text-sm text-slate-600">
-            <HelpItem text="Use only numbers for your account number." />
-            <HelpItem text="Billing month must be in MM-YYYY format." />
-            <HelpItem text="If the service is offline, wait a moment and try again." />
-          </div>
-        </aside>
       </main>
 
       {open && (
@@ -237,8 +199,8 @@ const BillInquiry = () => {
 function ServiceBadge({ online }) {
   return (
     <div
-      className={`inline-flex w-fit items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
-        online ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+      className={`self-start inline-flex w-fit items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold ${
+        online ? "border-emerald-600 bg-emerald-600 text-white" : "border-red-600 bg-red-600 text-white"
       }`}
     >
       <span
@@ -256,27 +218,18 @@ function InputField({ icon: Icon, label, helper, inputProps }) {
     <div>
       <label
         htmlFor={inputProps.id}
-        className="mb-2 block text-sm font-bold text-slate-800"
+        className="mb-2 block text-sm font-semibold text-slate-900"
       >
         {label}
       </label>
       <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Icon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
         <input
           {...inputProps}
-          className="h-12 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 disabled:bg-slate-100"
+          className="h-11 w-full rounded-2xl border border-slate-300 bg-slate-100 pl-11 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 disabled:bg-slate-100"
         />
       </div>
-      <p className="mt-2 text-xs text-slate-500">{helper}</p>
-    </div>
-  );
-}
-
-function HelpItem({ text }) {
-  return (
-    <div className="flex gap-2">
-      <FaCheckCircle className="mt-0.5 flex-none text-emerald-600" />
-      <span>{text}</span>
+      <p className="mt-2 text-xs text-slate-700">{helper}</p>
     </div>
   );
 }
@@ -288,19 +241,17 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6"
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl"
+        className="w-full max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-3">
             <div
-              className={`flex h-10 w-10 items-center justify-center rounded-md ${
-                hasError
-                  ? "bg-red-100 text-red-700"
-                  : "bg-emerald-100 text-emerald-700"
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
+                hasError ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
               }`}
             >
               {hasError ? <FaExclamationCircle /> : <FaReceipt />}
@@ -320,31 +271,27 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
             aria-label="Close result"
           >
             <FaTimes />
           </button>
         </div>
 
-        <div className="p-5">
+          <div className="p-4">
           {hasError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
               {billingDetails.error?.message || "No bill details were found."}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-slate-50 p-4 text-center">
-                <p className="text-sm font-medium text-slate-500">
-                  Consumer Name
-                </p>
-                <p className="mt-1 text-xl font-bold text-slate-900">
+            <div className="space-y-5">
+              <div className="rounded-3xl bg-slate-50 p-4 text-center">
+                <p className="text-sm font-medium text-slate-500">Consumer Name</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">
                   {data.consumerName || "N/A"}
                 </p>
-                <p className="mt-3 text-sm font-medium text-slate-500">
-                  Amount Due
-                </p>
-                <p className="text-3xl font-extrabold text-emerald-700">
+                <p className="mt-4 text-sm font-medium text-slate-500">Amount Due</p>
+                <p className="text-2xl font-extrabold text-emerald-700">
                   {formatAmount(data.amount)}
                 </p>
               </div>
@@ -368,14 +315,14 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
           <button
             type="button"
             onClick={onNewInquiry}
-            className="rounded-md bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
           >
             New Inquiry
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
           >
             Close
           </button>
@@ -387,10 +334,10 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
 
 function ResultItem({ label, value, warning }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
+    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
       <p
-        className={`mt-1 break-words text-sm font-bold ${
+        className={`mt-2 text-sm font-bold ${
           warning ? "text-red-700" : "text-slate-900"
         }`}
       >

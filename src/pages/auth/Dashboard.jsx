@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FaBriefcase,
   FaCalendarAlt,
   FaClipboardList,
+  FaCog,
   FaEdit,
   FaFileAlt,
-  FaIdBadge,
-  FaInfoCircle,
   FaRegFileAlt,
   FaUser,
 } from "react-icons/fa";
+import Policy from "../Policy";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
 
@@ -93,11 +95,11 @@ function formatValue(employee, field) {
 
 function Dashboard() {
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
   const [employee, setEmployee] = useState(null);
   const [employeeUserId, setEmployeeUserId] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
   const [editError, setEditError] = useState("");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -110,7 +112,6 @@ function Dashboard() {
     phone1: "",
     phone2: "",
   });
-  const [show, setShow] = useState(false);
   const [memoMode, setMemoMode] = useState("view");
   const [memoName, setMemoName] = useState("");
   const [memoUrl, setMemoUrl] = useState("");
@@ -118,10 +119,8 @@ function Dashboard() {
   const [employeeTarget, setEmployeeTarget] = useState("");
   const [batchTarget, setBatchTarget] = useState("all");
   const [memoMessage, setMemoMessage] = useState("");
-
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+  const [recipientMemos, setRecipientMemos] = useState([]);
+  const [isMemoLoading, setIsMemoLoading] = useState(false);
 
   const fullName = useMemo(() => {
     const parts = [
@@ -133,17 +132,25 @@ function Dashboard() {
     return capitalizeFullName(parts.join(" "));
   }, [employee]);
 
-  const firstName = capitalizeFullName(employee?.firstname) || "Employee";
-  const leaveCredits = employee?.employee_ledger || [];
-  const currentDate = useMemo(
+  const leaveCredits = useMemo(() => employee?.employee_ledger || [], [employee?.employee_ledger]);
+
+  const isAdmin = useMemo(
     () =>
-      new Intl.DateTimeFormat("en-PH", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      }).format(new Date()),
-    []
+      (employee?.role &&
+        ["admin", "administrator", "admin_user"].includes(String(employee.role).toLowerCase())) ||
+      (employee?.position && String(employee.position).toLowerCase().includes("admin")),
+    [employee?.role, employee?.position]
   );
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    const validTab = tab === "coop-policies" || tabs.some((item) => item.id === tab);
+    if (validTab) {
+      setActiveTab(tab);
+    }
+
+  }, [location.search]);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,19 +160,18 @@ function Dashboard() {
     }
 
     if (!user) {
-      setErrorMessage("No active user session was found.");
       setIsLoading(false);
       return;
     }
 
     const fetchUser = async () => {
       setIsLoading(true);
-      setErrorMessage("");
 
       const { data, error } = await supabase
         .from("employees")
         .select(
           `
+          id,
           empnumber,
           firstname,
           middlename,
@@ -199,7 +205,6 @@ function Dashboard() {
 
       if (error) {
         console.error(error);
-        setErrorMessage("We could not load your employee record right now.");
       } else {
         setEmployee(data);
         setEmployeeUserId(user.id);
@@ -208,7 +213,6 @@ function Dashboard() {
       setIsLoading(false);
     };
 
-    setShow(true);
     fetchUser();
 
     return () => {
@@ -216,7 +220,32 @@ function Dashboard() {
     };
   }, [authLoading, user]);
 
-  const handleOpenEdit = () => {
+  const fetchRecipientMemos = useCallback(async () => {
+    if (!employee?.id) return;
+
+    setIsMemoLoading(true);
+
+    const { data, error } = await supabase
+      .from("memo_recipients")
+      .select("id, is_read, memo(id, title, url, created_at)")
+      .eq("employee_id", employee.id);
+
+    if (error) {
+      console.error("Failed to fetch recipient memos:", error);
+      setRecipientMemos([]);
+    } else {
+      setRecipientMemos(data || []);
+    }
+
+    setIsMemoLoading(false);
+  }, [employee?.id]);
+
+  useEffect(() => {
+    if (activeTab !== "memo" || !employee?.id) return;
+    fetchRecipientMemos();
+  }, [activeTab, employee?.id, fetchRecipientMemos]);
+
+  const handleOpenEdit = useCallback(() => {
     setEditError("");
     setEditData({
       firstname: employee?.firstname || "",
@@ -227,21 +256,22 @@ function Dashboard() {
       phone2: employee?.phone2 || "",
     });
     setIsEditOpen(true);
-  };
+  }, [employee]);
 
-  const handleEditChange = (event) => {
+  const handleEditChange = useCallback((event) => {
     const { name, value } = event.target;
     setEditData((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleSaveEdit = async (event) => {
-    event.preventDefault();
-    setEditError("");
+  const handleSaveEdit = useCallback(
+    async (event) => {
+      event.preventDefault();
+      setEditError("");
 
-    setIsSaving(true);
+      setIsSaving(true);
 
     if (!user?.id) {
       console.error("No authenticated user.");
@@ -315,8 +345,6 @@ function Dashboard() {
       return;
     }
 
-    let updatedEmployee = Array.isArray(updatedData) ? updatedData[0] : updatedData;
-
     // Always fetch the latest employee row to ensure the UI reflects DB state
     const { data: refreshedEmployee, error: fetchError } = await supabase
       .from("employees")
@@ -368,115 +396,171 @@ function Dashboard() {
     setEmployeeUserId(user.id);
     setIsSaving(false);
     setIsEditOpen(false);
-  };
+  }, [editData, employee, user?.id]);
 
-  const canSendMemo =
-    memoName.trim().length > 0 &&
-    memoUrl.trim().length > 0 &&
-    (recipientType !== "employee" || employeeTarget.trim().length > 0);
+  const canSendMemo = useMemo(
+    () =>
+      memoName.trim().length > 0 &&
+      memoUrl.trim().length > 0 &&
+      (recipientType !== "employee" || employeeTarget.trim().length > 0),
+    [memoName, memoUrl, recipientType, employeeTarget]
+  );
 
-  const resetMemoForm = () => {
+  const resetMemoForm = useCallback(() => {
     setMemoName("");
     setMemoUrl("");
     setRecipientType("employee");
     setEmployeeTarget("");
     setBatchTarget("all");
     setMemoMessage("");
-  };
+  }, []);
 
-  const handleSendMemo = (event) => {
-    event.preventDefault();
+  const handleSendMemo = useCallback(
+    async (event) => {
+      event.preventDefault();
 
-    if (!canSendMemo) return;
+      if (!canSendMemo) return;
 
-    const recipient =
-      recipientType === "employee"
-        ? `Employee ${employeeTarget.trim() || "(unknown)"}`
-        : batchTarget === "all"
-        ? "All employees"
-        : batchTarget;
+      try {
+        let targetEmployee = null;
 
-    setMemoMessage(`Memo "${memoName.trim()}" sent to ${recipient}.`);
-    setMemoMode("view");
-    resetMemoForm();
-  };
+        if (recipientType === "employee") {
+          const { data: employeeData, error: employeeError } = await supabase
+            .from("employees")
+            .select("id, empnumber")
+            .eq("empnumber", employeeTarget.trim())
+            .maybeSingle();
+
+          if (employeeError) {
+            console.error("employee lookup failed:", employeeError);
+            setMemoMessage("Unable to look up employee. Please try again.");
+            return;
+          }
+
+          if (!employeeData) {
+            setMemoMessage("Employee not found.");
+            return;
+          }
+
+          targetEmployee = employeeData;
+
+          if (!targetEmployee?.id) {
+            setMemoMessage("Employee record has no valid ID.");
+            return;
+          }
+        }
+
+        const { data: memoData, error: memoError } = await supabase
+          .from("memo")
+          .insert({
+            title: memoName.trim(),
+            url: memoUrl.trim(),
+          })
+          .select()
+          .single();
+
+        if (memoError || !memoData) {
+          console.error(memoError);
+          setMemoMessage("Failed to save memo.");
+          return;
+        }
+
+        if (recipientType === "employee") {
+          const { error: recipientError } = await supabase
+            .from("memo_recipients")
+            .insert({
+              memo_id: memoData.id,
+              employee_id: targetEmployee.id,
+              is_read: false,
+            });
+
+          if (recipientError) {
+            console.error(recipientError);
+            setMemoMessage("Memo saved, but recipient assignment failed.");
+            return;
+          }
+        }
+
+        const recipient =
+          recipientType === "employee"
+            ? `Employee ${employeeTarget.trim()}`
+            : batchTarget === "all"
+            ? "All employees"
+            : batchTarget;
+
+        setMemoMessage(`Memo "${memoName.trim()}" sent to ${recipient}.`);
+        setMemoMode("view");
+        resetMemoForm();
+
+        if (recipientType === "employee" && targetEmployee?.id === employee?.id) {
+          fetchRecipientMemos();
+        }
+      } catch (error) {
+        console.error(error);
+        setMemoMessage("An unexpected error occurred.");
+      }
+    },
+    [canSendMemo, memoName, memoUrl, recipientType, employeeTarget, batchTarget, fetchRecipientMemos, employee, resetMemoForm]
+  );
 
   return (
-    <div className="bg-image2 min-h-screen px-4 pb-8 pt-28 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <section
-          className={`overflow-hidden rounded-lg border border-slate-200 bg-white/95 shadow-sm backdrop-blur transition-all duration-500 ${
-            show ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-          }`}
-        >
-          <div className="border-b border-slate-200 bg-slate-900 px-5 py-3 text-white sm:px-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="rounded-md bg-amber-300 px-2.5 py-1 font-bold text-slate-950">
-                  Dashboard
-                </span>
+    <>
+          {/* top stripe removed to let navigation handle header background */}
+
+      <div className="min-h-screen px-4 pb-8 pt-20 sm:px-6 lg:px-10 xl:pl-[240px] xl:pt-20" style={{ background: 'var(--section-bg)' }}>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+
+          {/* Main Content */}
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+          {/* Tab Navigation */}
+          <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-5 sm:px-6">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">Dashboard Sections</h2>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`group relative flex min-h-14 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 sm:text-sm ${
+                        isActive
+                          ? "bg-gradient-to-br from-amber-50 to-amber-100 text-amber-900 shadow-md"
+                          : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      }`}
+                      title={tab.label}
+                    >
+                      {/* Icon Container */}
+                      <span
+                        className={`flex items-center justify-center rounded-lg transition-all duration-200 ${
+                          isActive
+                            ? "bg-amber-200 text-amber-700"
+                            : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
+                        }`}
+                        style={{ width: "32px", height: "32px" }}
+                      >
+                        <Icon size={16} />
+                      </span>
+
+                      {/* Label */}
+                      <span className="text-center leading-tight">{tab.label}</span>
+
+                      {/* Active Indicator */}
+                      {isActive && (
+                        <div className="absolute inset-x-0 bottom-0 h-1 rounded-b-xl bg-gradient-to-r from-amber-400 to-amber-500"></div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-300">
-                <FaCalendarAlt className="text-amber-300" />
-                <span>{currentDate}</span>
-              </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
-                Employee Self-Service
-              </p>
-              <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
-                {greeting}, {firstName}
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
-                Quickly check your profile details, leave balances, memos, and
-                office orders from one simple dashboard.
-              </p>
-            </div>
-
-            <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:min-w-[360px]">
-              <SummaryItem
-                icon={FaIdBadge}
-                label="Employee No."
-                value={employee?.empnumber || "N/A"}
-              />
-              <SummaryItem
-                icon={FaBriefcase}
-                label="Department"
-                value={employee?.department || "N/A"}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="grid grid-cols-2 gap-2 border-b border-slate-200 bg-slate-50 p-2 md:grid-cols-4">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex min-h-[48px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                    isActive
-                      ? "bg-slate-900 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-white hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className={isActive ? "text-amber-300" : "text-amber-600"} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="p-4 sm:p-6">
+          {/* Tab Content */}
+          <div className="p-4 sm:p-6 themed-bg-card themed-text">
             {isLoading && <DashboardLoading />}
 
             {!isLoading && activeTab === "profile" && (
@@ -493,14 +577,7 @@ function Dashboard() {
 
             {!isLoading && activeTab === "memo" && (
               <MemoTab
-                isAdmin={
-                  (employee?.role &&
-                    (String(employee.role).toLowerCase() === "admin" ||
-                      String(employee.role).toLowerCase() === "administrator" ||
-                      String(employee.role).toLowerCase() === "admin_user")) ||
-                  (employee?.position &&
-                    String(employee.position).toLowerCase().includes("admin"))
-                }
+                isAdmin={isAdmin}
                 memoMode={memoMode}
                 setMemoMode={setMemoMode}
                 memoName={memoName}
@@ -515,6 +592,8 @@ function Dashboard() {
                 setBatchTarget={setBatchTarget}
                 memoMessage={memoMessage}
                 setMemoMessage={setMemoMessage}
+                recipientMemos={recipientMemos}
+                isMemoLoading={isMemoLoading}
                 onSendMemo={handleSendMemo}
                 onCancelMemo={() => {
                   resetMemoForm();
@@ -523,6 +602,8 @@ function Dashboard() {
                 canSendMemo={canSendMemo}
               />
             )}
+
+            {!isLoading && activeTab === "coop-policies" && <Policy />}
 
             {!isLoading && activeTab === "order" && (
               <EmptyState
@@ -536,100 +617,109 @@ function Dashboard() {
       </div>
 
       {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(15,23,42,0.5)', padding: '1.5rem' }}>
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl themed-bg-card" style={{ border: '1px solid var(--muted)' }}>
+            <div className="flex flex-col gap-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between themed-bg-section themed-border">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Edit Profile</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="text-lg font-semibold themed-text">Edit Profile</h3>
+                <p className="text-sm themed-muted">
                   Update your full name, address, and phone numbers.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditOpen(false)}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-md border px-3 py-2 text-sm font-semibold transition hover:bg-slate-100"
+                style={{ borderColor: 'var(--muted)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}
               >
                 Close
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 p-6">
+            <form onSubmit={handleSaveEdit} className="space-y-4 p-6 themed-bg-card themed-text">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700">First Name</label>
+                  <label className="block text-sm font-semibold themed-muted">First Name</label>
                   <input
                     name="firstname"
                     value={editData.firstname}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700">Middle Name</label>
+                  <label className="block text-sm font-semibold themed-muted">Middle Name</label>
                   <input
                     name="middlename"
                     value={editData.middlename}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700">Last Name</label>
+                  <label className="block text-sm font-semibold themed-muted">Last Name</label>
                   <input
                     name="lastname"
                     value={editData.lastname}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700">Address</label>
+                  <label className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>Address</label>
                   <input
                     name="address"
                     value={editData.address}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none"
+                    style={{ border: '1px solid var(--muted)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700">Mobile Number</label>
+                  <label className="block text-sm font-semibold themed-muted">Mobile Number</label>
                   <input
                     name="phone1"
                     value={editData.phone1}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700">Telephone Number</label>
+                  <label className="block text-sm font-semibold themed-muted">Telephone Number</label>
                   <input
                     name="phone2"
                     value={editData.phone2}
                     onChange={handleEditChange}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
                   />
                 </div>
               </div>
 
               {editError && (
-                <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-md px-4 py-3 text-sm" style={{ border: '1px solid var(--muted)', background: '#fff6f6', color: '#7f1d1d' }}>
                   {editError}
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+              <div className="flex flex-col gap-3 themed-border pt-4 sm:flex-row sm:justify-end" style={{ borderTopStyle: 'solid' }}>
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition hover:bg-slate-100"
+                  style={{ border: '1px solid var(--muted)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ opacity: isSaving ? 0.7 : 1 }}
                 >
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
@@ -639,7 +729,7 @@ function Dashboard() {
         </div>
       )}
 
-      {process.env.NODE_ENV === "development" && (
+      {false && process.env.NODE_ENV === "development" && (
         <div className="fixed bottom-4 right-4 z-50 w-96 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
           <div className="mb-2 font-semibold text-sm">Debug</div>
           <div>
@@ -659,51 +749,58 @@ function Dashboard() {
         </div>
       )}
     </div>
-  );
-}
-
-function SummaryItem({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-amber-100 text-amber-700">
-        <Icon />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-500">{label}</p>
-        <p className="truncate text-sm font-semibold text-slate-900">{value}</p>
-      </div>
-    </div>
+    </>
   );
 }
 
 function ProfileTab({ employee, fullName, onEditClick }) {
+  const navigate = useNavigate();
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-lg bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">Full Name</p>
-          <h2 className="text-xl font-bold text-slate-900">
-            {fullName || "Employee"}
-          </h2>
+    <div className="space-y-6">
+      <div className="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[1.6fr_auto]">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-slate-500">Employee profile</p>
+            <h2 className="text-3xl font-semibold text-slate-900">
+              {fullName || "Employee"}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Review your profile information, verify personal details, and update contact fields when needed.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Badge icon={FaBriefcase} text={employee?.position || "Position N/A"} />
+            <Badge icon={FaCalendarAlt} text={`Hired ${formatDate(employee?.datehired)}`} />
+            <Badge icon={FaUser} text={employee?.empstatus || "Status N/A"} />
+          </div>
         </div>
-        <div className="flex items-center justify-end gap-3">
+
+        <div className="flex flex-col gap-3 items-start justify-start lg:flex-row lg:items-center lg:justify-between">
+          <button
+            type="button"
+            onClick={() => navigate("/reset-password")}
+            title="Open settings"
+            aria-label="Open settings"
+            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            <FaCog className="mr-2 h-4 w-4 text-slate-500" />
+            Settings
+          </button>
           <button
             type="button"
             onClick={onEditClick}
             title="Edit profile"
             aria-label="Edit profile"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+            className="inline-flex items-center justify-center rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
           >
-            <FaEdit className="h-4 w-4" />
+            <FaEdit className="mr-2 h-4 w-4" />
+            Edit profile
           </button>
-          <div className="flex flex-wrap gap-2 text-sm">
-            <Badge icon={FaBriefcase} text={employee?.position || "Position N/A"} />
-            <Badge icon={FaCalendarAlt} text={`Hired ${formatDate(employee?.datehired)}`} />
-          </div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {profileFields.map((field) => (
           <InfoCard
             key={field.label}
@@ -721,9 +818,8 @@ function ProfileTab({ employee, fullName, onEditClick }) {
 function InfoCard({ label, value, wide, highlight, onEdit }) {
   return (
     <div
-      className={`rounded-lg border border-slate-200 bg-white p-4 ${
-        wide ? "sm:col-span-2 lg:col-span-3" : ""
-      }`}
+      className={`rounded-[1.5rem] border border-slate-200 p-5 shadow-sm ${wide ? "sm:col-span-2 lg:col-span-3" : ""}`}
+      style={{ background: 'var(--card-bg)' }}
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -733,17 +829,13 @@ function InfoCard({ label, value, wide, highlight, onEdit }) {
             onClick={onEdit}
             title={`Edit ${label}`}
             aria-label={`Edit ${label}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200"
           >
             <FaEdit className="h-4 w-4" />
           </button>
         )}
       </div>
-      <p
-        className={`mt-1 break-words text-base font-semibold ${
-          highlight ? "text-emerald-700" : "text-slate-900"
-        }`}
-      >
+      <p className={`mt-3 break-words text-base font-semibold ${highlight ? 'text-emerald-700' : 'text-slate-900'}`}>
         {value}
       </p>
     </div>
@@ -752,8 +844,8 @@ function InfoCard({ label, value, wide, highlight, onEdit }) {
 
 function Badge({ icon: Icon, text }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 font-medium text-slate-700">
-      <Icon className="text-amber-600" />
+    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
+      <Icon className="text-amber-500" />
       {text}
     </span>
   );
@@ -774,33 +866,37 @@ function MemoTab({
   batchTarget,
   setBatchTarget,
   memoMessage,
+  recipientMemos,
+  isMemoLoading,
   onSendMemo,
   onCancelMemo,
   canSendMemo,
 }) {
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">Memos</p>
-          <h2 className="text-xl font-bold text-slate-900">Employee Memo Management</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Paste a Google Drive memo image URL, then choose a specific employee or a batch to send.
-          </p>
+      <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">Memos</p>
+            <h2 className="text-2xl font-semibold text-slate-900">Employee Memo Management</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Paste a Google Drive memo image URL, then choose a specific employee or a batch to send.
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setMemoMode("add")}
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              Add Memo
+            </button>
+          )}
         </div>
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={() => setMemoMode("add")}
-            className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-          >
-            Add Memo
-          </button>
-        )}
       </div>
 
       {memoMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {memoMessage}
         </div>
       )}
@@ -812,8 +908,8 @@ function MemoTab({
           message="Only administrators can add memos."
         />
       ) : memoMode === "add" ? (
-        <form onSubmit={onSendMemo} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="space-y-4">
+        <form onSubmit={onSendMemo} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700">
                 Memo Name
@@ -823,7 +919,7 @@ function MemoTab({
                 value={memoName}
                 onChange={(event) => setMemoName(event.target.value)}
                 placeholder="Enter memo name"
-                className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
               />
             </div>
             <div>
@@ -835,14 +931,14 @@ function MemoTab({
                 value={memoUrl}
                 onChange={(event) => setMemoUrl(event.target.value)}
                 placeholder="https://drive.google.com/file/d/..."
-                className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
               />
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-700">Send memo to</p>
-              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-amber-300">
                   <input
                     type="radio"
                     checked={recipientType === "employee"}
@@ -851,7 +947,7 @@ function MemoTab({
                   />
                   Specific employee
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-amber-300">
                   <input
                     type="radio"
                     checked={recipientType === "batch"}
@@ -864,15 +960,13 @@ function MemoTab({
 
               {recipientType === "employee" ? (
                 <div className="mt-4">
-                  <label className="block text-sm font-semibold text-slate-700">
-                    Employee Number
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-700">Employee Number</label>
                   <input
                     type="text"
                     value={employeeTarget}
                     onChange={(event) => setEmployeeTarget(event.target.value.replace(/\D/g, ""))}
                     placeholder="Enter employee number"
-                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
               ) : (
@@ -883,7 +977,7 @@ function MemoTab({
                   <select
                     value={batchTarget}
                     onChange={(event) => setBatchTarget(event.target.value)}
-                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                   >
                     <option value="all">All employees</option>
                     <option value="management">Management team</option>
@@ -895,29 +989,88 @@ function MemoTab({
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onCancelMemo}
-              className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canSendMemo}
-              className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 hover:bg-amber-700"
             >
               Send memo
             </button>
           </div>
         </form>
       ) : (
-        <EmptyState
-          icon={FaRegFileAlt}
-          title="No memo posted"
-          message="Add a memo link on the right and send it to a specific employee or by batch."
-        />
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Assigned memos</h3>
+              <p className="text-sm text-slate-600">
+                View memos assigned to you here.
+              </p>
+            </div>
+            {isMemoLoading && (
+              <span className="text-sm text-slate-500">Loading memos…</span>
+            )}
+          </div>
+
+          {isMemoLoading ? (
+            <div className="mt-6 grid gap-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-24 animate-pulse rounded-lg border border-slate-200 bg-slate-100"
+                />
+              ))}
+            </div>
+          ) : recipientMemos.length > 0 ? (
+            <div className="mt-6 space-y-3">
+              {recipientMemos.map((item) => {
+                const memo = item.memo || {};
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium themed-muted">Memo name</p>
+                        <p className="text-base font-semibold themed-text">
+                          {memo.title || "Untitled memo"}
+                        </p>
+                      </div>
+                      <a
+                        href={memo.url || "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                      >
+                        View memo
+                      </a>
+                    </div>
+                    {memo.created_at && (
+                      <p className="mt-3 text-sm text-slate-500">
+                        Posted {formatDate(memo.created_at)}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={FaRegFileAlt}
+              title="No memos assigned"
+              message="Memos sent to you will appear here."
+            />
+          )}
+        </div>
       )}
     </div>
   );

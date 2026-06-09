@@ -1,26 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="outer" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffec3d" />
+    <linearGradient id="bulbOuter" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff277" />
+      <stop offset="45%" stop-color="#ffdd4b" />
       <stop offset="100%" stop-color="#f7b500" />
     </linearGradient>
-    <linearGradient id="inner" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fff9d1" />
-      <stop offset="100%" stop-color="#fff0a3" />
+    <linearGradient id="bulbInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fffce0" />
+      <stop offset="100%" stop-color="#fde196" />
     </linearGradient>
-    <linearGradient id="metal" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="baseMetal" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#d1d5db" />
       <stop offset="100%" stop-color="#6b7280" />
     </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur" />
+      <feFlood flood-color="#fff1a5" flood-opacity="0.55" result="color" />
+      <feComposite in="color" in2="blur" operator="in" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="16" stdDeviation="10" flood-color="rgba(0,0,0,0.22)" />
+    </filter>
+    <path id="textPath" d="M256,58
+      a198,198 0 1,1 -0.1,0" />
   </defs>
-  <rect width="512" height="512" rx="96" fill="#ffffff" />
-  <circle cx="256" cy="224" r="180" fill="url(#outer)" />
-  <ellipse cx="256" cy="240" rx="152" ry="160" fill="url(#inner)" />
-  <path d="M266 260c16-10 34-38 34-58 0-32-22-54-47-54-17 0-34 6-44 18-8 10-35 54-36 86-1 24 16 42 36 42 22 0 45-17 57-34z" fill="#ffffff" opacity="0.15" />
-  <path d="M154 170c16-20 46-30 75-26 18 2 42 11 54 22 14 13 22 36 22 55 0 33-20 70-40 96-14 18-26 32-38 46-22 16-44 18-61 10-22-9-32-30-32-54 0-23 10-48 23-65 12-15 18-24 7-24-24 0-64 92-31 146 32 50 126 52 211-41 20-20 34-38 44-58 26-54 22-120-26-152-33-22-91-17-128 12-21 17-24 22-24 33 0 20 4 19 0 0z" fill="#f21717" />
-  <path d="M180 295c12 0 22 8 22 18 0 10-10 18-22 18s-22-8-22-18c0-10 10-18 22-18z" fill="#d30f0f" />
-  <path d="M228 345h56c8 0 14 6 14 14v32c0 8-6 14-14 14h-56c-8 0-14-6-14-14v-32c0-8 6-14 14-14z" fill="url(#metal)" />
-  <path d="M208 393h96c8 0 14 6 14 14v8c0 8-6 14-14 14h-96c-8 0-14-6-14-14v-8c0-8 6-14 14-14z" fill="#9ca3af" />
-  <circle cx="345" cy="146" r="16" fill="#d30f0f" />
-  <circle cx="167" cy="160" r="14" fill="#d30f0f" />
+  <g filter="url(#shadow)">
+    <g filter="url(#glow)">
+      <path d="M256 60
+        c-90 0 -166 71 -166 160
+        c0 69 44 131 108 152
+        l0 62
+        c0 0 12 24 58 24
+        c46 0 58-24 58-24
+        l0-62
+        c64-21 108-83 108-152
+        c0-89-76-160-166-160z"
+        fill="url(#bulbOuter)" />
+      <path d="M256 100
+        c-67 0 -122 55 -122 123
+        c0 47 30 88 74 106
+        l0 46
+        c0 0 9 16 48 16
+        c39 0 48-16 48-16
+        l0-46
+        c44-18 74-59 74-106
+        c0-68-55-123-122-123z"
+        fill="url(#bulbInner)" />
+      <path d="M266 206c20-12 42-44 42-67 0-37-26-62-55-62-20 0-40 7-52 24-9 13-42 72-43 114-1 31 21 55 45 55 28 0 58-22 73-34z"
+        fill="#ffffff" opacity="0.18" />
+      <path d="M162 178c18-23 51-34 83-29 20 2 47 14 61 28 16 16 25 44 25 68 0 40-24 87-49 120-17 23-32 42-46 61-26 23-52 25-74 13-27-11-39-37-39-66 0-28 12-59 28-80 15-19 23-30 9-31-30-2-82 108-39 172 41 60 161 64 269-50 25-25 42-47 55-72 33-68 28-150-33-190-41-28-114-22-160 16-26 21-29 27-29 40 0 25 5 24 0 0z"
+        fill="#d02929" />
+    </g>
+    <path d="M172 328c14 0 26 9 26 20 0 12-12 20-26 20s-26-8-26-20c0-11 12-20 26-20z" fill="#b31a1a" />
+    <rect x="210" y="370" width="92" height="40" rx="12" fill="url(#baseMetal)" />
+    <rect x="206" y="410" width="100" height="32" rx="12" fill="#9ca3af" />
+    <path d="M232 379h48v16h-48z" fill="#6b7280" opacity="0.5" />
+    <circle cx="360" cy="146" r="16" fill="#d31b1b" />
+    <circle cx="152" cy="160" r="14" fill="#d31b1b" />
+    <text x="256" y="465" text-anchor="middle" font-family="sans-serif" font-size="42" font-weight="700" fill="#1f2937">1978</text>
+    <text font-family="sans-serif" font-size="22" fill="#1f2937" text-anchor="middle">
+      <textPath href="#textPath" startOffset="50%" side="left">BOHOL II ELECTRIC COOPERATIVE, INC</textPath>
+    </text>
+  </g>
 </svg>
