@@ -155,7 +155,7 @@ const BillInquiry = () => {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700"
+                    className="w-full inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-200 transition hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                   >
                     {loading ? (
                       <>
@@ -174,7 +174,7 @@ const BillInquiry = () => {
                     type="button"
                     onClick={clearForm}
                     disabled={loading}
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Clear
                   </button>
@@ -241,11 +241,11 @@ function ResultModal({ billingDetails, onClose, onNewInquiry }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-3 py-4"
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-2xl"
+        className="w-full max-w-full sm:max-w-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto rounded-[2rem] bg-white shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-3">
