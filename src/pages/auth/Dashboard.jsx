@@ -120,6 +120,16 @@ function Dashboard() {
   const [memoMessage, setMemoMessage] = useState("");
   const [recipientMemos, setRecipientMemos] = useState([]);
   const [isMemoLoading, setIsMemoLoading] = useState(false);
+  // Office order state (mirrors memo logic)
+  const [orderMode, setOrderMode] = useState("view");
+  const [orderTitle, setOrderTitle] = useState("");
+  const [orderUrl, setOrderUrl] = useState("");
+  const [orderRecipientType, setOrderRecipientType] = useState("employee");
+  const [orderEmployeeTarget, setOrderEmployeeTarget] = useState("");
+  const [orderBatchTarget, setOrderBatchTarget] = useState("all");
+  const [orderMessage, setOrderMessage] = useState("");
+  const [recipientOrders, setRecipientOrders] = useState([]);
+  const [isOrderLoading, setIsOrderLoading] = useState(false);
 
   const fullName = useMemo(() => {
     const parts = [
@@ -243,6 +253,31 @@ function Dashboard() {
     if (activeTab !== "memo" || !employee?.id) return;
     fetchRecipientMemos();
   }, [activeTab, employee?.id, fetchRecipientMemos]);
+
+  const fetchRecipientOrders = useCallback(async () => {
+    if (!employee?.id) return;
+
+    setIsOrderLoading(true);
+
+    const { data, error } = await supabase
+      .from("office_order_recipients")
+      .select("id, is_read, office_order(id, title, url, created_at)")
+      .eq("employee_id", employee.id);
+
+    if (error) {
+      console.error("Failed to fetch recipient orders:", error);
+      setRecipientOrders([]);
+    } else {
+      setRecipientOrders(data || []);
+    }
+
+    setIsOrderLoading(false);
+  }, [employee?.id]);
+
+  useEffect(() => {
+    if (activeTab !== "order" || !employee?.id) return;
+    fetchRecipientOrders();
+  }, [activeTab, employee?.id, fetchRecipientOrders]);
 
   const handleOpenEdit = useCallback(() => {
     setEditError("");
@@ -502,6 +537,111 @@ function Dashboard() {
     [canSendMemo, memoName, memoUrl, recipientType, employeeTarget, batchTarget, fetchRecipientMemos, employee, resetMemoForm]
   );
 
+    const canSendOrder = useMemo(
+      () =>
+        orderTitle.trim().length > 0 &&
+        orderUrl.trim().length > 0 &&
+        (orderRecipientType !== "employee" || orderEmployeeTarget.trim().length > 0),
+      [orderTitle, orderUrl, orderRecipientType, orderEmployeeTarget]
+    );
+
+    const resetOrderForm = useCallback(() => {
+      setOrderTitle("");
+      setOrderUrl("");
+      setOrderRecipientType("employee");
+      setOrderEmployeeTarget("");
+      setOrderBatchTarget("all");
+      setOrderMessage("");
+    }, []);
+
+    const handleSendOrder = useCallback(
+      async (event) => {
+        event.preventDefault();
+
+        if (!canSendOrder) return;
+
+        try {
+          let targetEmployee = null;
+
+          if (orderRecipientType === "employee") {
+            const { data: employeeData, error: employeeError } = await supabase
+              .from("employees")
+              .select("id, empnumber")
+              .eq("empnumber", orderEmployeeTarget.trim())
+              .maybeSingle();
+
+            if (employeeError) {
+              console.error("employee lookup failed:", employeeError);
+              setOrderMessage("Unable to look up employee. Please try again.");
+              return;
+            }
+
+            if (!employeeData) {
+              setOrderMessage("Employee not found.");
+              return;
+            }
+
+            targetEmployee = employeeData;
+
+            if (!targetEmployee?.id) {
+              setOrderMessage("Employee record has no valid ID.");
+              return;
+            }
+          }
+
+          const { data: orderData, error: orderError } = await supabase
+            .from("office_order")
+            .insert({
+              title: orderTitle.trim(),
+              url: orderUrl.trim(),
+            })
+            .select()
+            .single();
+
+          if (orderError || !orderData) {
+            console.error(orderError);
+            setOrderMessage("Failed to save office order.");
+            return;
+          }
+
+          if (orderRecipientType === "employee") {
+            const { error: recipientError } = await supabase
+              .from("office_order_recipients")
+              .insert({
+                office_order_id: orderData.id,
+                employee_id: targetEmployee.id,
+                is_read: false,
+              });
+
+            if (recipientError) {
+              console.error(recipientError);
+              setOrderMessage("Office order saved, but recipient assignment failed.");
+              return;
+            }
+          }
+
+          const recipient =
+            orderRecipientType === "employee"
+              ? `Employee ${orderEmployeeTarget.trim()}`
+              : orderBatchTarget === "all"
+              ? "All employees"
+              : orderBatchTarget;
+
+          setOrderMessage(`Office order "${orderTitle.trim()}" sent to ${recipient}.`);
+          setOrderMode("view");
+          resetOrderForm();
+
+          if (orderRecipientType === "employee" && targetEmployee?.id === employee?.id) {
+            fetchRecipientOrders();
+          }
+        } catch (error) {
+          console.error(error);
+          setOrderMessage("An unexpected error occurred.");
+        }
+      },
+      [canSendOrder, orderTitle, orderUrl, orderRecipientType, orderEmployeeTarget, orderBatchTarget, fetchRecipientOrders, employee, resetOrderForm]
+    );
+
   return (
     <>
           {/* top stripe removed to let navigation handle header background */}
@@ -605,10 +745,29 @@ function Dashboard() {
             {!isLoading && activeTab === "coop-policies" && <Policy />}
 
             {!isLoading && activeTab === "order" && (
-              <EmptyState
-                icon={FaFileAlt}
-                title="No office order posted"
-                message="Office orders assigned to you will be shown in this section."
+              <OfficeOrderTab
+                isAdmin={isAdmin}
+                orderMode={orderMode}
+                setOrderMode={setOrderMode}
+                orderTitle={orderTitle}
+                setOrderTitle={setOrderTitle}
+                orderUrl={orderUrl}
+                setOrderUrl={setOrderUrl}
+                orderRecipientType={orderRecipientType}
+                setOrderRecipientType={setOrderRecipientType}
+                orderEmployeeTarget={orderEmployeeTarget}
+                setOrderEmployeeTarget={setOrderEmployeeTarget}
+                orderBatchTarget={orderBatchTarget}
+                setOrderBatchTarget={setOrderBatchTarget}
+                orderMessage={orderMessage}
+                recipientOrders={recipientOrders}
+                isOrderLoading={isOrderLoading}
+                onSendOrder={handleSendOrder}
+                onCancelOrder={() => {
+                  resetOrderForm();
+                  setOrderMode("view");
+                }}
+                canSendOrder={canSendOrder}
               />
             )}
           </div>
@@ -870,7 +1029,7 @@ function MemoTab({
             <p className="text-sm font-medium text-slate-500">Memos</p>
             <h2 className="text-2xl font-semibold text-slate-900">Employee Memo Management</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Paste a Google Drive memo image URL, then choose a specific employee or a batch to send.
+              Paste a Google Drive memo URL, then choose a specific employee or a batch to send.
             </p>
           </div>
           {isAdmin && (
@@ -914,7 +1073,7 @@ function MemoTab({
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700">
-                Memo Image URL
+                 Memo URL
               </label>
               <input
                 type="url"
@@ -1059,6 +1218,198 @@ function MemoTab({
               title="No memos assigned"
               message="Memos sent to you will appear here."
             />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OfficeOrderTab({
+  isAdmin,
+  orderMode,
+  setOrderMode,
+  orderTitle,
+  setOrderTitle,
+  orderUrl,
+  setOrderUrl,
+  orderRecipientType,
+  setOrderRecipientType,
+  orderEmployeeTarget,
+  setOrderEmployeeTarget,
+  orderBatchTarget,
+  setOrderBatchTarget,
+  orderMessage,
+  recipientOrders,
+  isOrderLoading,
+  onSendOrder,
+  onCancelOrder,
+  canSendOrder,
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">Office Orders</p>
+            <h2 className="text-2xl font-semibold text-slate-900">Office Order Management</h2>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Paste a Google Drive office order URL, then choose a specific employee or a batch to send.
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setOrderMode("add")}
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              Add Office Order
+            </button>
+          )}
+        </div>
+      </div>
+
+      {orderMessage && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {orderMessage}
+        </div>
+      )}
+
+      {orderMode === "add" && !isAdmin ? (
+        <EmptyState
+          icon={FaRegFileAlt}
+          title="Access denied"
+          message="Only administrators can add office orders."
+        />
+      ) : orderMode === "add" ? (
+        <form onSubmit={onSendOrder} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Office Order Title</label>
+              <input
+                type="text"
+                value={orderTitle}
+                onChange={(event) => setOrderTitle(event.target.value)}
+                placeholder="Enter office order name"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Office Order URL</label>
+              <input
+                type="url"
+                value={orderUrl}
+                onChange={(event) => setOrderUrl(event.target.value)}
+                placeholder="https://drive.google.com/file/d/..."
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
+
+            <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-700">Send office order to</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-amber-300">
+                  <input
+                    type="radio"
+                    checked={orderRecipientType === "employee"}
+                    onChange={() => setOrderRecipientType("employee")}
+                    className="h-4 w-4"
+                  />
+                  Specific employee
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-amber-300">
+                  <input
+                    type="radio"
+                    checked={orderRecipientType === "batch"}
+                    onChange={() => setOrderRecipientType("batch")}
+                    className="h-4 w-4"
+                  />
+                  Batch send
+                </label>
+              </div>
+
+              {orderRecipientType === "employee" ? (
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-slate-700">Employee Number</label>
+                  <input
+                    type="text"
+                    value={orderEmployeeTarget}
+                    onChange={(event) => setOrderEmployeeTarget(event.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter employee number"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-slate-700">Batch target</label>
+                  <select
+                    value={orderBatchTarget}
+                    onChange={(event) => setOrderBatchTarget(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
+                  >
+                    <option value="all">All employees</option>
+                    <option value="management">Management team</option>
+                    <option value="support">Support staff</option>
+                    <option value="field">Field staff</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onCancelOrder}
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!canSendOrder}
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 hover:bg-amber-700"
+            >
+              Send office order
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Assigned office orders</h3>
+              <p className="text-sm text-slate-600">View office orders assigned to you here.</p>
+            </div>
+            {isOrderLoading && <span className="text-sm text-slate-500">Loading orders…</span>}
+          </div>
+
+          {isOrderLoading ? (
+            <div className="mt-6 grid gap-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="h-24 animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
+              ))}
+            </div>
+          ) : recipientOrders.length > 0 ? (
+            <div className="mt-6 space-y-3">
+              {recipientOrders.map((item) => {
+                const order = item.office_order || {};
+                return (
+                  <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium themed-muted">Office order</p>
+                        <p className="text-base font-semibold themed-text">{order.title || "Untitled office order"}</p>
+                      </div>
+                      <a href={order.url || "#"} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">View office order</a>
+                    </div>
+                    {order.created_at && <p className="mt-3 text-sm text-slate-500">Posted {formatDate(order.created_at)}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState icon={FaRegFileAlt} title="No office orders assigned" message="Office orders sent to you will appear here." />
           )}
         </div>
       )}
