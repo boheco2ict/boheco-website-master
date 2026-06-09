@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-const img = ["assets/logo.png"];
+const img = ["/assets/logo.png"];
 
 const LandingPage = () => {
   return (
@@ -10,7 +10,7 @@ const LandingPage = () => {
         draggable={false}
         src={img[0]}
         alt="BOHECO II logo"
-        className="w-48 h-48 md:w-72 md:h-72 mb-4 rounded-full border border-amber-200 bg-white p-2 shadow-lg"
+        className="w-48 h-48 md:w-72 md:h-72 mb-4 bg-transparent drop-shadow-[0_0_28px_rgba(252,211,77,0.65)]"
       />
 
       <h1 className="font-extrabold md:text-6xl text-3xl text-slate-900 leading-tight">
@@ -31,12 +31,13 @@ const LandingPage = () => {
         </NavLink>
 
         <NavLink
-          to="/notice"
+          to="/inquiries"
           className="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
-          aria-label="View notices"
+          aria-label="View bill inquiries"
         >
-          Notices
+          Bill Inquiries
         </NavLink>
+
       </nav>
     </header>
   );

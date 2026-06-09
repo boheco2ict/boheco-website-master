@@ -5,7 +5,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 const Footer = () => {
   return (
-    <footer className="w-full border-t border-amber-200 bg-amber-100 text-slate-900">
+    <footer className="relative z-0 w-full border border-transparent bg-amber-100 text-slate-900">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 text-sm sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div>
           <p className="font-bold">BOHOL II ELECTRIC COOPERATIVE, INC.</p>

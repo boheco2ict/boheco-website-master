@@ -5,22 +5,29 @@ import Advisory from "./pages/Advisory";
 import Partners from "./pages/Partners";
 import LifelineAdvisory from "./pages/LifelineAdvisory";
 import NeaAdvisory from "./pages/Notice";
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
 import DdpPspp from "./pages/DdpPspp";
 import BillInquiry from "./pages/BillInquiry";
-import Policy from "./pages/Policy";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Award from "./pages/Award";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
+import Policy from "./pages/Policy";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import InstallPrompt from "./components/InstallPrompt";
 
 function App() {
+  const location = useLocation();
+  const hideFooterOnRestrictedPages = [
+    "/dashboard",
+    "/inquiries",
+    "/reset-password",
+  ].some((path) => location.pathname.startsWith(path));
+
   return (
     <div className="pt-[76px]">
       <Navigation />
@@ -48,18 +55,11 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="coop-policies"
-            element={
-              <ProtectedRoute>
-                <Policy />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="coop-policies" element={<Policy />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Footer />
+      {!hideFooterOnRestrictedPages && <Footer />}
     </div>
   );
 }

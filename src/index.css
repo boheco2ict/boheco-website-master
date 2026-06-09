@@ -117,3 +117,457 @@ code {
 .swal2-border-radius {
   border-radius: 1rem !important;
 }
+
+/* Application theme variables (defaults) */
+:root {
+  --header-bg: #0f172a; /* default header background (slate-900) */
+  --primary: #b45309; /* amber-600 */
+  --accent: #f59e0b; /* amber-500 */
+  --text-primary: #0f172a;
+  --muted: #64748b;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --section-bg: #f8fafc;
+  --mobile-header-bg: #ffffff;
+}
+
+/* Optional theme classes: add one of these to <body> to switch theme */
+body.theme-amber {
+  --header-bg: #92400e;
+  --primary: #b45309;
+  --accent: #f59e0b;
+  --text-primary: #0f172a;
+  --mobile-header-bg: #fff7ed;
+}
+
+body.theme-dark {
+  --header-bg: #111827;
+  --primary: #f59e0b;
+  --accent: #fbbf24;
+  --text-primary: #f8fafc;
+  --card-bg: #0b1220;
+  --section-bg: #0f1724;
+  --mobile-header-bg: var(--header-bg);
+}
+
+/* Top stripe uses theme variable */
+.app-top-stripe {
+  background: var(--header-bg);
+}
+
+/* Sidebar and header theme helpers */
+.app-sidebar {
+  background: var(--sidebar-bg);
+  color: var(--text-primary);
+  border-right: none;
+}
+
+.app-header {
+  background: var(--header-bg);
+  color: var(--text-primary);
+  border-bottom: none;
+}
+
+.theme-text-primary { color: var(--text-primary); }
+.theme-muted { color: var(--muted); }
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Themed helpers for existing components */
+.themed-bg-card,
+.themed-bg-section,
+.themed-border,
+.themed-text,
+.themed-muted,
+.themed-accent-bg,
+.themed-accent,
+.themed-accent-strong {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.themed-bg-card { background: var(--card-bg) !important; }
+.themed-bg-section { background: var(--section-bg) !important; }
+.themed-border { border-color: var(--muted) !important; }
+.themed-text { color: var(--text-primary) !important; }
+.themed-muted { color: var(--muted) !important; }
+.themed-accent-bg { background: rgba(245,158,11,0.08) !important; }
+.themed-accent { color: var(--accent) !important; }
+.themed-accent-strong { color: var(--primary) !important; }
+
+/* Sidebar enhancements */
+.app-sidebar nav {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-sidebar .scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.app-sidebar .scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-sidebar .scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-sidebar .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.app-sidebar .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Navigation link enhancements */
+.app-sidebar nav a {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-sidebar nav a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(120, 113, 108, 0.05);
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 0.5rem;
+}
+
+.app-sidebar nav a:hover::before {
+  opacity: 1;
+}
+
+/* Header enhancements */
+.app-header {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Mobile menu animations */
+.mobile-nav-slide {
+  animation: slideDown 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Active navigation styling */
+.app-sidebar a.active {
+  box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.2);
+}
+
+/* Dashboard Tab Navigation Enhancements */
+section button[title] {
+  position: relative;
+  overflow: hidden;
+}
+
+section button[title]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+section button[title]:hover::before {
+  opacity: 1;
+}
+
+/* Tab Icon Animation */
+section button[title] span:first-child {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section button[title]:hover span:first-child {
+  transform: scale(1.1);
+}
+
+section button[title]:active span:first-child {
+  transform: scale(0.95);
+}
+
+/* Tab Label Transition */
+section button[title] span:last-of-type {
+  transition: all 0.2s ease;
+}
+
+/* Gradient Animations */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+section button[title]:nth-child(1):not(:hover) {
+  background: linear-gradient(135deg, #f8f8f8, #f0f0f0);
+}
+
+/* Responsive Tab Adjustments */
+@media (max-width: 640px) {
+  section button[title] {
+    min-height: 56px;
+  }
+
+  section button[title] span:first-child {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  section button[title] span:first-child svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .app-sidebar {
+    bottom: 0 !important;
+  }
+}
+
+/* Dashboard Sidebar Professional Enhancements */
+.sidebar-panel {
+  animation: slideInFromLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.sidebar-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-panel::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.sidebar-panel::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-panel::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Collapse Animation */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Expanded Content Animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Stagger Animation for Cards */
+.sidebar-panel .space-y-2\.5 > div {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+.sidebar-panel .space-y-2\.5 > div:nth-child(1) { animation-delay: 0.05s; }
+.sidebar-panel .space-y-2\.5 > div:nth-child(2) { animation-delay: 0.1s; }
+.sidebar-panel .space-y-2\.5 > div:nth-child(3) { animation-delay: 0.15s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Group Hover Effects */
+.sidebar-panel .group:hover {
+  animation: none;
+}
+
+.sidebar-panel .group {
+  will-change: transform, box-shadow;
+}
+
+/* Avatar Animation */
+.sidebar-panel .inline-flex[style*="h-20"] {
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Collapse Button Enhanced */
+.sidebar-panel button[title*="sidebar"] {
+  transition: all 0.2s ease;
+}
+
+.sidebar-panel button[title*="sidebar"]:hover {
+  transform: scale(1.08);
+}
+
+.sidebar-panel button[title*="sidebar"]:active {
+  transform: scale(0.95);
+}
+
+/* Compensation Card Hover */
+.sidebar-panel .bg-gradient-to-br {
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.sidebar-panel .group:hover .bg-gradient-to-br {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(217, 119, 6, 0.15);
+}
+
+/* Info Cards Hover Animation */
+.sidebar-panel .bg-slate-50,
+.sidebar-panel .bg-blue-50,
+.sidebar-panel .bg-purple-50 {
+  transition: all 0.2s ease;
+}
+
+.sidebar-panel .bg-slate-50:hover,
+.sidebar-panel .bg-blue-50:hover,
+.sidebar-panel .bg-purple-50:hover {
+  transform: translateY(-2px);
+}
+
+/* Edit Button Animation */
+.sidebar-panel button[type="button"]:last-of-type {
+  animation: slideInFromBottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-panel button[type="button"]:last-of-type::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.sidebar-panel button[type="button"]:last-of-type:hover::before {
+  left: 100%;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Collapsed State Smooth Transition */
+.sidebar-panel.w-24 {
+  scrollbar-width: none;
+}
+
+.sidebar-panel.w-24::-webkit-scrollbar {
+  display: none;
+}
+
+/* Title Animation */
+.sidebar-panel h2 {
+  animation: fadeInDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Divider Animation */
+.sidebar-panel .w-full.h-px {
+  animation: expandWidth 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+@keyframes expandWidth {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* Responsive Sidebar */
+@media (max-width: 1280px) {
+  .sidebar-panel {
+    display: none !important;
+  }
+}
+

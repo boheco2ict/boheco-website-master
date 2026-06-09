@@ -1,14 +1,22 @@
 import React from "react";
 
-const img = ["assets/l.png", "assets/m2.jpg"];
+const img = ["/assets/logo.png", "/assets/m2.jpg"];
 
 const Profile = ({ members, household, consumers, employees }) => {
   return (
     <section>
-      <div className="flex justify-center text-center text-4xl font-[Gloock] font-extrabold uppercase">
-        Our Profile
+      <div className="flex flex-col items-center text-center">
+        <img
+          draggable={false}
+          src={img[0]}
+          alt="BOHECO II logo"
+          className="mb-6 h-28 w-auto"
+        />
+        <div className="text-4xl font-[Gloock] font-extrabold uppercase">
+          Our Profile
+        </div>
       </div>
-      <section className="container py-8 md:pl-24 mx-auto flex  lg:flex-row flex-col-reverse md:justify-beteew justify-center">
+      <section className="container py-8 md:pl-24 mx-auto flex lg:flex-row flex-col-reverse md:justify-beteew justify-center">
         <div className="text-xl p-4 m-4 bg-slate-100 bg-opacity-40 shadow-lg rounded-lg cursor-pointer hover:bg-opacity-60">
           <div className="font-[Gloock] font-bold">
             BOHOL II ELECTRIC COOPERATIVE, INC. (BOHECO II )
