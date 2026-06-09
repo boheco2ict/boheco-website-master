@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
 const STORAGE_KEY = 'boheco-installed';
 
 function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const deferredPromptRef = useRef(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [hasModalShown, setHasModalShown] = useState(false);
+  const [fallbackModalShown, setFallbackModalShown] = useState(false);
 
   const isIosDevice = useCallback(
     () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()),
@@ -15,9 +16,11 @@ function InstallPrompt() {
   );
 
   const handleInstall = useCallback(async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const choiceResult = await deferredPrompt.userChoice;
+    const promptEvent = deferredPromptRef.current;
+
+    if (promptEvent) {
+        promptEvent.prompt();
+        const choiceResult = await promptEvent.userChoice;
         if (choiceResult.outcome === 'accepted') {
           Swal.fire({
             title: 'Great!',
@@ -41,7 +44,7 @@ function InstallPrompt() {
             showConfirmButton: false,
           });
         }
-        setDeferredPrompt(null);
+        deferredPromptRef.current = null;
         return;
       }
 
@@ -60,7 +63,7 @@ function InstallPrompt() {
           confirmButton: 'swal2-confirm-custom',
         },
       });
-    }, [deferredPrompt, isIosDevice]);
+    }, [isIosDevice]);
 
   useEffect(() => {
     const installed = localStorage.getItem(STORAGE_KEY) === 'true';
@@ -75,7 +78,11 @@ function InstallPrompt() {
 
     const beforeInstallPromptHandler = (event) => {
       event.preventDefault();
-      setDeferredPrompt(event);
+      deferredPromptRef.current = event;
+
+      if (fallbackModalShown && !isInstalled && !isIosDevice()) {
+        showInstallModal();
+      }
     };
 
     const appInstalledHandler = () => {
@@ -85,7 +92,7 @@ function InstallPrompt() {
         // ignore localStorage failures
       }
       setIsInstalled(true);
-      setDeferredPrompt(null);
+      deferredPromptRef.current = null;
       Swal.fire({
         title: 'Installed!',
         text: 'BOHECO II has been added to your device.',
@@ -96,20 +103,66 @@ function InstallPrompt() {
     };
 
     const showInstallModal = async () => {
-      if (hasModalShown || isInstalled) return;
+      if (isInstalled) return;
+      if (hasModalShown && !fallbackModalShown) return;
+
+      if (isIosDevice()) {
+        setHasModalShown(true);
+        setFallbackModalShown(false);
+
+        await Swal.fire({
+          title: 'Install BOHECO II',
+          html: 'Install BOHECO II from Safari Share > Add to Home Screen.',
+          icon: 'info',
+          confirmButtonText: 'OK',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'swal2-border-radius swal2-small-popup',
+            confirmButton: 'swal2-confirm-custom',
+          },
+        });
+        return;
+      }
+
+      let promptEvent = deferredPromptRef.current;
+
+      if (!promptEvent) {
+        promptEvent = await new Promise((resolve) => {
+          let onPrompt;
+
+          const timer = window.setTimeout(() => {
+            window.removeEventListener('beforeinstallprompt', onPrompt);
+            resolve(null);
+          }, 3000);
+
+          onPrompt = (event) => {
+            event.preventDefault();
+            deferredPromptRef.current = event;
+            window.clearTimeout(timer);
+            window.removeEventListener('beforeinstallprompt', onPrompt);
+            resolve(event);
+          };
+
+          window.addEventListener('beforeinstallprompt', onPrompt);
+        });
+      }
+
+      const canInstall = Boolean(promptEvent);
       setHasModalShown(true);
+      setFallbackModalShown(!canInstall);
 
       const result = await Swal.fire({
         title: 'Install BOHECO II',
-        html: isIosDevice()
-          ? 'Install BOHECO II from Safari Share > Add to Home Screen.'
-          : 'Add BOHECO II to your home screen for faster access and offline support.',
+        html: canInstall
+          ? 'Add BOHECO II to your home screen for faster access and offline support.'
+          : 'Your browser does not support the automatic install prompt yet. Please use your browser menu and choose Install when available.',
         icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'Install',
+        showCancelButton: canInstall,
+        confirmButtonText: canInstall ? 'Install' : 'OK',
         cancelButtonText: 'Maybe later',
         reverseButtons: true,
         allowOutsideClick: false,
+        buttonsStyling: false,
         customClass: {
           popup: 'swal2-border-radius swal2-small-popup',
           confirmButton: 'swal2-confirm-custom',
@@ -117,7 +170,7 @@ function InstallPrompt() {
         },
       });
 
-      if (result.isConfirmed) {
+      if (result.isConfirmed && canInstall) {
         await handleInstall();
       }
     };
@@ -131,7 +184,7 @@ function InstallPrompt() {
       window.removeEventListener('beforeinstallprompt', beforeInstallPromptHandler);
       window.removeEventListener('appinstalled', appInstalledHandler);
     };
-  }, [hasModalShown, isInstalled, handleInstall, isIosDevice]);
+  }, [hasModalShown, isInstalled, handleInstall, isIosDevice, fallbackModalShown]);
 
   return null;
 }
