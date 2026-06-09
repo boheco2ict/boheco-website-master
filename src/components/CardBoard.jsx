@@ -1,19 +1,32 @@
+import { useEffect } from "react";
+import { useState } from "react";
+import { supabase } from "../supabase";
 import BCards from "./BCards";
 
-const path = [
-  "BOD/BOD1-d.jpg",
-  "BOD/BOD2-d.jpg",
-  "BOD/BOD3-d.jpg",
-  "BOD/BOD4-d.jpg",
-  "BOD/BOD5-d.jpg",
-  "BOD/BOD6-d.jpg",
-  "BOD/BOD7-d.jpg",
-  "BOD/BOD8-d.jpg",
-  "BOD/BOD9-d.jpg",
-  "BOD/pe.png",
-];
-
 const CardBoard = () => {
+  const [bod, setBod] = useState([]);
+
+  useEffect(() => {
+    fetchBod();
+  }, []);
+
+  async function fetchBod() {
+    const { data, error } = await supabase
+      .from("bod")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error(error);
+    }
+
+    setBod(data);
+  }
+
+  const row1 = bod.slice(0, 1);
+  const row2 = bod.slice(1, 5);
+  const row3 = bod.slice(5, 9);
+
   return (
     <section>
       {/* MANAGEMENT */}
@@ -21,73 +34,40 @@ const CardBoard = () => {
         Board Of Directors
       </div>
       <section className="flex justify-center items-center">
-        <BCards
-          path={path[4]}
-          title={"DISTRICT V REPRESENTATIVE"}
-          name={"Noel D. Villanueva"}
-          address={"UBAY & CPG ISLAND"}
-          position={"PRESIDENT"}
-        />
+        {row1.map((item) => (
+          <BCards
+            key={item.id}
+            path={item.url}
+            title={item.title}
+            name={item.name}
+            address={item.address}
+            position={item.position}
+          />
+        ))}
       </section>
       <section className="flex justify-center 2xl:flex-row flex-col gap-6 items-center">
-        <BCards
-          path={path[7]}
-          title={"DISTRICT VIII REPRESENTATIVE"}
-          name={"ROBERTO O. LANGAMEN"}
-          address={"TRINIDAD, BIEN-UNIDO & TALIBON"}
-          position={"1ST VICE-PRESIDENT"}
-        />
-        <BCards
-          path={path[3]}
-          title={"DISTRICT IV REPRESENTATIVE"}
-          name={"SIXTO B. BUDIONGAN JR"}
-          address={"CANDIJAY, MABINI & ALICIA"}
-          position={"2ND VICE-PRESIDENTCHIEF PRO"}
-        />
-        <BCards
-          path={path[1]}
-          title={"DISTRICT II REPRESENTATIVE"}
-          name={"GENARO D. MENDE"}
-          address={"JAGNA & DUERO"}
-          position={"SECRETARY"}
-        />
-        <BCards
-          path={path[2]}
-          title={"DISTRICT III REPRESENTATIVE"}
-          name={"CHRISTINE G. LAGURA"}
-          address={"GUINDULMAN & ANDA"}
-          position={"TREASURER"}
-        />
+        {row2.map((item) => (
+          <BCards
+            key={item.id}
+            path={item.url}
+            title={item.title}
+            name={item.name}
+            address={item.address}
+            position={item.position}
+          />
+        ))}
       </section>
       <section className="flex justify-center 2xl:flex-row flex-col gap-6 items-center">
-        <BCards
-          path={path[5]}
-          title={"DISTRICT VI REPRESENTATIVE"}
-          name={"RUEL E. MABAQUIAO"}
-          address={"PILAR & SIERRA-BULLONES"}
-          position={"AUDITOR"}
-        />
-        <BCards
-          path={path[6]}
-          title={"DISTRICT VII REPRESENTATIVE"}
-          name={"CRISTITA A. CERICOS"}
-          address={"SAN MIGUEL, DAGOHOY & DANAO"}
-          position={"CHIEF PRO"}
-        />
-        <BCards
-          path={path[8]}
-          title={"DISTRICT IX REPRESENTATIVE"}
-          name={"ARNULDO S. LUGOD"}
-          address={"GETAFE & BUENAVISTA"}
-          position={"PRO I"}
-        />
-        <BCards
-          path={path[9]}
-          title={"DISTRICT II REPRESENTATIVE"}
-          name={"Danilo C. Cadiz"}
-          address={"G-HERNARDEZ, VALENCIA"}
-          position={"PRO II"}
-        />
+        {row3.map((item) => (
+          <BCards
+            key={item.id}
+            path={item.url}
+            title={item.title}
+            name={item.name}
+            address={item.address}
+            position={item.position}
+          />
+        ))}
       </section>
     </section>
   );

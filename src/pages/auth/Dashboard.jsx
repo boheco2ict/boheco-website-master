@@ -149,6 +149,7 @@ function Dashboard() {
     if (validTab) {
       setActiveTab(tab);
     }
+
   }, [location.search]);
 
   useEffect(() => {
