@@ -753,6 +753,7 @@ function Dashboard() {
 }
 
 function ProfileTab({ employee, fullName, onEditClick }) {
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
   return (
     <div className="space-y-6">
