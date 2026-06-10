@@ -8,6 +8,7 @@ import {
   FaFileAlt,
   FaRegFileAlt,
   FaUser,
+  FaTimes,
 } from "react-icons/fa";
 import Policy from "../Policy";
 import { supabase } from "../../supabase";
@@ -774,7 +775,7 @@ function Dashboard() {
               )}
 
               {!isLoading && activeTab === "leave" && (
-                <LeaveCreditsTab leaveCredits={leaveCredits} />
+                <LeaveCreditsTab leaveCredits={leaveCredits} employee={employee} />
               )}
 
               {!isLoading && activeTab === "memo" && (
@@ -1616,7 +1617,7 @@ function OfficeOrderTab({
   );
 }
 
-function LeaveCreditsTab({ leaveCredits }) {
+function LeaveCreditsTab({ leaveCredits, employee }) {
   const [isApplying, setIsApplying] = useState(false);
   const [applicationType, setApplicationType] = useState(
     leaveCredits[0]?.leave_type || ""
@@ -1624,15 +1625,58 @@ function LeaveCreditsTab({ leaveCredits }) {
   const [appStart, setAppStart] = useState("");
   const [appEnd, setAppEnd] = useState("");
   const [appReason, setAppReason] = useState("");
+  const [daysRequested, setDaysRequested] = useState(1);
   const [appError, setAppError] = useState("");
   const [appSuccess, setAppSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingApplications, setPendingApplications] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!employee?.id) {
+      setPendingApplications([]);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const fetchPendingApplications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("leave_applications")
+          .select("*")
+          .eq("employee_id", employee.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false });
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Failed to fetch pending leave applications:", error);
+          setPendingApplications([]);
+        } else {
+          setPendingApplications(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching pending applications:", err);
+        if (isMounted) setPendingApplications([]);
+      }
+    };
+
+    fetchPendingApplications();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [employee?.id]);
 
   const resetApplicationForm = useCallback(() => {
     setApplicationType(leaveCredits[0]?.leave_type || "");
     setAppStart("");
     setAppEnd("");
     setAppReason("");
+    setDaysRequested(1);
     setAppError("");
     setAppSuccess("");
   }, [leaveCredits]);
@@ -1645,35 +1689,64 @@ function LeaveCreditsTab({ leaveCredits }) {
     if (new Date(appStart) > new Date(appEnd))
       return "Start date cannot be after end date.";
     if (!appReason.trim()) return "Please provide a reason for your leave.";
+    const dr = Number(daysRequested);
+    if (!Number.isFinite(dr) || dr <= 0) return "Please enter a valid number of days.";
     return "";
-  }, [applicationType, appStart, appEnd, appReason]);
-
+  }, [applicationType, appStart, appEnd, appReason, daysRequested]);
   const handleSubmitApplication = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault();
+      setAppError("");
+      if (!employee?.id) {
+        setAppError("Unable to determine employee record. Please reload.");
+        return;
+      }
+
       const err = validateApplication();
       if (err) {
         setAppError(err);
         return;
       }
 
-      // Since backend is in development, simulate success and keep locally
-      const newApp = {
-        id: `local-${Date.now()}`,
-        leave_type: applicationType,
-        start_date: appStart,
-        end_date: appEnd,
-        reason: appReason,
-        status: "pending",
-        created_at: new Date().toISOString(),
-      };
+      setIsSubmitting(true);
 
-      setPendingApplications((prev) => [newApp, ...prev]);
-      setAppSuccess(
-        "Application submitted (local pending). We'll post it when the API is ready."
-      );
-      setIsApplying(false);
-      resetApplicationForm();
+      try {
+        const payload = {
+          employee_id: employee.id,
+          leave_type: applicationType,
+          start_date: appStart,
+          end_date: appEnd,
+          days_requested: Number(daysRequested),
+          reason: appReason.trim(),
+          status: "pending",
+          approved_by: null,
+          approved_at: null,
+          created_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
+          .from("leave_applications")
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Failed to save leave application:", error);
+          setAppError(error.message || "Failed to save application.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        setPendingApplications((prev) => [data, ...prev.filter((p) => p.id !== data.id)]);
+        setAppSuccess("Application submitted and saved. Status: pending.");
+        setIsApplying(false);
+        resetApplicationForm();
+      } catch (ex) {
+        console.error(ex);
+        setAppError("An unexpected error occurred while submitting.");
+      } finally {
+        setIsSubmitting(false);
+      }
     },
     [
       validateApplication,
@@ -1681,7 +1754,9 @@ function LeaveCreditsTab({ leaveCredits }) {
       appStart,
       appEnd,
       appReason,
+      daysRequested,
       resetApplicationForm,
+      employee,
     ]
   );
 
@@ -1709,110 +1784,141 @@ function LeaveCreditsTab({ leaveCredits }) {
         </div>
       </div>
 
-      {appError && (
-        <div
-          className="rounded-md px-4 py-3 text-sm"
-          style={{
-            border: "1px solid var(--muted)",
-            background: "#fff6f6",
-            color: "#7f1d1d",
-          }}
-        >
-          {appError}
-        </div>
-      )}
-
-      {appSuccess && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {appSuccess}
-        </div>
-      )}
+      {/* Notifications moved inside the modal when applying */}
 
       {isApplying && (
-        <form
-          onSubmit={handleSubmitApplication}
-          className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(15,23,42,0.5)", padding: "1.5rem" }}
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-semibold themed-muted">
-                Leave Type
-              </label>
-              <select
-                value={applicationType}
-                onChange={(e) => setApplicationType(e.target.value)}
-                className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                style={{ border: "1px solid var(--muted)" }}
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl themed-bg-card" style={{ border: '1px solid var(--muted)' }}>
+            <div className="flex items-center justify-between px-6 py-4 themed-bg-section themed-border" style={{ position: 'relative' }}>
+              <div>
+                <h3 className="text-lg font-semibold themed-text">Apply for Leave</h3>
+                <p className="text-sm themed-muted">Submit your leave application. Status will be set to pending.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsApplying(false);
+                  resetApplicationForm();
+                }}
+                aria-label="Close"
+                className="p-1 text-slate-600 hover:text-slate-900"
+                style={{ background: 'transparent', border: 'none' }}
               >
-                {leaveCredits.map((l) => (
-                  <option key={l.leave_type} value={l.leave_type}>
-                    {l.leave_type} ({l.leave_balance ?? 0})
-                  </option>
-                ))}
-              </select>
+                <FaTimes size={18} />
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-semibold themed-muted">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={appStart}
-                onChange={(e) => setAppStart(e.target.value)}
-                className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                style={{ border: "1px solid var(--muted)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold themed-muted">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={appEnd}
-                onChange={(e) => setAppEnd(e.target.value)}
-                className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                style={{ border: "1px solid var(--muted)" }}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold themed-muted">
-                Reason
-              </label>
-              <textarea
-                value={appReason}
-                onChange={(e) => setAppReason(e.target.value)}
-                className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                rows={3}
-                style={{ border: "1px solid var(--muted)" }}
-              />
-            </div>
-          </div>
 
-          <div className="mt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setIsApplying(false);
-                resetApplicationForm();
-              }}
-              className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition hover:bg-slate-100"
-              style={{
-                border: "1px solid var(--muted)",
-                background: "var(--card-bg)",
-                color: "var(--text-primary)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
-            >
-              Submit application
-            </button>
+            {appError && (
+              <div
+                className="rounded-md px-4 py-3 text-sm m-6"
+                style={{
+                  border: "1px solid var(--muted)",
+                  background: "#fff6f6",
+                  color: "#7f1d1d",
+                }}
+                role="alert"
+              >
+                {appError}
+              </div>
+            )}
+
+            {appSuccess && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 m-6" role="status">
+                {appSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitApplication} className="space-y-4 p-6 themed-bg-card themed-text">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-semibold themed-muted">Leave Type</label>
+                  <select
+                    value={applicationType}
+                    onChange={(e) => setApplicationType(e.target.value)}
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
+                  >
+                    {leaveCredits.map((l) => (
+                      <option key={l.leave_type} value={l.leave_type}>
+                        {l.leave_type} ({l.leave_balance ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold themed-muted">Start Date</label>
+                  <input
+                    type="date"
+                    value={appStart}
+                    onChange={(e) => setAppStart(e.target.value)}
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold themed-muted">End Date</label>
+                  <input
+                    type="date"
+                    value={appEnd}
+                    onChange={(e) => setAppEnd(e.target.value)}
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold themed-muted">Days Requested</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={daysRequested}
+                    onChange={(e) => setDaysRequested(e.target.value)}
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    style={{ border: '1px solid var(--muted)' }}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold themed-muted">Reason</label>
+                  <textarea
+                    value={appReason}
+                    onChange={(e) => setAppReason(e.target.value)}
+                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                    rows={3}
+                    style={{ border: '1px solid var(--muted)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsApplying(false);
+                    resetApplicationForm();
+                  }}
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition hover:bg-slate-100"
+                  style={{ border: '1px solid var(--muted)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit application'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       <div className="grid gap-3 md:grid-cols-2">
