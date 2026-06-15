@@ -16,6 +16,7 @@ import Award from "./pages/Award";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
 import Policy from "./pages/Policy";
+import EmployeeManual from "./pages/EmployeeManual";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
@@ -65,6 +66,14 @@ function App() {
             }
           />
           <Route path="coop-policies" element={<Policy />} />
+          <Route
+            path="employee-manual"
+            element={
+              <ProtectedRoute>
+                <EmployeeManual />
+              </ProtectedRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
