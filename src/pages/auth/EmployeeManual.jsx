@@ -6,7 +6,7 @@ import {
   FaFolderOpen,
   FaSearch,
 } from "react-icons/fa";
-import { supabase } from "../supabase";
+import { supabase } from "../../supabase";
 
 function sortManuals(data) {
   return [...data].sort((a, b) => {
@@ -53,7 +53,7 @@ function EmployeeManualPage() {
       if (error) {
         console.error("Employee manual fetch error:", error);
         setErrorMessage(
-          "We could not load the employee manual from the server. Please try again later.",
+          "We could not load the employee manual from the server. Please try again later."
         );
         setManualData([]);
         setIsLoading(false);
@@ -96,11 +96,11 @@ function EmployeeManualPage() {
   }, [activeGroup, groupNames, manualGroups, searchTerm]);
 
   const visibleGroupNames = groupNames.filter(
-    (group) => filteredGroups[group]?.length,
+    (group) => filteredGroups[group]?.length
   );
   const filteredCount = visibleGroupNames.reduce(
     (count, group) => count + (filteredGroups[group]?.length || 0),
-    0,
+    0
   );
   const totalDocuments = manualData.length;
 

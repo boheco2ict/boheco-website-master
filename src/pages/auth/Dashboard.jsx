@@ -6,7 +6,7 @@ import {
   FaRegFileAlt,
   FaUser,
 } from "react-icons/fa";
-import Policy from "../Policy";
+import Policy from "./Policy";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
 

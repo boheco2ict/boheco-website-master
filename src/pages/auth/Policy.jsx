@@ -6,8 +6,8 @@ import {
   FaFolderOpen,
   FaSearch,
 } from "react-icons/fa";
-import { supabase } from "../supabase";
-import { useAuth } from "../context/AuthContext";
+import { supabase } from "../../supabase";
+import { useAuth } from "../../context/AuthContext";
 
 const OLD_POLICIES_GROUP = "Compilation of Old Policies";
 
@@ -101,7 +101,7 @@ function Policy() {
     if (!user) {
       setIsLoading(false);
       setErrorMessage(
-        "Coop Policies are restricted to signed-in users. Please log in to view the full policy list.",
+        "Coop Policies are restricted to signed-in users. Please log in to view the full policy list."
       );
       setPolicyData(DEFAULT_POLICY_DOCUMENTS);
       return;
@@ -119,7 +119,7 @@ function Policy() {
       if (error) {
         console.error("Policy fetch error:", error);
         setErrorMessage(
-          "We could not load the cooperative policies from the server, showing sample policy documents instead.",
+          "We could not load the cooperative policies from the server, showing sample policy documents instead."
         );
         setPolicyData(sortPolicies(DEFAULT_POLICY_DOCUMENTS));
         setIsLoading(false);
@@ -128,12 +128,12 @@ function Policy() {
 
       if (!data || !data.length) {
         setErrorMessage(
-          "No cooperative policy entries were found in the database. Please verify your Supabase RLS settings or sign in again.",
+          "No cooperative policy entries were found in the database. Please verify your Supabase RLS settings or sign in again."
         );
       }
 
       setPolicyData(
-        sortPolicies(data && data.length ? data : DEFAULT_POLICY_DOCUMENTS),
+        sortPolicies(data && data.length ? data : DEFAULT_POLICY_DOCUMENTS)
       );
       setIsLoading(false);
     };
@@ -153,7 +153,7 @@ function Policy() {
       if (activeGroup !== "All" && group !== activeGroup) return result;
 
       const policies = (policyGroups[group] || []).filter((policy) =>
-        policy.title?.toLowerCase().includes(query),
+        policy.title?.toLowerCase().includes(query)
       );
 
       if (policies.length) {
@@ -165,11 +165,11 @@ function Policy() {
   }, [activeGroup, groupNames, policyGroups, searchTerm]);
 
   const visibleGroupNames = groupNames.filter(
-    (group) => filteredGroups[group]?.length,
+    (group) => filteredGroups[group]?.length
   );
   const filteredCount = visibleGroupNames.reduce(
     (count, group) => count + (filteredGroups[group]?.length || 0),
-    0,
+    0
   );
   const totalPolicies = policyData.length;
 
