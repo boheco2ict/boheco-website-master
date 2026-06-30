@@ -13,6 +13,7 @@ import BillInquiry from "./pages/BillInquiry";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Award from "./pages/Award";
+import Developers from "./pages/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
 import Policy from "./pages/auth/Policy";
@@ -46,6 +47,7 @@ function App() {
           <Route path="inquiries" element={<BillInquiry />} />
           <Route path="lifeline" element={<LifelineAdvisory />} />
           <Route path="awards" element={<Award />} />
+          <Route path="developers" element={<Developers />} />
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
