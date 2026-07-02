@@ -35,7 +35,6 @@ const Navigation = () => {
     { id: 3, name: "RATE ADVISORY", link: "rate-advisory" },
     { id: 4, name: "NOTICE", link: "notice" },
     { id: 11, name: "COOP POLICIES", link: "coop-policies" },
-    { id: 15, name: "EMPLOYEE MANUAL", link: "employee-manual" },
     { id: 5, name: "DDP & PSPPs", link: "ddpandpspp" },
     { id: 6, name: "LIFELINE RATE", link: "lifeline" },
     { id: 7, name: "PAYMENT PARTNERS", link: "partners" },

@@ -97,6 +97,37 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     setAppSuccess("");
   }, [leaveCredits]);
 
+  const notifyLeaveAdmin = useCallback(async (application) => {
+    const notifyBaseUrl =
+      process.env.REACT_APP_NOTIFY_API_URL?.replace(/\/$/, "") ||
+      "http://localhost:5000";
+
+    try {
+      const response = await fetch(`${notifyBaseUrl}/api/notify-leave`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employee_id: application.employee_id,
+          leave_type: application.leave_type,
+          start_date: application.start_date,
+          end_date: application.end_date,
+          days_requested: application.days_requested,
+          reason: application.reason,
+          approved_by: application.approved_by,
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Notify endpoint returned ${response.status}: ${text}`);
+      }
+    } catch (notifyError) {
+      console.error("Failed to notify leave admins:", notifyError);
+    }
+  }, []);
+
   const validateApplication = useCallback(() => {
     setAppError("");
     if (!applicationType) return "Please choose a leave type.";
@@ -188,6 +219,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
           ]);
         }
 
+        await notifyLeaveAdmin(data);
         setAppSuccess("Application submitted and saved. Status: pending.");
         setIsApplying(false);
         resetApplicationForm();
@@ -208,6 +240,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
       daysRequested,
       resetApplicationForm,
       employee,
+      notifyLeaveAdmin,
     ]
   );
 
