@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const slides = [
@@ -29,7 +29,8 @@ const Partners = () => {
   }, []);
 
   const goToSlide = (index) => setActiveSlide(index);
-  const goToNext = () => setActiveSlide((current) => (current + 1) % slides.length);
+  const goToNext = () =>
+    setActiveSlide((current) => (current + 1) % slides.length);
   const goToPrevious = () =>
     setActiveSlide((current) => (current - 1 + slides.length) % slides.length);
 
@@ -47,7 +48,8 @@ const Partners = () => {
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
             View all supported payment channels in one place. Slides rotate
-            automatically, and you can also navigate manually using arrows or dots.
+            automatically, and you can also navigate manually using arrows or
+            dots.
           </p>
         </div>
 
@@ -102,7 +104,9 @@ const Partners = () => {
                     onClick={() => goToSlide(index)}
                     aria-label={`Go to ${slide.title}`}
                     className={`h-2.5 w-2.5 rounded-full transition ${
-                      active ? "bg-amber-600" : "bg-slate-300 hover:bg-slate-400"
+                      active
+                        ? "bg-amber-600"
+                        : "bg-slate-300 hover:bg-slate-400"
                     }`}
                   />
                 );

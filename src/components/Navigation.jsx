@@ -34,25 +34,29 @@ const Navigation = () => {
     { id: 2, name: "ABOUT", link: "about" },
     { id: 3, name: "RATE ADVISORY", link: "rate-advisory" },
     { id: 4, name: "NOTICE", link: "notice" },
-    { id: 11, name: "COOP POLICIES", link: "coop-policies" },
     { id: 5, name: "DDP & PSPPs", link: "ddpandpspp" },
     { id: 6, name: "LIFELINE RATE", link: "lifeline" },
     { id: 7, name: "PAYMENT PARTNERS", link: "partners" },
     { id: 8, name: "BILL INQUIRIES", link: "inquiries" },
     { id: 9, name: "AWARDS", link: "awards" },
+    { id: 10, name: "COOP POLICIES", link: "coop-policies" },
+    { id: 11, name: "EMPLOYEE MANUAL", link: "employee-manuals" },
   ];
 
   const AuthLink = [
-    { id: 10, name: "DASHBOARD", link: "dashboard" },
-    { id: 14, name: "SETTINGS", link: "settings" },
-    { id: 12, name: "LOGOUT", type: "action", action: "logout" },
+    { id: 12, name: "DASHBOARD", link: "dashboard" },
+    { id: 13, name: "SETTINGS", link: "settings" },
+    { id: 14, name: "LOGOUT", type: "action", action: "logout" },
   ];
 
-  const GuestLink = [{ id: 13, name: "LOGIN", link: "login" }];
+  const GuestLink = [{ id: 15, name: "LOGIN", link: "login" }];
 
   const desktopGuestLinks = [
     ...Links.filter(
-      (link) => link.link !== "/" && link.link !== "coop-policies",
+      (link) =>
+        link.link !== "/" &&
+        link.link !== "coop-policies" &&
+        link.link !== "employee-manuals"
     ),
     ...GuestLink,
   ];
@@ -64,7 +68,10 @@ const Navigation = () => {
     ? Links.filter((link) => link.link !== "/")
     : isDashboardPath
     ? Links.filter((link) => link.link !== "/")
-    : Links.filter((link) => link.link !== "coop-policies");
+    : Links.filter(
+        (link) =>
+          link.link !== "coop-policies" && link.link !== "employee-manuals"
+      );
   const menuLink = auth
     ? [...visibleLinks, ...AuthLink]
     : [...visibleLinks, ...GuestLink];
@@ -75,7 +82,7 @@ const Navigation = () => {
     const dash = byLink("dashboard");
     const inquiries = byLink("inquiries");
     const coopPolicies = byLink("coop-policies");
-    const employeeManual = byLink("employee-manual");
+    const employeeManual = byLink("employee-manuals");
     const settings = byLink("settings");
     const logout =
       menuLink.find((l) => l.type === "action" && l.action === "logout") ||
@@ -98,7 +105,7 @@ const Navigation = () => {
         link.link !== "ddpandpspp" &&
         link.link !== "lifeline" &&
         link.link !== "partners" &&
-        link.link !== "awards",
+        link.link !== "awards"
     );
   }
 
@@ -109,7 +116,7 @@ const Navigation = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [winWidth, setWinWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0,
+    typeof window !== "undefined" ? window.innerWidth : 0
   );
 
   useEffect(() => {
@@ -192,7 +199,7 @@ const Navigation = () => {
                 const logoutItem = sidebarLinks.find(
                   (l) =>
                     (l.type === "action" && l.action === "logout") ||
-                    l.name === "LOGOUT",
+                    l.name === "LOGOUT"
                 );
                 const nonLogout = sidebarLinks.filter((l) => l !== logoutItem);
 
@@ -204,7 +211,7 @@ const Navigation = () => {
                         if (lnk.link === "inquiries")
                           return FaFileInvoiceDollar;
                         if (lnk.link === "coop-policies") return FaFolderOpen;
-                        if (lnk.link === "employee-manual") return FaFileAlt;
+                        if (lnk.link === "employee-manuals") return FaFileAlt;
                         if (lnk.link === "settings") return FaCog;
                         return null;
                       };
@@ -291,7 +298,7 @@ const Navigation = () => {
               const logoutItem = sidebarLinks.find(
                 (l) =>
                   (l.type === "action" && l.action === "logout") ||
-                  l.name === "LOGOUT",
+                  l.name === "LOGOUT"
               );
               return logoutItem ? (
                 <div className="border-t border-slate-200 px-2 py-4">

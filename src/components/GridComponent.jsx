@@ -1,5 +1,3 @@
-import React from "react";
-
 function GridComponent({ title, url }) {
   return (
     <div className="p-12">

@@ -1,5 +1,3 @@
-import React from "react";
-
 const img = ["/assets/l.png", "/assets/m2.jpg"];
 
 const Profile = ({ members, household, consumers, employees }) => {

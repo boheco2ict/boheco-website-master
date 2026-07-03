@@ -1,4 +1,3 @@
-import React from "react";
 import Rates from "../components/Rates";
 import GenRates from "../components/GenRates";
 

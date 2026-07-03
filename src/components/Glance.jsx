@@ -1,5 +1,3 @@
-import React from "react";
-
 const About = ({ employees }) => {
   return (
     <section>
