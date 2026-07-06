@@ -1,5 +1,3 @@
-import React from "react";
-
 const img = ["/assets/m.jpeg", "/assets/v.jpeg"];
 
 const Section = () => {

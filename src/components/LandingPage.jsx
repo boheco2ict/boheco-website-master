@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
 
 const img = ["/assets/bohecslog.png"];
@@ -37,7 +36,6 @@ const LandingPage = () => {
         >
           Bill Inquiries
         </NavLink>
-
       </nav>
     </header>
   );

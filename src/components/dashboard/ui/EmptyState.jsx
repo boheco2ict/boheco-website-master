@@ -1,5 +1,3 @@
-import React from "react";
-
 function EmptyState({ icon: Icon, title, message }) {
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">

@@ -1,4 +1,4 @@
-import React from "react";
+import { Link } from "react-router-dom";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -31,7 +31,12 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-amber-200 px-4 py-2 text-center text-xs text-slate-700">
-        © {new Date().getFullYear()} BOHECO II. Developed by BOHECO II.
+        <Link
+          to="/developers"
+          className="inline-flex items-center justify-center transition hover:text-amber-700 hover:underline"
+        >
+          © {new Date().getFullYear()} BOHECO II. Developed by BOHECO II.
+        </Link>
       </div>
     </footer>
   );

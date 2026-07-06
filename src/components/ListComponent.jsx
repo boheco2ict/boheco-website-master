@@ -1,5 +1,3 @@
-import React from "react";
-
 const pdfLogo = "assets/pdf-logo.png";
 
 function ListComponent({ title, url }) {

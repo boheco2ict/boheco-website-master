@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiOutlineVerticalRight, AiOutlineVerticalLeft } from "react-icons/ai";
 
 const url =
@@ -62,9 +62,7 @@ const Lifeline = () => {
         </p>
       </div>
 
-      <div
-        className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg"
-      >
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
         <div className="relative">
           <img
             draggable={false}
@@ -77,7 +75,9 @@ const Lifeline = () => {
             <p className="text-xs uppercase tracking-[0.2em] text-amber-300">
               Slide {currentIndex + 1} of {slides.length}
             </p>
-            <h3 className="mt-1 text-xl font-bold sm:text-2xl">{currentSlide.title}</h3>
+            <h3 className="mt-1 text-xl font-bold sm:text-2xl">
+              {currentSlide.title}
+            </h3>
             <p className="mt-1 text-sm text-slate-100/90 sm:text-base">
               {currentSlide.description}
             </p>
@@ -112,9 +112,7 @@ const Lifeline = () => {
                 type="button"
                 onClick={() => setCurrentIndex(index)}
                 className={`h-2.5 w-2.5 rounded-full transition ${
-                  isActive
-                    ? "bg-amber-600"
-                    : "bg-slate-300 hover:bg-slate-400"
+                  isActive ? "bg-amber-600" : "bg-slate-300 hover:bg-slate-400"
                 }`}
                 aria-label={`Go to ${slide.title}`}
               />
