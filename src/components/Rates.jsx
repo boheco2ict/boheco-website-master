@@ -1,192 +1,108 @@
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import RatesTable from "./RatesTable";
 import { FaBolt, FaChevronLeft, FaChevronRight, FaImage } from "react-icons/fa";
+import { supabase } from "../supabase";
 
-const url =
-  "https://odmrwqsixtqedqnwbhfh.supabase.co/storage/v1/object/public/WEBSITE%20ASSETS/";
-
-const img = [
-  "RATES/POWER/Power1.jpg",
-  "RATES/POWER/Power2.jpg",
-  "RATES/POWER/Power3.jpg",
-  "RATES/POWER/Power4.jpg",
-  "RATES/POWER/Power5.jpg",
+const months = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
 ];
 
-const v26 = [
-  12.7371,
-  11.9444,
-  11.7416,
-  12.2367,
-  11.9856,
-  12.9893,
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
+const createHeader = (year) => [
+  "RATE CLASS",
+  ...months.map((month) => `${month} ${year}`),
+  `AVERAGE ${year}`,
 ];
 
-const v25 = [
-  12.1276, 12.1722, 12.1571, 12.2459, 11.7797, 10.8995, 11.2969, 11.4375,
-  12.4851, 11.9606, 12.3215, 12.1927,
-];
+const createBody = (rates) => {
+  const values = Array(12).fill(null);
 
-const v24 = [
-  10.3272, 10.2636, 10.2951, 10.9064, 11.7569, 9.4893, 10.2697, 13.9642,
-  13.3436, 11.9938, 12.2191, 12.0691,
-];
+  rates.forEach((rate) => {
+    values[rate.month - 1] = Number(rate.rate);
+  });
 
-const v23 = [
-  11.5472, 13.3037, 12.3968, 12.4197, 12.2549, 13.2443, 13.6768, 13.8465,
-  14.1532, 12.3757, 13.9001, 10.795,
-];
+  const valid = values.filter((v) => v !== null);
 
-const v22 = [
-  11.7628, 19.2901, 15.4101, 11.6674, 12.998, 13.1694, 13.919, 13.1891, 13.8792,
-  13.8352, 14.0901, 13.6085,
-];
+  const average = (valid.reduce((sum, v) => sum + v, 0) / valid.length).toFixed(
+    4
+  );
 
-const withAverage = (array) => {
-  const nonNullValues = array.filter((val) => val !== null);
-  const average = (
-    nonNullValues.reduce((acc, val) => acc + val, 0) / nonNullValues.length
-  ).toFixed(4);
-
-  return [...array, average];
+  return [...values, average];
 };
 
-const thead2026 = [
-  "RATE CLASS",
-  "JAN 2026",
-  "FEB 2026",
-  "MAR 2026",
-  "APR 2026",
-  "MAY 2026",
-  "JUN 2026",
-  "JUL 2026",
-  "AUG 2026",
-  "SEP 2026",
-  "OCT 2026",
-  "NOV 2026",
-  "DEC 2026",
-  "AVERAGE 2026",
-];
-
-const thead2025 = [
-  "RATE CLASS",
-  "JAN 2025",
-  "FEB 2025",
-  "MAR 2025",
-  "APR 2025",
-  "MAY 2025",
-  "JUN 2025",
-  "JUL 2025",
-  "AUG 2025",
-  "SEP 2025",
-  "OCT 2025",
-  "NOV 2025",
-  "DEC 2025",
-  "AVERAGE 2025",
-];
-
-const thead2024 = [
-  "RATE CLASS",
-  "JAN 2024",
-  "FEB 2024",
-  "MAR 2024",
-  "APR 2024",
-  "MAY 2024",
-  "JUN 2024",
-  "JUL 2024",
-  "AUG 2024",
-  "SEP 2024",
-  "OCT 2024",
-  "NOV 2024",
-  "DEC 2024",
-  "AVERAGE 2024",
-];
-
-const thead2023 = [
-  "RATE CLASS",
-  "JAN 2023",
-  "FEB 2023",
-  "MAR 2023",
-  "APR 2023",
-  "MAY 2023",
-  "JUN 2023",
-  "JUL 2023",
-  "AUG 2023",
-  "SEP 2023",
-  "OCT 2023",
-  "NOV 2023",
-  "DEC 2023",
-  "AVERAGE 2024",
-];
-
-const thead2022 = [
-  "RATE CLASS",
-  "JAN 2022",
-  "FEB 2022",
-  "MAR 2022",
-  "APR 2022",
-  "MAY 2022",
-  "JUN 2022",
-  "JUL 2022",
-  "AUG 2022",
-  "SEP 2022",
-  "OCT 2022",
-  "NOV 2022",
-  "DEC 2022",
-  "AVERAGE 2022",
-];
-
 const Rates = () => {
-  const rateYears = useMemo(
-    () => [
-      {
-        year: "2026",
-        thead: thead2026,
-        tbody: withAverage(v26),
-        url: "https://drive.google.com/file/d/1ryeVnQ9zFAS_OxVy_D8ghoazWhXpMzj5/view?usp=sharing",
-      },
-      {
-        year: "2025",
-        thead: thead2025,
-        tbody: withAverage(v25),
-        url: "https://drive.google.com/file/d/1ryeVnQ9zFAS_OxVy_D8ghoazWhXpMzj5/view?usp=sharing",
-      },
-      {
-        year: "2024",
-        thead: thead2024,
-        tbody: withAverage(v24),
-        url: "https://drive.google.com/file/d/1EnfEQhjvfBhcOaDS2S94_QOOOqc1tj9H/view?usp=sharing",
-      },
-      {
-        year: "2023",
-        thead: thead2023,
-        tbody: withAverage(v23),
-        url: "https://drive.google.com/file/d/1gHc-snjlUD_XSU-OCC3ebZAZ_T_j1vRN/view?usp=sharing",
-      },
-      {
-        year: "2022",
-        thead: thead2022,
-        tbody: withAverage(v22),
-        url: "https://drive.google.com/file/d/1GJTuPViBtxkwIefzy_qDOI8I7btFhWs6/view?usp=sharing",
-      },
-    ],
-    []
-  );
-  const [activeYear, setActiveYear] = useState(rateYears[0].year);
+  const [activeYear, setActiveYear] = useState(null);
+  const [advisories, setAdvisories] = useState([]);
+  const [rateYears, setRateYears] = useState([]);
+
   const [activeAdvisory, setActiveAdvisory] = useState(0);
+
+  useEffect(() => {
+    loadRates();
+    loadAdvisories();
+  }, []);
+
+  useEffect(() => {
+    if (rateYears.length > 0) {
+      setActiveYear(rateYears[0].year);
+    }
+  }, [rateYears]);
+
+  async function loadRates() {
+    const { data, error } = await supabase
+      .from("power_rate_years")
+      .select(
+        `
+            *,
+            power_rates (
+                month,
+                rate
+            )
+        `
+      )
+      .order("year", { ascending: false });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setRateYears(data);
+  }
+
+  async function loadAdvisories() {
+    const { data } = await supabase
+      .from("power_rate_advisories")
+      .select("*")
+      .order("display_order");
+
+    setAdvisories(data);
+  }
+
   const selectedRate = rateYears.find((rate) => rate.year === activeYear);
+
   const handlePrevAdvisory = () => {
-    setActiveAdvisory((current) => (current - 1 + img.length) % img.length);
+    if (advisories.length === 0) return;
+
+    setActiveAdvisory(
+      (current) => (current - 1 + advisories.length) % advisories.length
+    );
   };
 
   const handleNextAdvisory = () => {
-    setActiveAdvisory((current) => (current + 1) % img.length);
+    if (advisories.length === 0) return;
+
+    setActiveAdvisory((current) => (current + 1) % advisories.length);
   };
 
   return (
@@ -226,10 +142,10 @@ const Rates = () => {
         </div>
 
         <RatesTable
-          year={selectedRate.year}
-          thead={selectedRate.thead}
-          tbody={selectedRate.tbody}
-          url={selectedRate.url}
+          year={selectedRate?.year}
+          thead={createHeader(selectedRate?.year)}
+          tbody={createBody(selectedRate?.power_rates || [])}
+          url={selectedRate?.pdf_url}
         />
       </section>
 
@@ -274,7 +190,7 @@ const Rates = () => {
           <img
             className="mx-auto max-h-[720px] w-full rounded-md bg-white object-contain shadow-sm"
             draggable={false}
-            src={url + img[activeAdvisory]}
+            src={advisories[activeAdvisory]?.image_url}
             alt={`Power rate advisory page ${activeAdvisory + 1}`}
           />
         </div>

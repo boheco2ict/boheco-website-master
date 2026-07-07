@@ -69,7 +69,7 @@ function App() {
           />
           <Route path="coop-policies" element={<Policy />} />
           <Route
-            path="employee-manual"
+            path="employee-manuals"
             element={
               <ProtectedRoute>
                 <EmployeeManual />
