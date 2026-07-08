@@ -13,25 +13,25 @@ const developers = [
   {
     name: "Earl Gultia",
     role: "Intern",
-    github: "https://github.com/earlgultia",
+    github: "https://earlgultia.github.io/myprofile/",
     image: "DEVELOPERS/EG.jpeg",
   },
   {
     name: "Sherwin Madrona",
     role: "Intern",
-    github: "https://github.com/asmodeus-M",
+    github: "https://asmodeus-m.github.io/MyProfile/",
     image: "DEVELOPERS/S.jpeg",
   },
   {
     name: "Jaye Melle Dela Peña",
     role: "Intern",
-    github: "https://github.com/DanielJM102703",
+    github: "https://danieljm102703.github.io/JayeMelleprofile/",
     image: "DEVELOPERS/JM.jpeg",
   },
   {
     name: "Pink Acas",
     role: "Intern",
-    github: "https://github.com/readerFY",
+    github: "https://readerfy.github.io/Portfolio/",
     image: "DEVELOPERS/P.jpeg",
   },
   {
