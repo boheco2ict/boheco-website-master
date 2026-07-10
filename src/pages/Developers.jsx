@@ -37,19 +37,19 @@ const developers = [
   {
     name: "Cherry Inoferio",
     role: "Intern",
-    github: "https://github.com/CherryInoferio",
+    github: "https://cherryinoferio.github.io/MyPortfolio/",
     image: "DEVELOPERS/C.jpeg",
   },
   {
     name: "Lea Mae Contiñeta",
     role: "Intern",
-    github: "https://github.com/leamae112603",
+    github: "https://leamae112603.github.io/",
     image: "DEVELOPERS/LM.jpeg",
   },
   {
     name: "Renz Gamo",
     role: "Intern",
-    github: "https://github.com/renz010105",
+    github: "https://renz010105.github.io/",
     image: "DEVELOPERS/R.jpeg",
   },
 ];
