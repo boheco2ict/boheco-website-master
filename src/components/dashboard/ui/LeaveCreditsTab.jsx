@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../../supabase";
 
+
+
 function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [isApplying, setIsApplying] = useState(false);
   const [applicationType, setApplicationType] = useState(
@@ -11,12 +13,53 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [appEnd, setAppEnd] = useState("");
   const [appReason, setAppReason] = useState("");
   const [daysRequested, setDaysRequested] = useState(1);
-  const [recipientId, setRecipientId] = useState("");
   const [appError, setAppError] = useState("");
   const [appSuccess, setAppSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [assignedApplications, setAssignedApplications] = useState([]);
+  const [approverId, setApproverId] = useState(null);
+  const [approverName, setApproverName] = useState(null);
+
+  const getApproverEmployeeIdByDepartment = async (department) => {
+    if (!department) return null;
+
+    const { data, error } = await supabase
+      .from("can_approve_leave")
+      .select("emp_id, fname, mname, lname")
+      .eq("dept", department)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to fetch approver employee id:", error);
+      return null;
+    }
+
+    return data ?? null;
+  };
+
+
+
+useEffect(() => {
+  const fetchApproverId = async () => {
+    if (!employee?.department) return;
+
+    const data = await getApproverEmployeeIdByDepartment(employee.department);
+    setApproverId(data?.emp_id || null);
+    setApproverName(data ? `${data.fname} ${data.mname ? data.mname.charAt(0).toUpperCase() + "." : ""} ${data.lname}` : null);
+
+    // console.log(
+    //   "Approver ID:",
+    //   data?.emp_id,
+    //   "Name:",
+    //   data
+    //     ? `${data.fname} ${data.mname ? data.mname.charAt(0).toUpperCase() + "." : ""} ${data.lname}`
+    //     : "N/A"
+    // );
+  };
+
+  fetchApproverId();
+}, [employee?.department]);
 
   useEffect(() => {
     let isMounted = true;
@@ -54,31 +97,61 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     fetchPendingApplications();
 
     // fetch applications that need approval (admins only)
+    // const fetchAssigned = async () => {
+    //   try {
+    //     if (!isAdmin) {
+    //       setAssignedApplications([]);
+    //       return;
+    //     }
+
+    //     const { data, error } = await supabase
+    //       .from("leave_applications")
+    //       .select("*")
+    //       .eq("status", "pending")
+    //       .eq("approved_by", employee.id)
+    //       .order("created_at", { ascending: false });
+
+    //     if (error) {
+    //       console.error("Failed to fetch assigned leave applications:", error);
+    //       setAssignedApplications([]);
+    //     } else {
+    //       setAssignedApplications(data || []);
+    //     }
+    //   } catch (err) {
+    //     console.error("Unexpected error fetching assigned applications:", err);
+    //     setAssignedApplications([]);
+    //   }
+    // };
     const fetchAssigned = async () => {
-      try {
-        if (!isAdmin) {
-          setAssignedApplications([]);
-          return;
-        }
+  try {
+    if (!isAdmin) {
+      setAssignedApplications([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("leave_applications")
+      .select("*")
+      .eq("status", "pending")
+      .eq("approved_by", employee.id)
+      .order("created_at", { ascending: false });
 
-        const { data, error } = await supabase
-          .from("leave_applications")
-          .select("*")
-          .eq("status", "pending")
-          .eq("approved_by", employee.id)
-          .order("created_at", { ascending: false });
+    console.log("Query Result:", data);
+    console.log("Query Error:", error);
 
-        if (error) {
-          console.error("Failed to fetch assigned leave applications:", error);
-          setAssignedApplications([]);
-        } else {
-          setAssignedApplications(data || []);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching assigned applications:", err);
-        setAssignedApplications([]);
-      }
-    };
+    if (error) {
+      console.error("Failed to fetch assigned leave applications:", error);
+      setAssignedApplications([]);
+    } else {
+      console.log("Number of Records:", data?.length);
+      console.table(data);
+
+      setAssignedApplications(data || []);
+    }
+  } catch (err) {
+    console.error("Unexpected error fetching assigned applications:", err);
+    setAssignedApplications([]);
+  }
+};
 
     fetchAssigned();
 
@@ -159,32 +232,6 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
       setIsSubmitting(true);
 
       try {
-        // if recipientId provided, attempt to resolve it as an employee number
-        let targetEmployeeId = null;
-        if (recipientId && recipientId.toString().trim()) {
-          const empNumber = recipientId.toString().trim();
-          const { data: foundEmp, error: findErr } = await supabase
-            .from("employees")
-            .select("id, empnumber")
-            .eq("empnumber", empNumber)
-            .maybeSingle();
-
-          if (findErr) {
-            console.error("Employee lookup failed:", findErr);
-            setAppError("Unable to look up target employee. Please try again.");
-            setIsSubmitting(false);
-            return;
-          }
-
-          if (!foundEmp) {
-            setAppError("Target employee not found.");
-            setIsSubmitting(false);
-            return;
-          }
-
-          targetEmployeeId = foundEmp.id;
-        }
-
         const payload = {
           employee_id: employee.id,
           leave_type: applicationType,
@@ -193,7 +240,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
           days_requested: Number(daysRequested),
           reason: appReason.trim(),
           status: "pending",
-          approved_by: targetEmployeeId || null,
+          approved_by: approverId || null,
           approved_at: null,
           created_at: new Date().toISOString(),
         };
@@ -233,7 +280,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     [
       validateApplication,
       applicationType,
-      recipientId,
+      approverId,
       appStart,
       appEnd,
       appReason,
@@ -454,7 +501,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
             }}
             className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
           >
-            Apply for leave
+            Apply for Leave
           </button>
         </div>
       </div>
@@ -583,15 +630,14 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
                   />
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-semibold themed-muted">
-                    Recipient Employee ID (manual, optional)
+                    Approver ID and Name
                   </label>
                   <input
                     type="text"
-                    value={recipientId}
-                    onChange={(e) => setRecipientId(e.target.value)}
-                    placeholder="e.g. 12345"
+                    disabled
+                    value={`${approverId} - ${approverName}`}
                     className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
                     style={{ border: "1px solid var(--muted)" }}
                   />
