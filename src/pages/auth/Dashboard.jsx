@@ -164,6 +164,7 @@ function Dashboard() {
       if (error) {
         console.error(error);
       } else {
+        // console.log("Dashboard user:", user.id, data);
         setEmployee(data);
         setEmployeeUserId(user.id);
       }
@@ -642,7 +643,6 @@ function Dashboard() {
       resetOrderForm,
     ]
   );
-
   return (
     <>
       {/* top stripe removed to let navigation handle header background */}
@@ -708,8 +708,9 @@ function Dashboard() {
             {/* Tab Content */}
             <div className="p-4 sm:p-6 themed-bg-card themed-text">
               {isLoading && <DashboardLoading />}
-
+              
               {!isLoading && activeTab === "profile" && (
+                
                 <ProfileTab
                   employee={employee}
                   fullName={fullName}

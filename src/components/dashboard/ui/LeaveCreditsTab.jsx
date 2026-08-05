@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../../supabase";
 
-
-
 function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
+  // console.log("IsAdmin: ", isAdmin);
+  // console.log("Leave Credits: ", leaveCredits);
+  // console.log("Employee: ", employee);
+  // console.log("Leave Balance: ", leaveCredits[0]?.leave_balance);
   const [isApplying, setIsApplying] = useState(false);
   const [applicationType, setApplicationType] = useState(
     leaveCredits[0]?.leave_type || ""
@@ -135,15 +137,15 @@ useEffect(() => {
       .eq("approved_by", employee.id)
       .order("created_at", { ascending: false });
 
-    console.log("Query Result:", data);
-    console.log("Query Error:", error);
+    // console.log("Query Result:", data);
+    // console.log("Query Error:", error);
 
     if (error) {
       console.error("Failed to fetch assigned leave applications:", error);
       setAssignedApplications([]);
     } else {
-      console.log("Number of Records:", data?.length);
-      console.table(data);
+      // console.log("Number of Records:", data?.length);
+      // console.table(data);
 
       setAssignedApplications(data || []);
     }
@@ -299,54 +301,20 @@ useEffect(() => {
         console.warn("Approve attempted by non-admin");
         return;
       }
+
       if (!employee?.id) return;
+
       setProcessingApprovalId(app.id);
+
       try {
-        // mark application approved
-        const { data: updatedApp, error: updErr } = await supabase
-          .from("leave_applications")
-          .update({
-            status: "approved",
-            approved_at: new Date().toISOString(),
-          })
-          .eq("id", app.id)
-          .select()
-          .single();
-
-        if (updErr) {
-          console.error("Failed to approve application:", updErr);
-          return;
-        }
-
-        // reflect the status change in local UI immediately
-        if (updatedApp) {
-          // remove from assigned applications (approver view)
-          setAssignedApplications((prev) =>
-            prev.filter((p) => p.id !== updatedApp.id)
-          );
-
-          // if the current user is the applicant, update their pending list
-          if (employee && updatedApp.employee_id === employee.id) {
-            setPendingApplications((prev) =>
-              prev
-                .map((p) => (p.id === updatedApp.id ? updatedApp : p))
-                .filter((p) => p.status === "pending")
-            );
-          }
-        }
-
-        // deduct leave balance for the employee
-        const { data: balances, error: balErr } = await supabase
+        // Retrieve leave balances
+        const { data: balances } = await supabase
           .from("employee_leave_balances")
           .select("*")
-          .eq("employee_id", app.employee_id);
+          .eq("employee_id", app.employee_id)
+          .throwOnError();
 
-        if (balErr) {
-          console.error("Failed to fetch leave balances:", balErr);
-          alert("Failed to fetch leave balances.");
-          return;
-        }
-
+        // Find matching leave type
         const balanceRow = balances?.find(
           (b) =>
             String(b.leave_type).trim().toLowerCase() ===
@@ -354,133 +322,116 @@ useEffect(() => {
         );
 
         if (!balanceRow) {
-          console.error("No matching balance row found.", {
-            employee_id: app.employee_id,
-            app_leave_type: app.leave_type,
-            balances,
-          });
-          alert(`No matching balance found for leave type: ${app.leave_type}`);
-          return;
+          throw new Error(
+            `No matching balance found for leave type: ${app.leave_type}`
+          );
         }
 
+        // Compute new balance
         const currentBalance = Number(balanceRow.leave_balance || 0);
         const requestedDays = Number(app.days_requested || 0);
         const newBalance = Math.max(0, currentBalance - requestedDays);
 
-        const { data: updatedBalance, error: updateBalanceError } =
-          await supabase
-            .from("employee_leave_balances")
-            .update({
-              leave_balance: newBalance,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", balanceRow.id)
-            .select("*");
+        // Update leave balance
+        const { data: updatedBalance } = await supabase
+          .from("employee_leave_balances")
+          .update({
+            leave_balance: newBalance,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", balanceRow.id)
+          .select("*")
+          .throwOnError();
 
-        if (updateBalanceError) {
-          alert("Balance update failed. Check console.");
-          return;
-        }
-
-        if (!updatedBalance || updatedBalance.length === 0) {
-          alert(
-            "Balance update was blocked or updated 0 rows. Most likely Supabase RLS/policy issue."
+        if (!updatedBalance?.length) {
+          throw new Error(
+            "Balance update was blocked or updated 0 rows."
           );
-          return;
         }
 
-        alert(
-          `Leave balance deducted. New balance: ${updatedBalance[0].leave_balance}`
+        // Approve application
+        const { data: updatedApp } = await supabase
+          .from("leave_applications")
+          .update({
+            status: "approved",
+            approved_at: new Date().toISOString(),
+          })
+          .eq("id", app.id)
+          .select()
+          .single()
+          .throwOnError();
+
+        // Update UI
+        setAssignedApplications((prev) =>
+          prev.filter((p) => p.id !== updatedApp.id)
         );
 
-        // Refresh the affected employee's leave balances in the UI
-        try {
-          if (typeof setEmployee === "function") {
-            const { data: refreshedEmp, error: refreshErr } = await supabase
-              .from("employees")
-              .select(
-                `
-                id,
-                empnumber,
-                firstname,
-                middlename,
-                lastname,
-                department,
-                position,
-                empstatus,
-                address,
-                phone1,
-                phone2,
-                birthdate,
-                tin,
-                sss,
-                pagibig,
-                philhealth,
-                datehired,
-                basicrate,
-                riceallowance,
-                role,
-                user_id,
-                employee_leave_balances (
-                  leave_type,
-                  leave_balance
-                )
-              `
-              )
-              .eq("id", app.employee_id)
-              .maybeSingle();
-
-            if (!refreshErr && refreshedEmp) {
-              setEmployee((prev) =>
-                prev && prev.id === refreshedEmp.id ? refreshedEmp : prev
-              );
-            }
-          }
-        } catch (refreshErr) {
-          console.error(
-            "Failed to refresh employee after balance update:",
-            refreshErr
+        if (updatedApp.employee_id === employee.id) {
+          setPendingApplications((prev) =>
+            prev
+              .map((p) => (p.id === updatedApp.id ? updatedApp : p))
+              .filter((p) => p.status === "pending")
           );
         }
 
-        // remove from assigned list
-        setAssignedApplications((prev) => prev.filter((p) => p.id !== app.id));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setProcessingApprovalId(null);
-      }
-    },
-    [employee, isAdmin, setEmployee]
-  );
-
-  const handleReject = useCallback(
-    async (app) => {
-      if (!isAdmin) {
-        console.warn("Reject attempted by non-admin");
-        return;
-      }
-      if (!employee?.id) return;
-      setProcessingApprovalId(app.id);
-      try {
-        await supabase
-          .from("leave_applications")
-          .update({ status: "rejected", approved_at: new Date().toISOString() })
-          .eq("id", app.id);
-
-        // reflect the rejection in local UI
-        setAssignedApplications((prev) => prev.filter((p) => p.id !== app.id));
-        if (employee && app.employee_id === employee.id) {
-          setPendingApplications((prev) => prev.filter((p) => p.id !== app.id));
-        }
-      } catch (err) {
-        console.error(err);
+        alert("Application Approved Successfully.");
+      } catch (error) {
+        console.error("Approval failed:", error);
+        alert(error.message || "Failed to approve leave application.");
       } finally {
         setProcessingApprovalId(null);
       }
     },
     [employee, isAdmin]
   );
+
+const handleReject = useCallback(
+  async (app) => {
+    if (!isAdmin) {
+      console.warn("Reject attempted by non-admin");
+      return;
+    }
+
+    if (!employee?.id) {
+      console.warn("No logged-in employee.");
+      return;
+    }
+
+    setProcessingApprovalId(app.id);
+
+    try {
+      const { data: updatedApp } = await supabase
+        .from("leave_applications")
+        .update({
+          status: "rejected",
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", app.id)
+        .select()
+        .single()
+        .throwOnError();
+
+      // Remove from assigned applications
+      setAssignedApplications((prev) =>
+        prev.filter((p) => p.id !== updatedApp.id)
+      );
+
+      // Remove from pending applications if the current user is the applicant
+      if (updatedApp.employee_id === employee.id) {
+        setPendingApplications((prev) =>
+          prev.filter((p) => p.id !== updatedApp.id)
+        );
+      }
+      alert("Leave Application Rejected Successfully.");
+    } catch (error) {
+      console.error("Failed to reject application:", error);
+      alert(error.message || "Failed to Reject Leave Application.");
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  },
+  [employee, isAdmin]
+);
 
   return (
     <div className="space-y-4">
@@ -713,7 +664,7 @@ useEffect(() => {
       {assignedApplications.length > 0 && (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm mb-4">
           <h3 className="text-lg font-semibold text-slate-900">
-            Applications Assigned To You
+            Leave Applications Assigned To You
           </h3>
           <div className="mt-4 space-y-3">
             {assignedApplications.map((a) => (
