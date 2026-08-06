@@ -3,65 +3,96 @@ import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../../supabase";
 
 function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
-  // console.log("IsAdmin: ", isAdmin);
-  // console.log("Leave Credits: ", leaveCredits);
-  // console.log("Employee: ", employee);
-  // console.log("Leave Balance: ", leaveCredits[0]?.leave_balance);
   const [isApplying, setIsApplying] = useState(false);
-  const [applicationType, setApplicationType] = useState(
-    leaveCredits[0]?.leave_type || ""
-  );
+  const [applicationType, setApplicationType] = useState("");
   const [appStart, setAppStart] = useState("");
   const [appEnd, setAppEnd] = useState("");
   const [appReason, setAppReason] = useState("");
-  const [daysRequested, setDaysRequested] = useState(1);
+  const [daysRequested, setDaysRequested] = useState(0);
   const [appError, setAppError] = useState("");
   const [appSuccess, setAppSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [assignedApplications, setAssignedApplications] = useState([]);
+  const [historyApplications, setHistoryApplications] = useState([]);
   const [approverId, setApproverId] = useState(null);
   const [approverName, setApproverName] = useState(null);
+  const [isHalfDay, setIsHalfDay] = useState(false);
+  const [processingApproval, setIsProcessingApproval] = useState(null);
+  const [processingReject, setIsProcessingReject] = useState(null);
+  const [processingCancel, setIsProcessingCancel] = useState(null);
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
+  const filteredHistoryApplications =
+  historyStatusFilter === "all"
+    ? historyApplications
+    : historyApplications.filter(
+        (app) => app.status === historyStatusFilter
+      );
 
-  const getApproverEmployeeIdByDepartment = async (department) => {
-    if (!department) return null;
-
-    const { data, error } = await supabase
+  const getApproverEmployeeIdByDepartment = async () => {
+  try {
+    // Get the approver ID
+    const { data: approverData } = await supabase
       .from("can_approve_leave")
-      .select("emp_id, fname, mname, lname")
-      .eq("dept", department)
-      .maybeSingle();
+      .select("emp_id, dept")
+      .eq("dept", employee.department)
+      .single()
+      .throwOnError();
 
-    if (error) {
-      console.error("Failed to fetch approver employee id:", error);
-      return null;
+    setApproverId(approverData.emp_id);
+
+    // Fetch the approver's name from employees
+    const { data: approver } = await supabase
+      .from("employees")
+      .select("firstname, middlename, lastname")
+      .eq("id", approverData.emp_id)
+      .single()
+      .throwOnError();
+
+    const approverName = `${approver.firstname} ${
+      approver.middlename
+        ? `${approver.middlename.charAt(0).toUpperCase()}. `
+        : ""
+    }${approver.lastname} - ${approverData.dept}`;
+    setApproverName(approverName);
+  } catch (error) {
+    console.error("Failed to fetch approver:", error);
+    setApproverId(null);
+    setApproverName(null);
+  }
+  };
+  getApproverEmployeeIdByDepartment();
+
+  useEffect(() => {
+  if (!appStart || !appEnd) {
+    setDaysRequested("");
+    return;
+  }
+
+  const start = new Date(appStart);
+  const end = new Date(appEnd);
+
+  if (end < start) {
+    setDaysRequested("");
+    return;
+  }
+
+  let workingDays = 0;
+  const current = new Date(start);
+
+  while (current <= end) {
+    const day = current.getDay();
+
+    // Monday-Friday
+    if (day >= 1 && day <= 5) {
+      workingDays++;
     }
 
-    return data ?? null;
-  };
+    current.setDate(current.getDate() + 1);
+  }
 
-
-
-useEffect(() => {
-  const fetchApproverId = async () => {
-    if (!employee?.department) return;
-
-    const data = await getApproverEmployeeIdByDepartment(employee.department);
-    setApproverId(data?.emp_id || null);
-    setApproverName(data ? `${data.fname} ${data.mname ? data.mname.charAt(0).toUpperCase() + "." : ""} ${data.lname}` : null);
-
-    // console.log(
-    //   "Approver ID:",
-    //   data?.emp_id,
-    //   "Name:",
-    //   data
-    //     ? `${data.fname} ${data.mname ? data.mname.charAt(0).toUpperCase() + "." : ""} ${data.lname}`
-    //     : "N/A"
-    // );
-  };
-
-  fetchApproverId();
-}, [employee?.department]);
+  setDaysRequested(isHalfDay ? workingDays - 0.5 : workingDays);
+}, [appStart, appEnd, isHalfDay]);
 
   useEffect(() => {
     let isMounted = true;
@@ -72,7 +103,29 @@ useEffect(() => {
         isMounted = false;
       };
     }
+    const fetchHistoryApplications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("leave_applications")
+          .select("*")
+          .eq("employee_id", employee.id)
+          .in("status", ["approved", "rejected", "cancelled"])
+          .order("created_at", { ascending: false });
 
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Failed to fetch history leave applications:", error);
+          setHistoryApplications([]);
+        } else {
+          setHistoryApplications(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching history applications:", err);
+        if (isMounted) setHistoryApplications([]);
+      }
+    };
+    fetchHistoryApplications();
     const fetchPendingApplications = async () => {
       try {
         const { data, error } = await supabase
@@ -95,72 +148,68 @@ useEffect(() => {
         if (isMounted) setPendingApplications([]);
       }
     };
-
     fetchPendingApplications();
-
-    // fetch applications that need approval (admins only)
-    // const fetchAssigned = async () => {
-    //   try {
-    //     if (!isAdmin) {
-    //       setAssignedApplications([]);
-    //       return;
-    //     }
-
-    //     const { data, error } = await supabase
-    //       .from("leave_applications")
-    //       .select("*")
-    //       .eq("status", "pending")
-    //       .eq("approved_by", employee.id)
-    //       .order("created_at", { ascending: false });
-
-    //     if (error) {
-    //       console.error("Failed to fetch assigned leave applications:", error);
-    //       setAssignedApplications([]);
-    //     } else {
-    //       setAssignedApplications(data || []);
-    //     }
-    //   } catch (err) {
-    //     console.error("Unexpected error fetching assigned applications:", err);
-    //     setAssignedApplications([]);
-    //   }
-    // };
     const fetchAssigned = async () => {
-  try {
-    if (!isAdmin) {
-      setAssignedApplications([]);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("leave_applications")
-      .select("*")
-      .eq("status", "pending")
-      .eq("approved_by", employee.id)
-      .order("created_at", { ascending: false });
+      try {
+        if (!isAdmin) {
+          setAssignedApplications([]);
+          return;
+        }
 
-    // console.log("Query Result:", data);
-    // console.log("Query Error:", error);
+        // Fetch leave applications
+        const { data: applications } = await supabase
+          .from("leave_applications")
+          .select("*")
+          .eq("status", "pending")
+          .eq("approved_by", employee.id)
+          .order("created_at", { ascending: false })
+          .throwOnError();
 
-    if (error) {
-      console.error("Failed to fetch assigned leave applications:", error);
-      setAssignedApplications([]);
-    } else {
-      // console.log("Number of Records:", data?.length);
-      // console.table(data);
+        if (!applications?.length) {
+          setAssignedApplications([]);
+          return;
+        }
 
-      setAssignedApplications(data || []);
-    }
-  } catch (err) {
-    console.error("Unexpected error fetching assigned applications:", err);
-    setAssignedApplications([]);
-  }
-};
+        // Get unique employee IDs
+        const employeeIds = [
+          ...new Set(applications.map((app) => app.employee_id)),
+        ];
 
+        // Fetch employees
+        const { data: employees } = await supabase
+          .from("employees")
+          .select("id, firstname, middlename, lastname")
+          .in("id", employeeIds)
+          .throwOnError();
+
+        // Create a lookup map
+        const employeeMap = Object.fromEntries(
+          employees.map((emp) => [emp.id, emp])
+        );
+
+        // Merge employee into each application
+        const mergedData = applications.map((app) => ({
+          ...app,
+          employee: employeeMap[app.employee_id] || null,
+        }));
+        setAssignedApplications(mergedData);
+      } catch (error) {
+        console.error("Failed to fetch assigned leave applications:", error);
+        setAssignedApplications([]);
+      }
+    };
     fetchAssigned();
-
     return () => {
       isMounted = false;
     };
   }, [employee?.id, isAdmin]);
+
+  const formatDate = (date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
 
   const resetApplicationForm = useCallback(() => {
     setApplicationType(leaveCredits[0]?.leave_type || "");
@@ -171,37 +220,6 @@ useEffect(() => {
     setAppError("");
     setAppSuccess("");
   }, [leaveCredits]);
-
-  const notifyLeaveAdmin = useCallback(async (application) => {
-    const notifyBaseUrl =
-      process.env.REACT_APP_NOTIFY_API_URL?.replace(/\/$/, "") ||
-      "http://localhost:5000";
-
-    try {
-      const response = await fetch(`${notifyBaseUrl}/api/notify-leave`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employee_id: application.employee_id,
-          leave_type: application.leave_type,
-          start_date: application.start_date,
-          end_date: application.end_date,
-          days_requested: application.days_requested,
-          reason: application.reason,
-          approved_by: application.approved_by,
-        }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Notify endpoint returned ${response.status}: ${text}`);
-      }
-    } catch (notifyError) {
-      console.error("Failed to notify leave admins:", notifyError);
-    }
-  }, []);
 
   const validateApplication = useCallback(() => {
     setAppError("");
@@ -216,9 +234,20 @@ useEffect(() => {
       return "Please enter a valid number of days.";
     return "";
   }, [applicationType, appStart, appEnd, appReason, daysRequested]);
+
   const handleSubmitApplication = useCallback(
     async (e) => {
+      const availableBalance = leaveCredits.find(
+                                                  (l) =>
+                                                    String(l.leave_type).trim().toLowerCase() ===
+                                                    String(applicationType).trim().toLowerCase()
+                                                )?.leave_balance;
+      
       e.preventDefault();
+      if(availableBalance !== undefined && Number(daysRequested) > Number(availableBalance)) {
+        setAppError(`Insufficient leave balance. You have ${availableBalance} days available for ${applicationType}.`);
+        return;
+      }
       setAppError("");
       if (!employee?.id) {
         setAppError("Unable to determine employee record. Please reload.");
@@ -246,13 +275,11 @@ useEffect(() => {
           approved_at: null,
           created_at: new Date().toISOString(),
         };
-
         const { data, error } = await supabase
           .from("leave_applications")
           .insert(payload)
-          .select()
-          .single();
-
+          .select();
+          console.log("Submit leave application response:", data.length);
         if (error) {
           console.error("Failed to save leave application:", error);
           setAppError(error.message || "Failed to save application.");
@@ -267,8 +294,6 @@ useEffect(() => {
             ...prev.filter((p) => p.id !== data.id),
           ]);
         }
-
-        await notifyLeaveAdmin(data);
         setAppSuccess("Application submitted and saved. Status: pending.");
         setIsApplying(false);
         resetApplicationForm();
@@ -279,33 +304,22 @@ useEffect(() => {
         setIsSubmitting(false);
       }
     },
-    [
-      validateApplication,
-      applicationType,
-      approverId,
-      appStart,
-      appEnd,
-      appReason,
-      daysRequested,
-      resetApplicationForm,
-      employee,
-      notifyLeaveAdmin,
-    ]
+    [leaveCredits, daysRequested, employee.id, validateApplication, applicationType, appStart, appEnd, appReason, approverId, resetApplicationForm]
   );
-
-  const [processingApprovalId, setProcessingApprovalId] = useState(null);
 
   const handleApprove = useCallback(
     async (app) => {
+      const confirmed = window.confirm(
+        "Are you sure you want to approve this leave application?"
+      );
+      if (!confirmed) return;
       if (!isAdmin) {
         console.warn("Approve attempted by non-admin");
         return;
       }
 
       if (!employee?.id) return;
-
-      setProcessingApprovalId(app.id);
-
+      setIsProcessingApproval(app.id);
       try {
         // Retrieve leave balances
         const { data: balances } = await supabase
@@ -342,7 +356,7 @@ useEffect(() => {
           .eq("id", balanceRow.id)
           .select("*")
           .throwOnError();
-
+          console.log("Update balance response:", updatedBalance.length);
         if (!updatedBalance?.length) {
           throw new Error(
             "Balance update was blocked or updated 0 rows."
@@ -357,38 +371,79 @@ useEffect(() => {
             approved_at: new Date().toISOString(),
           })
           .eq("id", app.id)
-          .select()
-          .single()
+          .select("*")
           .throwOnError();
-
+          console.log("Approve application response:", updatedApp.length);
         // Update UI
         setAssignedApplications((prev) =>
-          prev.filter((p) => p.id !== updatedApp.id)
+          prev.filter((p) => p.id !== updatedApp[0].id)
         );
-
-        if (updatedApp.employee_id === employee.id) {
-          setPendingApplications((prev) =>
-            prev
-              .map((p) => (p.id === updatedApp.id ? updatedApp : p))
-              .filter((p) => p.status === "pending")
-          );
-        }
+        setPendingApplications((prev) =>
+          prev.filter((p) => p.id !== updatedApp[0].id)
+        );
 
         alert("Application Approved Successfully.");
       } catch (error) {
         console.error("Approval failed:", error);
         alert(error.message || "Failed to approve leave application.");
       } finally {
-        setProcessingApprovalId(null);
+        setIsProcessingApproval(null);
       }
     },
     [employee, isAdmin]
   );
 
+const handleCancelApplication = async (appid) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to cancel this leave application?"
+  );
+
+  if (!confirmed) return;
+  setIsProcessingCancel(appid);
+  try {
+    const { data, error } = await supabase
+      .from("leave_applications")
+      .update({
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("id", appid)
+      .select()
+      .throwOnError();
+
+    console.log("Cancel application response:", data.length);
+    if (error) {
+      console.error("Failed to cancel application:", error);
+      alert("Failed to Cancel Application.");
+      return;
+    }
+    if (!data || data.length === 0) {
+      alert("Failed to Cancel Application. The application may not exist or you don't have permission.");
+      return;
+    }
+    setPendingApplications((prev) =>
+      prev.filter((p) => p.id !== appid)
+    );
+    setAssignedApplications((prev) =>
+      prev.filter((p) => p.id !== appid)
+    );
+    alert("Leave Application Cancelled Successfully.");
+  } catch (error) {
+    console.error("Failed to cancel application:", error);
+    alert("Failed to Cancel Application.");
+  } finally {
+    setIsProcessingCancel(null);
+  }
+};
+
 const handleReject = useCallback(
   async (app) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to reject this leave application?"
+    );
+    if (!confirmed) return;
     if (!isAdmin) {
-      console.warn("Reject attempted by non-admin");
+      console.warn("Only admins can reject leave applications.");
       return;
     }
 
@@ -396,11 +451,9 @@ const handleReject = useCallback(
       console.warn("No logged-in employee.");
       return;
     }
-
-    setProcessingApprovalId(app.id);
-
+    setIsProcessingReject(app.id);
     try {
-      const { data: updatedApp } = await supabase
+      const { data } = await supabase
         .from("leave_applications")
         .update({
           status: "rejected",
@@ -408,18 +461,17 @@ const handleReject = useCallback(
         })
         .eq("id", app.id)
         .select()
-        .single()
         .throwOnError();
-
+        console.log("Reject application response:", data.length);
       // Remove from assigned applications
       setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== updatedApp.id)
+        prev.filter((p) => p.id !== data[0].id)
       );
 
       // Remove from pending applications if the current user is the applicant
-      if (updatedApp.employee_id === employee.id) {
+      if (data.employee_id === employee.id) {
         setPendingApplications((prev) =>
-          prev.filter((p) => p.id !== updatedApp.id)
+          prev.filter((p) => p.id !== data[0].id)
         );
       }
       alert("Leave Application Rejected Successfully.");
@@ -427,7 +479,7 @@ const handleReject = useCallback(
       console.error("Failed to reject application:", error);
       alert(error.message || "Failed to Reject Leave Application.");
     } finally {
-      setProcessingApprovalId(null);
+      setIsProcessingReject(null);
     }
   },
   [employee, isAdmin]
@@ -526,12 +578,17 @@ const handleReject = useCallback(
                   <label className="block text-sm font-semibold themed-muted">
                     Leave Type
                   </label>
+
                   <select
                     value={applicationType}
                     onChange={(e) => setApplicationType(e.target.value)}
                     className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
                     style={{ border: "1px solid var(--muted)" }}
                   >
+                    <option value="" disabled>
+                      -- Please Select a Leave Type --
+                    </option>
+
                     {leaveCredits.map((l) => (
                       <option key={l.leave_type} value={l.leave_type}>
                         {l.leave_type} ({l.leave_balance ?? 0})
@@ -570,25 +627,38 @@ const handleReject = useCallback(
                   <label className="block text-sm font-semibold themed-muted">
                     Days Requested
                   </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    value={daysRequested}
-                    onChange={(e) => setDaysRequested(e.target.value)}
-                    className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                    style={{ border: "1px solid var(--muted)" }}
-                  />
+
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={daysRequested}
+                      readOnly
+                      className="flex-1 rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
+                      style={{ border: "1px solid var(--muted)" }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setIsHalfDay((prev) => !prev)}
+                      className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                        isHalfDay
+                          ? "bg-amber-600 text-white"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {isHalfDay ? "Half Day ✓" : "Half Day"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-semibold themed-muted">
-                    Approver ID and Name
+                    Approver Name
                   </label>
                   <input
                     type="text"
                     disabled
-                    value={`${approverId} - ${approverName}`}
+                    value={`${approverName}`}
                     className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
                     style={{ border: "1px solid var(--muted)" }}
                   />
@@ -629,7 +699,7 @@ const handleReject = useCallback(
                   disabled={isSubmitting}
                   className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit application"}
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
                 </button>
               </div>
             </form>
@@ -664,7 +734,7 @@ const handleReject = useCallback(
       {assignedApplications.length > 0 && (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm mb-4">
           <h3 className="text-lg font-semibold text-slate-900">
-            Leave Applications Assigned To You
+            Leave Applications - ({assignedApplications.length})
           </h3>
           <div className="mt-4 space-y-3">
             {assignedApplications.map((a) => (
@@ -675,31 +745,31 @@ const handleReject = useCallback(
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-500">
-                      {a.leave_type} — Employee: {a.employee_id}
+                      {a.leave_type} — {a.employee.lastname}, {a.employee.firstname} {a.employee.middlename ? a.employee.middlename.charAt(0).toUpperCase() + "." : ""}
                     </p>
                     <p className="font-semibold">
-                      {a.start_date} → {a.end_date} ({a.days_requested} days)
+                      {formatDate(a.start_date)} → {formatDate(a.end_date)} ({a.days_requested} days)
                     </p>
-                    <p className="text-sm text-slate-600 mt-1">{a.reason}</p>
+                    <p className="mt-1 text-sm italic text-slate-600">{a.reason}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleApprove(a)}
-                      disabled={processingApprovalId === a.id}
+                      disabled={processingApproval === a.id}
                       className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
                     >
-                      {processingApprovalId === a.id
+                      {processingApproval === a.id
                         ? "Processing..."
                         : "Approve"}
                     </button>
                     <button
                       type="button"
                       onClick={() => handleReject(a)}
-                      disabled={processingApprovalId === a.id}
+                      disabled={processingReject === a.id}
                       className="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                     >
-                      {processingApprovalId === a.id
+                      {processingReject === a.id
                         ? "Processing..."
                         : "Reject"}
                     </button>
@@ -716,6 +786,7 @@ const handleReject = useCallback(
           <h3 className="text-lg font-semibold text-slate-900">
             Pending Applications
           </h3>
+
           <div className="mt-4 space-y-3">
             {pendingApplications.map((a) => (
               <div
@@ -725,17 +796,100 @@ const handleReject = useCallback(
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-500">{a.leave_type}</p>
+
                     <p className="font-semibold">
-                      {a.start_date} → {a.end_date}
+                      {formatDate(a.start_date)} → {formatDate(a.end_date)}
                     </p>
-                    <p className="text-sm text-slate-600 mt-1">{a.reason}</p>
+
+                    <p className="mt-1 text-sm italic text-slate-600">
+                      {a.reason}
+                    </p>
                   </div>
-                  <div className="text-sm font-medium text-amber-700">
-                    {a.status}
-                  </div>
+
+                  <button
+                    type="button"
+                    disabled={processingCancel === a.id}
+                    onClick={() => handleCancelApplication(a.id)}
+                    className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                  >
+                    {processingCancel === a.id
+                        ? "Processing..."
+                        : "Cancel"}
+                  </button>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {historyApplications.length > 0 && (
+        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">
+              History Applications
+            </h3>
+
+            <select
+              value={historyStatusFilter}
+              onChange={(e) => setHistoryStatusFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            >
+              <option value="all">All</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3">
+  {filteredHistoryApplications.length === 0 ? (
+    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+      <p className="text-sm font-medium text-slate-600">
+        No applications found.
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        There are no {historyStatusFilter === "all" ? "" : historyStatusFilter} leave applications to display.
+      </p>
+    </div>
+  ) : (
+    filteredHistoryApplications.map((a) => (
+      <div
+        key={a.id}
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex items-start justify-between">
+          {/* Left Side */}
+          <div>
+            <p className="text-sm text-slate-500">{a.leave_type}</p>
+
+            <p className="font-semibold">
+              {formatDate(a.start_date)} → {formatDate(a.end_date)}
+            </p>
+
+            <p className="mt-1 text-sm italic text-slate-600">
+              {a.reason}
+            </p>
+          </div>
+
+          {/* Right Side - Status */}
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+              a.status === "approved"
+                ? "bg-green-100 text-green-700"
+                : a.status === "rejected"
+                ? "bg-red-100 text-red-700"
+                : a.status === "cancelled"
+                ? "bg-gray-100 text-gray-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {a.status}
+          </span>
+        </div>
+      </div>
+    ))
+  )}
+</div>
           </div>
         </div>
       )}
