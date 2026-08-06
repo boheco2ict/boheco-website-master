@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../../supabase";
+import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
 
 function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [isApplying, setIsApplying] = useState(false);
@@ -17,18 +18,23 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [historyApplications, setHistoryApplications] = useState([]);
   const [approverId, setApproverId] = useState(null);
   const [approverName, setApproverName] = useState(null);
+  const [approverEmail, setApproverEmail] = useState(null);
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [processingApproval, setIsProcessingApproval] = useState(null);
   const [processingReject, setIsProcessingReject] = useState(null);
   const [processingCancel, setIsProcessingCancel] = useState(null);
   const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
-  const filteredHistoryApplications =
-  historyStatusFilter === "all"
-    ? historyApplications
-    : historyApplications.filter(
-        (app) => app.status === historyStatusFilter
-      );
-
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const filteredHistoryApplications = historyStatusFilter === "all"
+                                      ? historyApplications
+                                      : historyApplications.filter(
+                                      (app) => app.status === historyStatusFilter
+                                      );
+  const openRejectModal = (application) => {
+    setSelectedApplication(application);
+    setRejectModalOpen(true);
+  };
   const getApproverEmployeeIdByDepartment = async () => {
   try {
     // Get the approver ID
@@ -41,24 +47,24 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
 
     setApproverId(approverData.emp_id);
 
-    // Fetch the approver's name from employees
+    // Fetch the approver's name and email from employees
     const { data: approver } = await supabase
       .from("employees")
-      .select("firstname, middlename, lastname")
+      .select("firstname, middlename, lastname, email")
       .eq("id", approverData.emp_id)
       .single()
       .throwOnError();
 
     const approverName = `${approver.firstname} ${
-      approver.middlename
-        ? `${approver.middlename.charAt(0).toUpperCase()}. `
-        : ""
+      approver.middlename ? `${approver.middlename.charAt(0).toUpperCase()}. ` : ""
     }${approver.lastname} - ${approverData.dept}`;
     setApproverName(approverName);
+    setApproverEmail(approver.email || null);
   } catch (error) {
     console.error("Failed to fetch approver:", error);
     setApproverId(null);
     setApproverName(null);
+    setApproverEmail(null);
   }
   };
   getApproverEmployeeIdByDepartment();
@@ -279,7 +285,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
           .from("leave_applications")
           .insert(payload)
           .select();
-          console.log("Submit leave application response:", data.length);
+
         if (error) {
           console.error("Failed to save leave application:", error);
           setAppError(error.message || "Failed to save application.");
@@ -287,13 +293,28 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
           return;
         }
 
+        const created = Array.isArray(data) ? data[0] : data;
+
         // only add to pendingApplications if the created application belongs to current employee
-        if (data.employee_id === employee.id) {
-          setPendingApplications((prev) => [
-            data,
-            ...prev.filter((p) => p.id !== data.id),
-          ]);
+        if (created && created.employee_id === employee.id) {
+          setPendingApplications((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
         }
+
+        // Open Gmail compose with approval link (uses Gmail web compose URL)
+        try {
+          if (approverEmail && created && created.id) {
+            const approvalLink = `${window.location.origin}/auth/dashboard?tab=leave&app=${created.id}`;
+            const subject = `Leave application approval - ${employee.firstname} ${employee.lastname}`;
+            const body = `Please review and approve the leave application:\n\n${approvalLink}`;
+            const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+              approverEmail
+            )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.open(mailUrl, "_blank");
+          }
+        } catch (e) {
+          console.warn("Failed to open Gmail compose:", e);
+        }
+
         setAppSuccess("Application submitted and saved. Status: pending.");
         setIsApplying(false);
         resetApplicationForm();
@@ -437,11 +458,9 @@ const handleCancelApplication = async (appid) => {
 };
 
 const handleReject = useCallback(
-  async (app) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to reject this leave application?"
-    );
-    if (!confirmed) return;
+  async (reason) => {
+    if (!selectedApplication) return;
+
     if (!isAdmin) {
       console.warn("Only admins can reject leave applications.");
       return;
@@ -451,29 +470,38 @@ const handleReject = useCallback(
       console.warn("No logged-in employee.");
       return;
     }
-    setIsProcessingReject(app.id);
+
+    setIsProcessingReject(selectedApplication.id);
+
     try {
       const { data } = await supabase
         .from("leave_applications")
         .update({
           status: "rejected",
-          approved_at: new Date().toISOString(),
+          rejection_reason: reason,
+          rejected_at: new Date().toISOString(),
         })
-        .eq("id", app.id)
+        .eq("id", selectedApplication.id)
         .select()
         .throwOnError();
-        console.log("Reject application response:", data.length);
-      // Remove from assigned applications
+
+      console.log("Reject application response:", data.length);
+
+      // Remove from the admin's assigned applications
       setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== data[0].id)
+        prev.filter((p) => p.id !== data.id)
       );
 
-      // Remove from pending applications if the current user is the applicant
+      // Remove from the employee's pending list if applicable
       if (data.employee_id === employee.id) {
         setPendingApplications((prev) =>
-          prev.filter((p) => p.id !== data[0].id)
+          prev.filter((p) => p.id !== data.id)
         );
       }
+
+      setRejectModalOpen(false);
+      setSelectedApplication(null);
+
       alert("Leave Application Rejected Successfully.");
     } catch (error) {
       console.error("Failed to reject application:", error);
@@ -482,7 +510,7 @@ const handleReject = useCallback(
       setIsProcessingReject(null);
     }
   },
-  [employee, isAdmin]
+  [employee, isAdmin, selectedApplication]
 );
 
   return (
@@ -763,9 +791,18 @@ const handleReject = useCallback(
                         ? "Processing..."
                         : "Approve"}
                     </button>
+                    <RejectApplicationReasonModal
+                      isOpen={rejectModalOpen}
+                      loading={processingReject !== null}
+                      onClose={() => {
+                        setRejectModalOpen(false);
+                        setSelectedApplication(null);
+                      }}
+                      onConfirm={handleReject}
+                    />
                     <button
                       type="button"
-                      onClick={() => handleReject(a)}
+                      onClick={() => openRejectModal(a)}
                       disabled={processingReject === a.id}
                       className="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                     >
