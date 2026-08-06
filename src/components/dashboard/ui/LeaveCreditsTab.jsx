@@ -40,17 +40,17 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     // Get the approver ID
     const { data: approverData } = await supabase
       .from("can_approve_leave")
-      .select("emp_id, dept")
+      .select("emp_id, dept, email")
       .eq("dept", employee.department)
       .single()
       .throwOnError();
-
-    setApproverId(approverData.emp_id);
+      setApproverId(approverData.emp_id);
+      setApproverEmail(approverData.email || null);
 
     // Fetch the approver's name and email from employees
     const { data: approver } = await supabase
       .from("employees")
-      .select("firstname, middlename, lastname, email")
+      .select("firstname, middlename, lastname")
       .eq("id", approverData.emp_id)
       .single()
       .throwOnError();
@@ -59,7 +59,7 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
       approver.middlename ? `${approver.middlename.charAt(0).toUpperCase()}. ` : ""
     }${approver.lastname} - ${approverData.dept}`;
     setApproverName(approverName);
-    setApproverEmail(approver.email || null);
+    console.log("Approver fetched:", approverName, approverData.email);
   } catch (error) {
     console.error("Failed to fetch approver:", error);
     setApproverId(null);
@@ -241,6 +241,77 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     return "";
   }, [applicationType, appStart, appEnd, appReason, daysRequested]);
 
+
+const sendMail = useCallback(
+  async (data) => {
+    const created = Array.isArray(data) ? data[0] : data;
+
+    // Only add to pendingApplications if the created application belongs to current employee
+    if (created && created.employee_id === employee.id) {
+      setPendingApplications((prev) => [
+        created,
+        ...prev.filter((p) => p.id !== created.id),
+      ]);
+    }
+
+    if (approverEmail && created?.id) {
+      const approvalLink = `${window.location.origin}/auth/dashboard?tab=leave&app=${created.id}`;
+      const subject = `Leave application approval - ${employee.firstname} ${employee.lastname}`;
+      const body = `Please review and approve the leave application:\n\n${approvalLink}`;
+
+      const baseUrl =
+        process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3001";
+      const apiUrl = `${baseUrl.replace(/\/$/, "")}/send-approval-email`;
+
+      try {
+        const resp = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: approverEmail,
+            subject,
+            text: body,
+          }),
+        });
+
+        if (!resp.ok) {
+          throw new Error(`Email API responded ${resp.status}`);
+        }
+
+        alert(`Notification email sent to ${approverEmail}`);
+      } catch (sendErr) {
+        console.warn(
+          "Automatic email send failed, falling back to Gmail compose:",
+          sendErr
+        );
+
+        try {
+          const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+            approverEmail
+          )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+          window.open(mailUrl, "_blank");
+
+          alert(
+            "Automatic email failed; Gmail compose has been opened as a fallback."
+          );
+        } catch (e) {
+          console.error("Failed to open Gmail compose:", e);
+
+          alert(
+            "Failed to notify the approver automatically. Please contact them manually."
+          );
+        }
+      }
+    }
+  },
+  [approverEmail, employee, setPendingApplications]
+);
+
+
+  
   const handleSubmitApplication = useCallback(
     async (e) => {
       const availableBalance = leaveCredits.find(
@@ -293,28 +364,13 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
           return;
         }
 
-        const created = Array.isArray(data) ? data[0] : data;
-
         // only add to pendingApplications if the created application belongs to current employee
-        if (created && created.employee_id === employee.id) {
-          setPendingApplications((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+        if (data.employee_id === employee.id) {
+          setPendingApplications((prev) => [
+            data,
+            ...prev.filter((p) => p.id !== data.id),
+          ]);
         }
-
-        // Open Gmail compose with approval link (uses Gmail web compose URL)
-        try {
-          if (approverEmail && created && created.id) {
-            const approvalLink = `${window.location.origin}/auth/dashboard?tab=leave&app=${created.id}`;
-            const subject = `Leave application approval - ${employee.firstname} ${employee.lastname}`;
-            const body = `Please review and approve the leave application:\n\n${approvalLink}`;
-            const mailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-              approverEmail
-            )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            window.open(mailUrl, "_blank");
-          }
-        } catch (e) {
-          console.warn("Failed to open Gmail compose:", e);
-        }
-
         setAppSuccess("Application submitted and saved. Status: pending.");
         setIsApplying(false);
         resetApplicationForm();
