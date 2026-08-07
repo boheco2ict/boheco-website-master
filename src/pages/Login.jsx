@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 
 function Login() {
@@ -10,13 +10,17 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from
+  ? location.state.from.pathname + location.state.from.search
+  : "/dashboard";
 
   useEffect(() => {
     const checkStatus = async () => {
       const { data } = await supabase.auth.getSession();
 
       if (data.session) {
-        navigate("/dashboard");
+        navigate(from, { replace: true });
         return;
       }
     };
@@ -48,7 +52,7 @@ function Login() {
       }
 
       if (data.session) {
-        navigate("/dashboard");
+        navigate(from, { replace: true });
       }
     } catch (error) {
       setMsg("Login failed");

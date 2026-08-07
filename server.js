@@ -31,11 +31,7 @@ app.post("/send-approval-email", async (req, res) => {
   try {
     const { to, subject, text } = req.body;
 
-    console.log("========== EMAIL REQUEST ==========");
-    console.log("To:", to);
-    console.log("Subject:", subject);
-
-    if (!to || !subject || !text) {
+    if (!to || !subject || (!text)) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields.",
@@ -43,14 +39,19 @@ app.post("/send-approval-email", async (req, res) => {
     }
 
     const info = await transporter.sendMail({
-      from: `"Leave Management System" <${process.env.EMAIL_USER}>`,
+      from: "Leave Application System",
       to,
       subject,
       text,
     });
 
-    console.log("✅ Email sent successfully!");
-    console.log("Message ID:", info.messageId);
+    if (!info || !info.messageId) {
+      throw new Error("Failed to send email.");
+    }
+    if (info) {
+      console.log("✅ Email sent successfully", info);
+
+    }
 
     return res.status(200).json({
       success: true,
@@ -67,7 +68,7 @@ app.post("/send-approval-email", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORTMAILER || 3005;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

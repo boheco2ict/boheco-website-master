@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../../supabase";
 import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
+import Pagination from "../../Pagination";
 
 function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [isApplying, setIsApplying] = useState(false);
@@ -26,11 +27,56 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
+
+  const ITEMS_PER_PAGE = 5;
+
+  // Page state for each list
+  const [assignedPage, setAssignedPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+
+  // ====================
+  // Assigned Applications
+  // ====================
+  const assignedTotalPages = Math.ceil(
+    assignedApplications.length / ITEMS_PER_PAGE
+  );
+
+  const paginatedAssignedApplications = assignedApplications.slice(
+    (assignedPage - 1) * ITEMS_PER_PAGE,
+    assignedPage * ITEMS_PER_PAGE
+  );
+
+  // ====================
+  // Pending Applications
+  // ====================
+  const pendingTotalPages = Math.ceil(
+    pendingApplications.length / ITEMS_PER_PAGE
+  );
+
+  const paginatedPendingApplications = pendingApplications.slice(
+    (pendingPage - 1) * ITEMS_PER_PAGE,
+    pendingPage * ITEMS_PER_PAGE
+  );
+
+  // ====================
+  // History Applications
+  // ====================
   const filteredHistoryApplications = historyStatusFilter === "all"
-                                      ? historyApplications
-                                      : historyApplications.filter(
-                                      (app) => app.status === historyStatusFilter
-                                      );
+                                    ? historyApplications
+                                    : historyApplications.filter(
+                                    (app) => app.status === historyStatusFilter
+                                    );
+
+  const historyTotalPages = Math.ceil(
+    filteredHistoryApplications.length / ITEMS_PER_PAGE
+  );
+
+  const paginatedHistoryApplications = filteredHistoryApplications.slice(
+    (historyPage - 1) * ITEMS_PER_PAGE,
+    historyPage * ITEMS_PER_PAGE
+  );
+
   const openRejectModal = (application) => {
     setSelectedApplication(application);
     setRejectModalOpen(true);
@@ -51,30 +97,42 @@ const sendMail = useCallback(
 
     const approvalLink = `${window.location.origin}/dashboard?tab=leave`;
 
-    const subject = `Leave Application Approval - ${employee.firstname} ${employee.lastname}`;
+    const subject = `Leave Application Approval for ${employee.firstname} ${employee.middlename?.charAt(0).toUpperCase()}. ${employee.lastname}`;
 
-    const body = `
-A new leave application has been submitted.
+    const text = `
+    Dear Approver,
 
-Employee: ${employee.firstname} ${employee.lastname}
-Leave Type: ${created.leave_type}
-Start Date: ${created.start_date}
-End Date: ${created.end_date}
-Days Requested: ${created.days_requested}
-Reason:
-${created.reason}
+    A new leave application has been submitted and is awaiting your review and approval.
 
-Review the application here:
-${approvalLink}
-`;
+    ==================================================
+    LEAVE APPLICATION DETAILS
+    ==================================================
+
+    Employee Name : ${employee.firstname} ${employee.lastname}
+    Leave Type         : ${created.leave_type}
+    Start Date           : ${formatDate(created.start_date)}
+    End Date            : ${formatDate(created.end_date)}
+    Duration             : ${created.days_requested} day(s)
+    Reason              : ${created.reason}
+
+    Please review this leave application by visiting the link below:
+
+    [-- ${approvalLink} --]
+
+    After reviewing the request, you may approve or reject it based on your organization's leave policy.
+
+    If you have any questions regarding this application, please contact the employee directly.
+
+    --------------------------------------------------
+    This is an automated email. Please do not reply to this message.
+    `;
 
     const apiUrl = `${
-      (process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3001").replace(/\/$/, "")
+      (process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3005").replace(/\/$/, "")
     }/send-approval-email`;
 
     try {
-      console.log("📤 Sending email...");
-      console.log("API:", apiUrl);
+      // console.log("📤 Sending email...");
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -84,17 +142,14 @@ ${approvalLink}
         body: JSON.stringify({
           to: approverEmail,
           subject,
-          text: body,
+          text,
         }),
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Unknown email error.");
-      }
+      console.log("Email sent response: ", result.success);
     } catch (error) {
-      console.error("Message:", error.message);
+      console.error("❌ Failed to send email:", error);
     }
   },
   [approverEmail, employee]
@@ -133,6 +188,48 @@ ${approvalLink}
     }
   };
   getApproverEmployeeIdByDepartment();
+  useEffect(() => {
+    // Assigned Applications
+    const assignedPages = Math.max(
+      1,
+      Math.ceil(assignedApplications.length / ITEMS_PER_PAGE)
+    );
+
+    if (assignedPage > assignedPages) {
+      setAssignedPage(assignedPages);
+    }
+
+    // Pending Applications
+    const pendingPages = Math.max(
+      1,
+      Math.ceil(pendingApplications.length / ITEMS_PER_PAGE)
+    );
+
+    if (pendingPage > pendingPages) {
+      setPendingPage(pendingPages);
+    }
+
+    // History Applications (Filtered)
+    const historyPages = Math.max(
+      1,
+      Math.ceil(filteredHistoryApplications.length / ITEMS_PER_PAGE)
+    );
+
+    if (historyPage > historyPages) {
+      setHistoryPage(historyPages);
+    }
+  }, [
+    assignedApplications.length,
+    pendingApplications.length,
+    filteredHistoryApplications.length,
+    assignedPage,
+    pendingPage,
+    historyPage,
+  ]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historyStatusFilter]);
 
   useEffect(() => {
   if (!appStart || !appEnd) {
@@ -306,78 +403,6 @@ ${approvalLink}
     return "";
   }, [applicationType, appStart, appEnd, appReason, daysRequested]);
 
-  // const handleSubmitApplication = useCallback(
-  //   async (e) => {
-  //     const availableBalance = leaveCredits.find(
-  //                                                 (l) =>
-  //                                                   String(l.leave_type).trim().toLowerCase() ===
-  //                                                   String(applicationType).trim().toLowerCase()
-  //                                               )?.leave_balance;
-      
-  //     e.preventDefault();
-  //     if(availableBalance !== undefined && Number(daysRequested) > Number(availableBalance)) {
-  //       setAppError(`Insufficient leave balance. You have ${availableBalance} days available for ${applicationType}.`);
-  //       return;
-  //     }
-  //     setAppError("");
-  //     if (!employee?.id) {
-  //       setAppError("Unable to determine employee record. Please reload.");
-  //       return;
-  //     }
-
-  //     const err = validateApplication();
-  //     if (err) {
-  //       setAppError(err);
-  //       return;
-  //     }
-
-  //     setIsSubmitting(true);
-
-  //     try {
-  //       const payload = {
-  //         employee_id: employee.id,
-  //         leave_type: applicationType,
-  //         start_date: appStart,
-  //         end_date: appEnd,
-  //         days_requested: Number(daysRequested),
-  //         reason: appReason.trim(),
-  //         status: "pending",
-  //         approved_by: approverId || null,
-  //         approved_at: null,
-  //         created_at: new Date().toISOString(),
-  //       };
-  //       const { data, error } = await supabase
-  //         .from("leave_applications")
-  //         .insert(payload)
-  //         .select();
-
-  //       if (error) {
-  //         console.error("Failed to save leave application:", error);
-  //         setAppError(error.message || "Failed to save application.");
-  //         setIsSubmitting(false);
-  //         return;
-  //       }
-
-  //       // only add to pendingApplications if the created application belongs to current employee
-  //       if (data.employee_id === employee.id) {
-  //         setPendingApplications((prev) => [
-  //           data,
-  //           ...prev.filter((p) => p.id !== data.id),
-  //         ]);
-  //       }
-  //       setAppSuccess("Application submitted and saved. Status: pending.");
-  //       setIsApplying(false);
-  //       resetApplicationForm();
-  //     } catch (ex) {
-  //       console.error(ex);
-  //       setAppError("An unexpected error occurred while submitting.");
-  //     } finally {
-  //       setIsSubmitting(false);
-  //     }
-  //   },
-  //   [leaveCredits, daysRequested, employee.id, validateApplication, applicationType, appStart, appEnd, appReason, approverId, resetApplicationForm]
-  // );
-
 const handleSubmitApplication = useCallback(
   async (e) => {
     e.preventDefault();
@@ -428,14 +453,13 @@ const handleSubmitApplication = useCallback(
         created_at: new Date().toISOString(),
       };
 
-      console.log("Submitting leave application...");
-      console.log(payload);
+      // console.log("Submitting leave application...");
+      // console.log(payload);
 
       const { data, error } = await supabase
         .from("leave_applications")
         .insert(payload)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error("❌ Failed to save leave application:", error);
@@ -443,25 +467,22 @@ const handleSubmitApplication = useCallback(
         return;
       }
 
-      console.log("✅ Leave application saved:", data);
+      console.log("Leave filing application response:", data.length);
 
       // Automatically send email to the approver
       try {
-        console.log("📧 Sending approval email...");
         await sendMail(data);
-        console.log("✅ Approval email sent.");
       } catch (mailError) {
         console.error("❌ Failed to send approval email:", mailError);
       }
 
       // Update pending applications list
-      if (data.employee_id === employee.id) {
+      if (data[0].employee_id === employee.id) {
         setPendingApplications((prev) => [
-          data,
-          ...prev.filter((p) => p.id !== data.id),
+          data[0],
+          ...prev.filter((p) => p.id !== data[0].id),
         ]);
       }
-
       setAppSuccess("Application submitted and saved. Status: pending.");
       setIsApplying(false);
       resetApplicationForm();
@@ -924,7 +945,7 @@ const handleReject = useCallback(
             Leave Applications - ({assignedApplications.length})
           </h3>
           <div className="mt-4 space-y-3">
-            {assignedApplications.map((a) => (
+            {paginatedAssignedApplications.map((a) => (
               <div
                 key={a.id}
                 className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -935,9 +956,11 @@ const handleReject = useCallback(
                       {a.leave_type} — {a.employee.lastname}, {a.employee.firstname} {a.employee.middlename ? a.employee.middlename.charAt(0).toUpperCase() + "." : ""}
                     </p>
                     <p className="font-semibold">
-                      {formatDate(a.start_date)} → {formatDate(a.end_date)} ({a.days_requested} days)
+                      {formatDate(a.start_date)} → {formatDate(a.end_date)} - ({a.days_requested} {a.days_requested === 1 ? "day" : "days"})
                     </p>
-                    <p className="mt-1 text-sm italic text-slate-600">{a.reason}</p>
+                    <p className="mt-1 text-sm italic text-slate-600">
+                      Leave Reason: {a.reason}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -974,17 +997,27 @@ const handleReject = useCallback(
               </div>
             ))}
           </div>
+          <Pagination
+            currentPage={assignedPage}
+            totalPages={assignedTotalPages}
+            onPrevious={() =>
+              setAssignedPage((page) => Math.max(page - 1, 1))
+            }
+            onNext={() =>
+              setAssignedPage((page) => Math.min(page + 1, assignedTotalPages))
+            }
+          />
         </div>
       )}
 
       {pendingApplications.length > 0 && (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">
-            Pending Applications
+            Pending Leave Applications ({pendingApplications.length})
           </h3>
 
           <div className="mt-4 space-y-3">
-            {pendingApplications.map((a) => (
+            {paginatedPendingApplications.map((a) => (
               <div
                 key={a.id}
                 className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -994,11 +1027,11 @@ const handleReject = useCallback(
                     <p className="text-sm text-slate-500">{a.leave_type}</p>
 
                     <p className="font-semibold">
-                      {formatDate(a.start_date)} → {formatDate(a.end_date)}
+                      {formatDate(a.start_date)} → {formatDate(a.end_date)} - ({a.days_requested} {a.days_requested === 1 ? "day" : "days"})
                     </p>
 
                     <p className="mt-1 text-sm italic text-slate-600">
-                      {a.reason}
+                      Leave Reason: {a.reason}
                     </p>
                   </div>
 
@@ -1006,7 +1039,7 @@ const handleReject = useCallback(
                     type="button"
                     disabled={processingCancel === a.id}
                     onClick={() => handleCancelApplication(a.id)}
-                    className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                    className="rounded-md bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-700"
                   >
                     {processingCancel === a.id
                         ? "Processing..."
@@ -1016,13 +1049,23 @@ const handleReject = useCallback(
               </div>
             ))}
           </div>
+          <Pagination
+            currentPage={pendingPage}
+            totalPages={pendingTotalPages}
+            onPrevious={() =>
+              setPendingPage((page) => Math.max(page - 1, 1))
+            }
+            onNext={() =>
+              setPendingPage((page) => Math.min(page + 1, pendingTotalPages))
+            }
+          />
         </div>
       )}
       {historyApplications.length > 0 && (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-slate-900">
-              History Applications
+              Leave Application History ({filteredHistoryApplications.length})
             </h3>
 
             <select
@@ -1038,54 +1081,67 @@ const handleReject = useCallback(
           </div>
           <div className="mt-4 space-y-3">
             <div className="mt-4 space-y-3">
-  {filteredHistoryApplications.length === 0 ? (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-      <p className="text-sm font-medium text-slate-600">
-        No applications found.
-      </p>
-      <p className="mt-1 text-xs text-slate-500">
-        There are no {historyStatusFilter === "all" ? "" : historyStatusFilter} leave applications to display.
-      </p>
-    </div>
-  ) : (
-    filteredHistoryApplications.map((a) => (
-      <div
-        key={a.id}
-        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-      >
-        <div className="flex items-start justify-between">
-          {/* Left Side */}
-          <div>
-            <p className="text-sm text-slate-500">{a.leave_type}</p>
+              {filteredHistoryApplications.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <p className="text-sm font-medium text-slate-600">
+                    No applications found.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    There are no {historyStatusFilter === "all" ? "" : historyStatusFilter} leave applications to display.
+                  </p>
+                </div>
+              ) : (
+                paginatedHistoryApplications.map((a) => (
+                  <div
+                    key={a.id}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between">
+                      {/* Left Side */}
+                      <div>
+                        <p className="text-sm text-slate-500">{a.leave_type}</p>
 
-            <p className="font-semibold">
-              {formatDate(a.start_date)} → {formatDate(a.end_date)}
-            </p>
+                        <p className="font-semibold">
+                          {formatDate(a.start_date)} → {formatDate(a.end_date)} - ({a.days_requested} {a.days_requested === 1 ? "day" : "days"})
+                        </p>
 
-            <p className="mt-1 text-sm italic text-slate-600">
-              {a.reason}
-            </p>
-          </div>
+                        <p className="mt-1 text-sm italic text-slate-600">
+                          Leave Reason: {a.reason}<br></br>
+                          {a.status === "rejected" ?  `Rejection Reason: ${a.rejection_reason}` : ""}
+                        </p>
+                      </div>
 
-          {/* Right Side - Status */}
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-              a.status === "approved"
-                ? "bg-green-100 text-green-700"
-                : a.status === "rejected"
-                ? "bg-red-100 text-red-700"
-                : a.status === "cancelled"
-                ? "bg-gray-100 text-gray-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {a.status}
-          </span>
-        </div>
-      </div>
-    ))
-  )}
-</div>
+                      {/* Right Side - Status */}
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                          a.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : a.status === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : a.status === "cancelled"
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {a.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <Pagination
+              currentPage={historyPage}
+              totalPages={historyTotalPages}
+              onPrevious={() =>
+                setHistoryPage((page) => Math.max(page - 1, 1))
+              }
+              onNext={() =>
+                setHistoryPage((page) =>
+                  Math.min(page + 1, historyTotalPages)
+                )
+              }
+            />
           </div>
         </div>
       )}
