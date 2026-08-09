@@ -82,79 +82,78 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     setRejectModalOpen(true);
   };
 
-const sendMail = useCallback(
-  async (data) => {
-    const created = Array.isArray(data) ? data[0] : data;
-    if (!created) {
-      console.error("❌ No application data received.");
-      return;
-    }
+  const sendMail = useCallback(
+    async (data) => {
+      const created = Array.isArray(data) ? data[0] : data;
+      if (!created) {
+        console.error("❌ No application data received.");
+        return;
+      }
 
-    if (!approverEmail) {
-      console.error("❌ Approver email is missing.");
-      return;
-    }
+      if (!approverEmail) {
+        console.error("❌ Approver email is missing.");
+        return;
+      }
 
-    const approvalLink = `${window.location.origin}/dashboard?tab=leave`;
+      const approvalLink = `${window.location.origin}/review-leave-application?id=${created.id}`;
 
-    const subject = `Leave Application Approval for ${employee.firstname} ${employee.middlename?.charAt(0).toUpperCase()}. ${employee.lastname}`;
+      const subject = `Leave Application Approval for ${employee.firstname} ${employee.middlename?.charAt(0).toUpperCase()}. ${employee.lastname}`;
 
-    const text = `
-    Dear Approver,
+      const text = `
+      Dear Approver,
 
-    A new leave application has been submitted and is awaiting your review and approval.
+      A new leave application has been submitted and is awaiting your review and approval.
 
-    ==================================================
-    LEAVE APPLICATION DETAILS
-    ==================================================
+      ==================================================
+      LEAVE APPLICATION DETAILS
+      ==================================================
 
-    Employee Name : ${employee.firstname} ${employee.lastname}
-    Leave Type         : ${created.leave_type}
-    Start Date           : ${formatDate(created.start_date)}
-    End Date            : ${formatDate(created.end_date)}
-    Duration             : ${created.days_requested} day(s)
-    Reason              : ${created.reason}
+      Employee Name : ${employee.firstname} ${employee.lastname}
+      Leave Type         : ${created.leave_type}
+      Start Date           : ${formatDate(created.start_date)}
+      End Date            : ${formatDate(created.end_date)}
+      Duration             : ${created.days_requested} day(s)
+      Reason              : ${created.reason}
 
-    Please review this leave application by visiting the link below:
+      Please review this leave application by visiting the link below:
 
-    [-- ${approvalLink} --]
+      [-- ${approvalLink} --]
 
-    After reviewing the request, you may approve or reject it based on your organization's leave policy.
+      After reviewing the request, you may approve or reject it based on your organization's leave policy.
 
-    If you have any questions regarding this application, please contact the employee directly.
+      If you have any questions regarding this application, please contact the employee directly.
 
-    --------------------------------------------------
-    This is an automated email. Please do not reply to this message.
-    `;
+      --------------------------------------------------
+      This is an automated email. Please do not reply to this message.
+      `;
 
-    const apiUrl = `${
-      (process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3005").replace(/\/$/, "")
-    }/send-approval-email`;
+      const apiUrl = `${
+        (process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3005").replace(/\/$/, "")
+      }/send-approval-email`;
 
-    try {
-      // console.log("📤 Sending email...");
+      try {
+        // console.log("📤 Sending email...");
 
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: approverEmail,
-          subject,
-          text,
-        }),
-      });
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: approverEmail,
+            subject,
+            text,
+          }),
+        });
 
-      const result = await response.json();
-      console.log("Email sent response: ", result.success);
-    } catch (error) {
-      console.error("❌ Failed to send email:", error);
-    }
-  },
-  [approverEmail, employee]
-);
-
+        const result = await response.json();
+        console.log("Email sent response: ", result.success);
+      } catch (error) {
+        console.error("❌ Failed to send email:", error);
+      }
+    },
+    [approverEmail, employee]
+  );
 
   const getApproverEmployeeIdByDepartment = async () => {
     try {
@@ -187,7 +186,13 @@ const sendMail = useCallback(
       setApproverEmail(null);
     }
   };
-  getApproverEmployeeIdByDepartment();
+  useEffect(() => {
+    if (employee?.department) {
+      getApproverEmployeeIdByDepartment();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employee.department]);
+
   useEffect(() => {
     // Assigned Applications
     const assignedPages = Math.max(

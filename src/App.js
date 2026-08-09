@@ -22,6 +22,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import InstallPrompt from "./components/InstallPrompt";
+import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
 
 function App() {
   const location = useLocation();
@@ -73,6 +74,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EmployeeManual />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="review-leave-application"
+            element={
+              <ProtectedRoute>
+                <ReviewApplication />
               </ProtectedRoute>
             }
           />
