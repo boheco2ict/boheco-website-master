@@ -61,6 +61,14 @@ function App() {
             }
           />
           <Route
+            path="review-application/:id"
+            element={
+              <ProtectedRoute>
+                <ReviewApplication />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="settings"
             element={
               <ProtectedRoute>
@@ -74,14 +82,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <EmployeeManual />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="review-leave-application"
-            element={
-              <ProtectedRoute>
-                <ReviewApplication />
               </ProtectedRoute>
             }
           />

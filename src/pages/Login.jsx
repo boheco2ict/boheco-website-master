@@ -26,7 +26,7 @@ function Login() {
     };
 
     checkStatus();
-  }, [navigate]);
+  }, [from, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

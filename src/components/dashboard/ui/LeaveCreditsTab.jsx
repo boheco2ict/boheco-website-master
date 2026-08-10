@@ -17,8 +17,10 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
   const [pendingApplications, setPendingApplications] = useState([]);
   const [assignedApplications, setAssignedApplications] = useState([]);
   const [historyApplications, setHistoryApplications] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [approverId, setApproverId] = useState(null);
   const [approverName, setApproverName] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [approverEmail, setApproverEmail] = useState(null);
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [processingApproval, setIsProcessingApproval] = useState(null);
@@ -81,79 +83,6 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     setSelectedApplication(application);
     setRejectModalOpen(true);
   };
-
-  const sendMail = useCallback(
-    async (data) => {
-      const created = Array.isArray(data) ? data[0] : data;
-      if (!created) {
-        console.error("❌ No application data received.");
-        return;
-      }
-
-      if (!approverEmail) {
-        console.error("❌ Approver email is missing.");
-        return;
-      }
-
-      const approvalLink = `${window.location.origin}/review-leave-application?id=${created.id}`;
-
-      const subject = `Leave Application Approval for ${employee.firstname} ${employee.middlename?.charAt(0).toUpperCase()}. ${employee.lastname}`;
-
-      const text = `
-      Dear Approver,
-
-      A new leave application has been submitted and is awaiting your review and approval.
-
-      ==================================================
-      LEAVE APPLICATION DETAILS
-      ==================================================
-
-      Employee Name : ${employee.firstname} ${employee.lastname}
-      Leave Type         : ${created.leave_type}
-      Start Date           : ${formatDate(created.start_date)}
-      End Date            : ${formatDate(created.end_date)}
-      Duration             : ${created.days_requested} day(s)
-      Reason              : ${created.reason}
-
-      Please review this leave application by visiting the link below:
-
-      [-- ${approvalLink} --]
-
-      After reviewing the request, you may approve or reject it based on your organization's leave policy.
-
-      If you have any questions regarding this application, please contact the employee directly.
-
-      --------------------------------------------------
-      This is an automated email. Please do not reply to this message.
-      `;
-
-      const apiUrl = `${
-        (process.env.REACT_APP_EMAIL_API_URL || "http://localhost:3005").replace(/\/$/, "")
-      }/send-approval-email`;
-
-      try {
-        // console.log("📤 Sending email...");
-
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: approverEmail,
-            subject,
-            text,
-          }),
-        });
-
-        const result = await response.json();
-        console.log("Email sent response: ", result.success);
-      } catch (error) {
-        console.error("❌ Failed to send email:", error);
-      }
-    },
-    [approverEmail, employee]
-  );
 
   const getApproverEmployeeIdByDepartment = async () => {
     try {
@@ -408,6 +337,103 @@ function LeaveCreditsTab({ isAdmin, leaveCredits, employee, setEmployee }) {
     return "";
   }, [applicationType, appStart, appEnd, appReason, daysRequested]);
 
+// const handleSubmitApplication = useCallback(
+//   async (e) => {
+//     e.preventDefault();
+
+//     const availableBalance = leaveCredits.find(
+//       (l) =>
+//         String(l.leave_type).trim().toLowerCase() ===
+//         String(applicationType).trim().toLowerCase()
+//     )?.leave_balance;
+
+//     if (
+//       availableBalance !== undefined &&
+//       Number(daysRequested) > Number(availableBalance)
+//     ) {
+//       setAppError(
+//         `Insufficient leave balance. You have ${availableBalance} days available for ${applicationType}.`
+//       );
+//       return;
+//     }
+
+//     setAppError("");
+
+//     if (!employee?.id) {
+//       setAppError("Unable to determine employee record. Please reload.");
+//       return;
+//     }
+
+//     const err = validateApplication();
+
+//     if (err) {
+//       setAppError(err);
+//       return;
+//     }
+
+//     setIsSubmitting(true);
+
+//     try {
+//       const payload = {
+//         employee_id: employee.id,
+//         leave_type: applicationType,
+//         start_date: appStart,
+//         end_date: appEnd,
+//         days_requested: Number(daysRequested),
+//         reason: appReason.trim(),
+//         status: "pending",
+//         approved_by: approverId || null,
+//         approved_at: null,
+//         created_at: new Date().toISOString(),
+//       };
+
+//       // console.log("Submitting leave application...");
+//       // console.log(payload);
+
+//       const { data, error } = await supabase
+//         .from("leave_applications")
+//         .insert(payload)
+//         .select();
+
+//       if (error) {
+//         console.error("❌ Failed to save leave application:", error);
+//         setAppError(error.message || "Failed to save application.");
+//         return;
+//       }
+
+//       console.log("Leave filing application response:", data.length);
+
+//       // Update pending applications list
+//       if (data[0].employee_id === employee.id) {
+//         setPendingApplications((prev) => [
+//           data[0],
+//           ...prev.filter((p) => p.id !== data[0].id),
+//         ]);
+//       }
+//       setAppSuccess("Application submitted and saved. Status: pending.");
+//       setIsApplying(false);
+//       resetApplicationForm();
+//     } catch (ex) {
+//       console.error("Unexpected error:", ex);
+//       setAppError("An unexpected error occurred while submitting.");
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   },
+//   [
+//     leaveCredits,
+//     daysRequested,
+//     employee,
+//     applicationType,
+//     appStart,
+//     appEnd,
+//     appReason,
+//     approverId,
+//     validateApplication,
+//     resetApplicationForm
+//   ]
+// );
+
 const handleSubmitApplication = useCallback(
   async (e) => {
     e.preventDefault();
@@ -431,7 +457,9 @@ const handleSubmitApplication = useCallback(
     setAppError("");
 
     if (!employee?.id) {
-      setAppError("Unable to determine employee record. Please reload.");
+      setAppError(
+        "Unable to determine employee record. Please reload."
+      );
       return;
     }
 
@@ -453,47 +481,103 @@ const handleSubmitApplication = useCallback(
         days_requested: Number(daysRequested),
         reason: appReason.trim(),
         status: "pending",
-        approved_by: approverId || null,
+
+        // Keep this NULL when the application is first filed.
+        // approved_by should identify who actually approved it.
+        approved_by: null,
         approved_at: null,
+
         created_at: new Date().toISOString(),
       };
 
-      // console.log("Submitting leave application...");
-      // console.log(payload);
-
+      // -----------------------------------------
+      // 1. Save leave application
+      // -----------------------------------------
       const { data, error } = await supabase
         .from("leave_applications")
         .insert(payload)
-        .select();
+        .select()
+        .single();
 
       if (error) {
-        console.error("❌ Failed to save leave application:", error);
-        setAppError(error.message || "Failed to save application.");
+        console.error(
+          "❌ Failed to save leave application:",
+          error
+        );
+
+        setAppError(
+          error.message || "Failed to save application."
+        );
+
         return;
       }
 
-      console.log("Leave filing application response:", data.length);
+      console.log(
+        "✅ Leave application saved:",
+        data
+      );
 
-      // Automatically send email to the approver
-      try {
-        await sendMail(data);
-      } catch (mailError) {
-        console.error("❌ Failed to send approval email:", mailError);
+      // -----------------------------------------
+      // 2. Send email notification to approver
+      // -----------------------------------------
+      const { data: emailData, error: emailError } =
+      await supabase.functions.invoke(
+        "send-leave-email",
+        {
+          body: {
+            applicationId: data.id,
+            origin: window.location.origin,
+          },
+        }
+      );
+
+      if (emailError) {
+        console.error(
+          "⚠️ Leave application was saved, but email notification failed:",
+          emailError
+        );
+
+        setAppSuccess(
+          "Application submitted and saved, but the approver email notification could not be sent."
+        );
+      } else {
+        console.log(
+          "✅ Approver email sent:",
+          emailData
+        );
+
+        setAppSuccess(
+          "Application submitted successfully. The approver has been notified by email."
+        );
       }
 
-      // Update pending applications list
-      if (data[0].employee_id === employee.id) {
+      // -----------------------------------------
+      // 3. Update pending applications list
+      // -----------------------------------------
+      if (data.employee_id === employee.id) {
         setPendingApplications((prev) => [
-          data[0],
-          ...prev.filter((p) => p.id !== data[0].id),
+          data,
+          ...prev.filter(
+            (p) => p.id !== data.id
+          ),
         ]);
       }
-      setAppSuccess("Application submitted and saved. Status: pending.");
+
+      // -----------------------------------------
+      // 4. Close/reset form
+      // -----------------------------------------
       setIsApplying(false);
       resetApplicationForm();
+
     } catch (ex) {
-      console.error("Unexpected error:", ex);
-      setAppError("An unexpected error occurred while submitting.");
+      console.error(
+        "Unexpected error:",
+        ex
+      );
+
+      setAppError(
+        "An unexpected error occurred while submitting."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -506,10 +590,8 @@ const handleSubmitApplication = useCallback(
     appStart,
     appEnd,
     appReason,
-    approverId,
     validateApplication,
     resetApplicationForm,
-    sendMail,
   ]
 );
 

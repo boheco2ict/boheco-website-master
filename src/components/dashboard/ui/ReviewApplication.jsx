@@ -1,195 +1,190 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { supabase } from "../../../supabase";
+import {
+  useParams,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
+import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
+import {
+  getLeaveApplicationById,
+  getEmployeeByUserId,
+} from "../../../services/getservices.js";
+import {
+  rejectApplication,
+  approveApplication
+} from "../../../services/updateservices.js";
 
 export default function ReviewApplication() {
-  const [searchParams] = useSearchParams();
-  const application_id = searchParams.get("id");
-  const [loginData, setLoginData] = useState([]);
-  const [application, setApplications] = useState([]);
-  const [loading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [employee, setEmployee] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [loadingfetchE, setIsLoadingE] = useState(true);
+  const [loadingfetchA, setIsLoadingA] = useState(true);
+  const [processingReject, setIsProcessingReject] = useState(false);
+  const [processingApproval, setIsProcessingApprove] = useState(false);
   const { user } = useAuth();
-
-  const fetchUser = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("employees")
-        .select(
-          `
-          id,
-          empnumber,
-          firstname,
-          middlename,
-          lastname,
-          department,
-          position,
-          empstatus,
-          address,
-          phone1,
-          phone2,
-          birthdate,
-          tin,
-          sss,
-          pagibig,
-          philhealth,
-          datehired,
-          basicrate,
-          riceallowance,
-          role,
-          user_id,
-          employee_leave_balances (
-            leave_type,
-            leave_balance
-          )
-          `
-        )
-        .eq("user_id", user.id)
-        .single();
-      // Supabase returned an error
-      if (error) {
-        console.error("Error fetching user:", error);
-        return;
-      }
-
-      // Successfully fetched user
-      setLoginData(data);
-
-    } catch (error) {
-      // Unexpected error
-      setLoginData([]);
-      console.error("Unexpected error fetching user:", error);
-
-    } finally {
-      // Always stop loading
-      setIsLoading(false);
-    }
-  };
-
-  const fetchApplication = async () => {
-    try {
-      // Fetch leave applications
-      const { data: applications } = await supabase
-        .from("leave_applications")
-        .select()
-        .eq("status", "pending")
-        .eq("status", "pending")
-        .eq("approved_by", loginData.id)
-        .order("created_at", { ascending: false })
-        .throwOnError();
-
-      if (!applications?.length) {
-        setApplications([]);
-        return;
-      }
-
-      // Get unique employee IDs
-      const employeeIds = [
-        ...new Set(applications.map((app) => app.employee_id)),
-      ];
-
-      // Fetch employees
-      const { data: employees } = await supabase
-        .from("employees")
-        .select("id, firstname, middlename, lastname")
-        .in("id", employeeIds)
-        .throwOnError();
-
-      // Create a lookup map
-      const employeeMap = Object.fromEntries(
-        employees.map((emp) => [emp.id, emp])
-      );
-
-      // Merge employee into each application
-      const mergedData = applications.map((app) => ({
-        ...app,
-        employee: employeeMap[app.employee_id] || null,
-      }));
-      setApplications(mergedData);
-    } catch (error) {
-      console.error("Failed to fetch assigned leave applications:", error);
-      setApplications([]);
-    }
-  };
+  const formatDate = (date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
+  // Fetch logged-in employee
   useEffect(() => {
-    fetchUser();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const fetchemployee = async () => {
+      try {
+        setIsLoadingE(true);
+
+        const employeeData = await getEmployeeByUserId(user.id);
+
+        setEmployee(employeeData);
+      } catch (error) {
+        console.error("Error fetching employee:", error);
+      } finally {
+        setIsLoadingE(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchemployee();
+    }
   }, [user?.id]);
 
+  // Fetch leave application
   useEffect(() => {
-    fetchApplication();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+    const fetchApplication = async () => {
+      try {
+        setIsLoadingA(true);
 
-  console.log(application, loginData);
+        const leaveApplication =
+          await getLeaveApplicationById(id);
 
-  const ReviewApplicationSkeleton = () => {
+        setApplications(leaveApplication);
+      } catch (error) {
+        console.error(
+          "Error fetching application:",
+          error
+        );
+      } finally {
+        setIsLoadingA(false);
+      }
+    };
+
+    if (id) {
+      fetchApplication();
+    }
+  }, [id]);
+  if (loadingfetchE || loadingfetchA) {
     return (
-      <div
-        className="min-h-screen px-4 pb-8 pt-20 sm:px-6 lg:px-10"
-        style={{ background: "var(--section-bg)" }}
-      >
-        <div className="mx-auto max-w-5xl">
-
-          {/* Header Skeleton */}
-          <div className="mb-8">
-            <div className="h-8 w-72 animate-pulse rounded-lg bg-slate-200" />
-
-            <div className="mt-3 h-4 w-96 max-w-full animate-pulse rounded bg-slate-200" />
-          </div>
-
-          {/* Card Skeleton */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            {/* Application ID + Status */}
-            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-5">
-              <div>
-                <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
-
-                <div className="mt-2 h-5 w-20 animate-pulse rounded bg-slate-200" />
-              </div>
-
-              <div className="h-7 w-24 animate-pulse rounded-full bg-slate-200" />
-            </div>
-
-            {/* Details */}
-            <div className="grid gap-6 md:grid-cols-2">
-
-              {[1, 2, 3, 4, 5, 6].map((item) => (
-                <div key={item}>
-                  <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
-
-                  <div className="mt-2 h-5 w-40 animate-pulse rounded bg-slate-200" />
-                </div>
-              ))}
-
-            </div>
-
-            {/* Reason */}
-            <div className="mt-8">
-              <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
-
-              <div className="mt-2 h-24 w-full animate-pulse rounded-xl bg-slate-100" />
-            </div>
-
-            {/* Buttons */}
-            <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-6">
-              <div className="h-10 w-24 animate-pulse rounded-md bg-slate-200" />
-
-              <div className="h-10 w-24 animate-pulse rounded-md bg-slate-200" />
-            </div>
-
-          </div>
-        </div>
+      <div>
+        Loading...
       </div>
     );
-  };
-
-  if (loading) {
-    return <ReviewApplicationSkeleton />;
+  }
+  // Employee not found
+  if (!employee) {
+    return <Navigate to="/dashboard" replace />;
   }
 
+  // ADMIN ONLY
+  if (
+    String(employee.role).toUpperCase() !== "ADMIN"
+  ) {
+    alert("You're not an admin. Redirecting to Dashboard...");
+
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
+  }
+  if (applications.status !== "pending") {
+    alert("Application is not pending. Redirecting to Dashboard...");
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
+  }
+  const openRejectModal = () => {
+    setRejectModalOpen(true);
+  };
+  const rejectApp = async (reason) => {
+    const confirmed = window.confirm(
+        "Are you sure you want to reject this leave application?"
+      );
+      if (!confirmed) return;
+    try {
+      setIsProcessingReject(true);
+
+      const response = await rejectApplication(
+        applications.id,
+        reason
+      );
+      console.log("reject application response: ", response.id);
+      setRejectModalOpen(false);
+      alert("Leave Application Rejected Successfully. Redirecting to Dashboard...");
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Failed to reject application:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Failed to reject leave application."
+      );
+
+    } finally {
+      setIsProcessingReject(false);
+    }
+  };
+  const approveApp = async () => {
+    const confirmed = window.confirm(
+        "Are you sure you want to approve this leave application?"
+      );
+      if (!confirmed) return;
+    try {
+      setIsProcessingApprove(true);
+      const response = await approveApplication(applications);
+      console.log("approve application response: ", response.application.id);
+      console.log("balance application response: ", response.balance.id);
+      alert("Leave Application Approve Successfully. Redirecting to Dashboard...");
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(
+        "❌ Failed to approve application:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Failed to approve leave application."
+      );
+
+    } finally {
+      setIsProcessingApprove(false);
+    }
+  }
+
+const home = () => {
+  navigate("/dashboard?tab=leave", {
+    replace: true,
+  });
+};
+
+  // console.log("application: ", applications);
+  // console.log("employee: ", employee);
   return (
     <div
       className="min-h-screen px-4 pb-8 pt-20 sm:px-6 lg:px-10"
@@ -211,7 +206,7 @@ export default function ReviewApplication() {
             <p className="text-sm text-slate-500">Employee</p>
 
             <p className="font-semibold text-slate-900">
-              Testing.
+              {applications?.name}
             </p>
           </div>
 
@@ -219,7 +214,7 @@ export default function ReviewApplication() {
             <p className="text-sm text-slate-500">Leave Type</p>
 
             <p className="font-semibold">
-              Testing.
+              {applications?.leave_type}
             </p>
           </div>
 
@@ -227,7 +222,7 @@ export default function ReviewApplication() {
             <p className="text-sm text-slate-500">Start Date</p>
 
             <p className="font-semibold">
-              Testing
+              {formatDate(applications?.start_date)}
             </p>
           </div>
 
@@ -235,7 +230,7 @@ export default function ReviewApplication() {
             <p className="text-sm text-slate-500">End Date</p>
 
             <p className="font-semibold">
-              Testing
+              {formatDate(applications?.end_date)}
             </p>
           </div>
 
@@ -245,7 +240,7 @@ export default function ReviewApplication() {
             </p>
 
             <p className="font-semibold">
-              Testing
+              {applications?.days_requested}
             </p>
           </div>
 
@@ -255,15 +250,15 @@ export default function ReviewApplication() {
             </p>
 
             <span
-              // className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-              //   application.status === "Pending"
-              //     ? "bg-yellow-100 text-yellow-700"
-              //     : application.status === "Approved"
-              //     ? "bg-emerald-100 text-emerald-700"
-              //     : "bg-red-100 text-red-700"
-              // }`}
+              className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+                applications.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : applications.status === "Approved"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-red-100 text-red-700"
+              }`}
             >
-              {/* {application.status} */}
+              {applications?.status}
             </span>
           </div>
 
@@ -276,29 +271,55 @@ export default function ReviewApplication() {
           </p>
 
           <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            Testing
+            {applications?.reason}
           </div>
 
         </div>
 
-          <div className="mt-8 flex justify-end gap-3">
-            <button
-              // onClick={handleReject}
-              disabled
-              className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-            >
-              {true ? "Processing..." : "Reject"}
-            </button>
+        <div className="mt-5 flex justify-end gap-2">
+          {/* home */}
+          <button
+            type="button"
+            onClick={home}
+            className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            View Application
+          </button>
+          {/* Approve */}
+          <button
+            type="button"
+            onClick={approveApp}
+            disabled={processingApproval}
+            className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {processingApproval
+              ? "Processing..."
+              : "Approve"}
+          </button>
 
-            <button
-              // onClick={handleApprove}
-              disabled
-              className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {true ? "Processing..." : "Approve"}
-            </button>
+          {/* Reject Modal */}
+          <RejectApplicationReasonModal
+            isOpen={rejectModalOpen}
+            loading={processingReject}
+            onClose={() => {
+              setRejectModalOpen(false);
+            }}
+            onConfirm={rejectApp}
+          />
 
-          </div>
+          {/* Reject */}
+          <button
+            type="button"
+            onClick={() => {openRejectModal()}}
+            disabled={processingReject}
+            className="inline-flex items-center justify-center rounded-md bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+          >
+            {processingReject
+              ? "Processing..."
+              : "Reject"}
+          </button>
+
+        </div>
       </div>
     </div>
   );
