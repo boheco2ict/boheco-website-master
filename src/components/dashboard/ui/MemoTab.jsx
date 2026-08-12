@@ -7,7 +7,7 @@ import {
   getAllEmployees,
   getMyAssignMemo,
   getDepartmentMeaning
-} from "../../../services/getservices";
+} from "../../../services/getServices";
 import {
   createMemo
 } from "../../../services/postservices";

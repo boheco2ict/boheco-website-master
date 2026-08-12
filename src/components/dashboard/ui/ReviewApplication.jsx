@@ -9,7 +9,7 @@ import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
 import {
   getLeaveApplicationById,
   getEmployeeByUserId,
-} from "../../../services/getservices";
+} from "../../../services/getServices";
 import {
   rejectApplication,
   approveApplication
