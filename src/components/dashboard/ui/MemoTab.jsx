@@ -7,13 +7,13 @@ import {
   getAllEmployees,
   getMyAssignMemo,
   getDepartmentMeaning
-} from "../../../services/getservices.js";
+} from "../../../services/getservices";
 import {
   createMemo
-} from "../../../services/postservices.js";
+} from "../../../services/postservices";
 import {
   markAsReadMemo
-} from "../../../services/updateservices.js";
+} from "../../../services/updateservices";
 
 function MemoTab({employee}) {
   const [memoMode, setMemoMode] = useState("view");

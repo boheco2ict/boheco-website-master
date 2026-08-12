@@ -9,11 +9,11 @@ import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
 import {
   getLeaveApplicationById,
   getEmployeeByUserId,
-} from "../../../services/getservices.js";
+} from "../../../services/getservices";
 import {
   rejectApplication,
   approveApplication
-} from "../../../services/updateservices.js";
+} from "../../../services/updateservices";
 
 export default function ReviewApplication() {
   const navigate = useNavigate();
