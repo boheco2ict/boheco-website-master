@@ -257,3 +257,62 @@ export const rejectApplication = async (application_id, reason) => {
     );
   }
 };
+
+export const markAsReadMemo = async (memoData) => {
+  if (!memoData) {
+    throw new Error(
+      "Unable to mark as read: No data was provided."
+    );
+  }
+  try {
+    const { data, error } = await supabase
+      .from("memo")
+      .update({
+        is_read: "TRUE",
+        read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", memoData.id)
+      .select()
+      .single();
+
+    // Supabase error
+    if (error) {
+      console.error(
+        "Supabase mark as read error:",
+        error
+      );
+
+      throw new Error(
+        error.message ||
+          "Failed to mark as read."
+      );
+    }
+
+    // No record was updated
+    if (!data) {
+      console.error(
+        "No record was updated."
+      );
+
+      throw new Error(
+        "The record could not be found or was not updated."
+      );
+    }
+
+
+    return data;
+
+  } catch (error) {
+    console.error(
+      "❌ Failed to update mark as read:",
+      error
+    );
+
+    // Preserve our custom errors
+    throw new Error(
+      error?.message ||
+        "An unexpected error occurred while marking as read."
+    );
+  }
+}

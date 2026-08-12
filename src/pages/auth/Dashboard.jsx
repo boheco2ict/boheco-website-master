@@ -54,15 +54,6 @@ function Dashboard() {
     phone1: "",
     phone2: "",
   });
-  const [memoMode, setMemoMode] = useState("view");
-  const [memoName, setMemoName] = useState("");
-  const [memoUrl, setMemoUrl] = useState("");
-  const [recipientType, setRecipientType] = useState("employee");
-  const [employeeTarget, setEmployeeTarget] = useState("");
-  const [batchTarget, setBatchTarget] = useState("all");
-  const [memoMessage, setMemoMessage] = useState("");
-  const [recipientMemos, setRecipientMemos] = useState([]);
-  const [isMemoLoading, setIsMemoLoading] = useState(false);
   // Office order state (mirrors memo logic)
   const [orderMode, setOrderMode] = useState("view");
   const [orderTitle, setOrderTitle] = useState("");
@@ -177,32 +168,8 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [authLoading, user]);
-
-  const fetchRecipientMemos = useCallback(async () => {
-    if (!employee?.id) return;
-
-    setIsMemoLoading(true);
-
-    const { data, error } = await supabase
-      .from("memo_recipients")
-      .select("id, is_read, memo(id, title, url, created_at)")
-      .eq("employee_id", employee.id);
-
-    if (error) {
-      console.error("Failed to fetch recipient memos:", error);
-      setRecipientMemos([]);
-    } else {
-      setRecipientMemos(data || []);
-    }
-
-    setIsMemoLoading(false);
-  }, [employee?.id]);
-
-  useEffect(() => {
-    if (activeTab !== "memo" || !employee?.id) return;
-    fetchRecipientMemos();
-  }, [activeTab, employee?.id, fetchRecipientMemos]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id]);
 
   const fetchRecipientOrders = useCallback(async () => {
     if (!employee?.id) return;
@@ -401,124 +368,6 @@ function Dashboard() {
       setIsEditOpen(false);
     },
     [editData, employee, user?.id]
-  );
-
-  const canSendMemo = useMemo(
-    () =>
-      memoName.trim().length > 0 &&
-      memoUrl.trim().length > 0 &&
-      (recipientType !== "employee" || employeeTarget.trim().length > 0),
-    [memoName, memoUrl, recipientType, employeeTarget]
-  );
-
-  const resetMemoForm = useCallback(() => {
-    setMemoName("");
-    setMemoUrl("");
-    setRecipientType("employee");
-    setEmployeeTarget("");
-    setBatchTarget("all");
-    setMemoMessage("");
-  }, []);
-
-  const handleSendMemo = useCallback(
-    async (event) => {
-      event.preventDefault();
-
-      if (!canSendMemo) return;
-
-      try {
-        let targetEmployee = null;
-
-        if (recipientType === "employee") {
-          const { data: employeeData, error: employeeError } = await supabase
-            .from("employees")
-            .select("id, empnumber")
-            .eq("empnumber", employeeTarget.trim())
-            .maybeSingle();
-
-          if (employeeError) {
-            console.error("employee lookup failed:", employeeError);
-            setMemoMessage("Unable to look up employee. Please try again.");
-            return;
-          }
-
-          if (!employeeData) {
-            setMemoMessage("Employee not found.");
-            return;
-          }
-
-          targetEmployee = employeeData;
-
-          if (!targetEmployee?.id) {
-            setMemoMessage("Employee record has no valid ID.");
-            return;
-          }
-        }
-
-        const { data: memoData, error: memoError } = await supabase
-          .from("memo")
-          .insert({
-            title: memoName.trim(),
-            url: memoUrl.trim(),
-          })
-          .select()
-          .single();
-
-        if (memoError || !memoData) {
-          console.error(memoError);
-          setMemoMessage("Failed to save memo.");
-          return;
-        }
-
-        if (recipientType === "employee") {
-          const { error: recipientError } = await supabase
-            .from("memo_recipients")
-            .insert({
-              memo_id: memoData.id,
-              employee_id: targetEmployee.id,
-              is_read: false,
-            });
-
-          if (recipientError) {
-            console.error(recipientError);
-            setMemoMessage("Memo saved, but recipient assignment failed.");
-            return;
-          }
-        }
-
-        const recipient =
-          recipientType === "employee"
-            ? `Employee ${employeeTarget.trim()}`
-            : batchTarget === "all"
-            ? "All employees"
-            : batchTarget;
-
-        setMemoMessage(`Memo "${memoName.trim()}" sent to ${recipient}.`);
-        setMemoMode("view");
-        resetMemoForm();
-
-        if (
-          recipientType === "employee" &&
-          targetEmployee?.id === employee?.id
-        ) {
-          fetchRecipientMemos();
-        }
-      } catch (error) {
-        console.error(error);
-        setMemoMessage("An unexpected error occurred.");
-      }
-    },
-    [
-      canSendMemo,
-      memoName,
-      memoUrl,
-      recipientType,
-      employeeTarget,
-      batchTarget,
-      fetchRecipientMemos,
-      employee,
-      resetMemoForm,
-    ]
   );
 
   const canSendOrder = useMemo(
@@ -729,29 +578,7 @@ function Dashboard() {
 
               {!isLoading && activeTab === "memo" && (
                 <MemoTab
-                  isAdmin={isAdmin}
-                  memoMode={memoMode}
-                  setMemoMode={setMemoMode}
-                  memoName={memoName}
-                  setMemoName={setMemoName}
-                  memoUrl={memoUrl}
-                  setMemoUrl={setMemoUrl}
-                  recipientType={recipientType}
-                  setRecipientType={setRecipientType}
-                  employeeTarget={employeeTarget}
-                  setEmployeeTarget={setEmployeeTarget}
-                  batchTarget={batchTarget}
-                  setBatchTarget={setBatchTarget}
-                  memoMessage={memoMessage}
-                  setMemoMessage={setMemoMessage}
-                  recipientMemos={recipientMemos}
-                  isMemoLoading={isMemoLoading}
-                  onSendMemo={handleSendMemo}
-                  onCancelMemo={() => {
-                    resetMemoForm();
-                    setMemoMode("view");
-                  }}
-                  canSendMemo={canSendMemo}
+                  employee={employee}
                 />
               )}
 

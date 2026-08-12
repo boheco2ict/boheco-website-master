@@ -112,3 +112,86 @@ export const getEmployeeByUserId = async (userId) => {
   }
   return data;
 };
+
+export const getAllEmployees = async () => {
+  const { data, error } = await supabase
+    .from("employees")
+    .select("*")
+    .not("user_id", "is", null)
+    .order("lastname", { ascending: true })
+    .throwOnError();
+
+  if (error) {
+    console.error("❌ Fetch Employees Error:", error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("Employee data not found.");
+  }
+
+  return data;
+};
+
+export const getMyAssignMemo = async (employee_id) => {
+  if (!employee_id) {
+    console.error(
+      "Fetch Memo Error: No employee ID provided."
+    );
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("memo")
+    .select(`
+      *,
+      postedBy:employees!posted_by (
+        id,
+        firstname,
+        middlename,
+        lastname
+      )
+    `)
+    .eq("employee_id", employee_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Fetch Assign Memo Error:", error);
+
+    if (error.code === "42501") {
+      console.error(
+        "🔒 RLS Policy Error: You do not have permission to access these memos."
+      );
+
+      throw new Error(
+        "You do not have permission to view these memos."
+      );
+    }
+
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("Assigned memo data not found.");
+  }
+
+  return data;
+};
+
+export const getDepartmentMeaning = async () => {
+  const { data, error } = await supabase
+    .from("departments")
+    .select("code, name")
+    .throwOnError();
+
+  if (error) {
+    console.error("❌ Fetch Department Meaning Error:", error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("Department meaning not found.");
+  }
+
+  return data;
+};
