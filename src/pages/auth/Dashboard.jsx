@@ -9,6 +9,9 @@ import {
 import Policy from "./Policy";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
+import {
+  getEmployeeByUserId
+} from "../../services/getservices";
 
 // UI Components
 import DashboardLoading from "../../components/dashboard/ui/DashboardLoading";
@@ -103,72 +106,31 @@ function Dashboard() {
 
   useEffect(() => {
     let isMounted = true;
-
     if (authLoading) {
       return;
     }
-
     if (!user) {
       setIsLoading(false);
       return;
     }
-
     const fetchUser = async () => {
-      setIsLoading(true);
-
-      const { data, error } = await supabase
-        .from("employees")
-        .select(
-          `
-          id,
-          empnumber,
-          firstname,
-          middlename,
-          lastname,
-          department,
-          position,
-          empstatus,
-          address,
-          phone1,
-          phone2,
-          birthdate,
-          tin,
-          sss,
-          pagibig,
-          philhealth,
-          datehired,
-          basicrate,
-          riceallowance,
-          role,
-          user_id,
-          employee_leave_balances (
-            leave_type,
-            leave_balance
-          )
-        `
-        )
-        .eq("user_id", user.id)
-        .single();
-
-      if (!isMounted) return;
-
-      if (error) {
-        console.error(error);
-      } else {
-        // console.log("Dashboard user:", user.id, data);
-        setEmployee(data);
+      try {
+        setIsLoading(true);
+        const employeeData = await getEmployeeByUserId(user.id);
+        setEmployee(employeeData);
         setEmployeeUserId(user.id);
+      } catch (error) {
+        console.error("Error fetching employee:", error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
+      if (!isMounted) return;
     };
-
     fetchUser();
-
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
   const fetchRecipientOrders = useCallback(async () => {
@@ -569,10 +531,8 @@ function Dashboard() {
 
               {!isLoading && activeTab === "leave" && (
                 <LeaveCreditsTab
-                  isAdmin={isAdmin}
                   leaveCredits={leaveCredits}
                   employee={employee}
-                  setEmployee={setEmployee}
                 />
               )}
 

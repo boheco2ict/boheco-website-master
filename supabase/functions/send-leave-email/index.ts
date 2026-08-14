@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@7.0.5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +7,9 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  // -----------------------------------------
   // Handle CORS preflight
+  // -----------------------------------------
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders,
@@ -18,33 +20,35 @@ Deno.serve(async (req) => {
     // -----------------------------------------
     // Environment variables
     // -----------------------------------------
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get(
-      "SUPABASE_SERVICE_ROLE_KEY"
-    )!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPassword = Deno.env.get("SMTP_PASSWORD");
 
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY is not configured");
+    if (!smtpUser || !smtpPassword) {
+      throw new Error(
+        "SMTP_USER or SMTP_PASSWORD is not configured"
+      );
     }
 
     // -----------------------------------------
-    // Create Supabase client
+    // Nodemailer transporter
     // -----------------------------------------
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseServiceKey
-    );
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: smtpUser,
+        pass: smtpPassword,
+      },
+    });
 
     // -----------------------------------------
-    // Get application ID from request
+    // Get data from request
     // -----------------------------------------
-    const { applicationId, origin } = await req.json();
-
-    if (!applicationId) {
+    const { myDepartment, application, origin, approverEmail, myName } = await req.json();
+    
+    if (!myDepartment) {
       return new Response(
         JSON.stringify({
-          error: "applicationId is required",
+          error: "myDepartment is required",
         }),
         {
           status: 400,
@@ -56,397 +60,322 @@ Deno.serve(async (req) => {
       );
     }
 
-    // -----------------------------------------
-    // Get leave application
-    // -----------------------------------------
-    const { data: application, error: applicationError } =
-      await supabase
-        .from("leave_applications")
-        .select(
-          `
-          id,
-          employee_id,
-          leave_type,
-          start_date,
-          end_date,
-          days_requested,
-          reason,
-          status,
-          created_at
-        `
-        )
-        .eq("id", applicationId)
-        .single();
-
-    if (applicationError || !application) {
-      console.error(
-        "Application error:",
-        applicationError
-      );
-
-      throw new Error(
-        "Leave application not found"
+    if (!application) {
+      return new Response(
+        JSON.stringify({
+          error: "application is required",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
-    // -----------------------------------------
-    // Get employee
-    // -----------------------------------------
-    const { data: employee, error: employeeError } =
-      await supabase
-        .from("employees")
-        .select(
-          `
-          id,
-          firstname,
-          lastname,
-          middlename,
-          department,
-          empnumber
-        `
-        )
-        .eq("id", application.employee_id)
-        .single();
-
-    if (employeeError || !employee) {
-      console.error(
-        "Employee error:",
-        employeeError
-      );
-
-      throw new Error(
-        "Employee information not found"
+    if (!approverEmail || (Array.isArray(approverEmail) && approverEmail.length === 0)) {
+      return new Response(
+        JSON.stringify({
+          error: "At least one approver email is required",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
-    // -----------------------------------------
-    // Find approver based on department
-    // -----------------------------------------
-    const { data: approver, error: approverError } =
-      await supabase
-        .from("can_approve_leave")
-        .select(
-          `
-          id,
-          emp_id,
-          dept,
-          email
-        `
-        )
-        .eq("dept", employee.department)
-        .limit(1)
-        .maybeSingle();
-
-    if (approverError) {
-      console.error(
-        "Approver lookup error:",
-        approverError
-      );
-
-      throw new Error(
-        "Unable to find leave approver"
+    if (!myName) {
+      return new Response(
+        JSON.stringify({
+          error: "myName is required",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
-    if (!approver || !approver.email) {
-      throw new Error(
-        `No leave approver found for department: ${employee.department}`
+    if (!origin) {
+      return new Response(
+        JSON.stringify({
+          error: "origin is required",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
-
-    // -----------------------------------------
-    // Employee full name
-    // -----------------------------------------
-    const employeeName = [
-      employee.firstname,
-      employee.middlename,
-      employee.lastname,
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const emailRecipients = Array.isArray(approverEmail) ? approverEmail : [approverEmail];
 
     // -----------------------------------------
     // Review URL
     // -----------------------------------------
     const domain = origin || "http://localhost:3000";
-
-    const reviewUrl =
-      `${domain}/review-application/${application.id}`;
+    const reviewUrl = `${domain}/review-application/${application.id}`;
 
     // -----------------------------------------
-    // Send email through Resend
+    // Email HTML
     // -----------------------------------------
-    const resendResponse = await fetch(
-      "https://api.resend.com/emails",
-      {
-        method: "POST",
+    const emailHtml = `
+      <!DOCTYPE html>
 
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
+      <html>
+        <body
+          style="
+            margin: 0;
+            padding: 0;
+            background: #f1f5f9;
+            font-family: Arial, sans-serif;
+          "
+        >
 
-        body: JSON.stringify({
-          from: "BOHECO II Leave System <onboarding@resend.dev>",
+          <div
+            style="
+              max-width: 650px;
+              margin: 40px auto;
+              background: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            "
+          >
 
-          to: [approver.email],
+            <div
+              style="
+                background: #1e3a8a;
+                padding: 25px;
+                color: white;
+              "
+            >
+              <h2 style="margin: 0;">
+                BOHECO II
+              </h2>
 
-          subject:
-            `New Leave Application - ${employeeName}`,
+              <p style="margin: 5px 0 0;">
+                Leave Management System
+              </p>
+            </div>
 
-          html: `
-            <!DOCTYPE html>
+            <div style="padding: 30px;">
 
-            <html>
-              <body
+              <h2 style="color: #111827;">
+                New Leave Application
+              </h2>
+
+              <p>
+                A new leave application has been
+                submitted and requires your review.
+              </p>
+
+              <hr
                 style="
-                  margin: 0;
-                  padding: 0;
-                  background: #f1f5f9;
-                  font-family: Arial, sans-serif;
+                  border: none;
+                  border-top: 1px solid #e5e7eb;
+                  margin: 25px 0;
+                "
+              />
+
+              <h3>
+                Application Details
+              </h3>
+
+              <table
+                style="
+                  width: 100%;
+                  border-collapse: collapse;
                 "
               >
 
-                <div
-                  style="
-                    max-width: 650px;
-                    margin: 40px auto;
-                    background: #ffffff;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-                  "
-                >
-
-                  <div
+                <tr>
+                  <td
                     style="
-                      background: #1e3a8a;
-                      padding: 25px;
-                      color: white;
+                      padding: 8px 0;
+                      font-weight: bold;
                     "
                   >
-                    <h2 style="margin: 0;">
-                      BOHECO II
-                    </h2>
+                    Employee
+                  </td>
 
-                    <p style="margin: 5px 0 0;">
-                      Leave Management System
-                    </p>
-                  </div>
+                  <td style="padding: 8px 0;">
+                    ${myName}
+                  </td>
+                </tr>
 
-                  <div style="padding: 30px;">
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Employee ID
+                  </td>
 
-                    <h2 style="color: #111827;">
-                      New Leave Application
-                    </h2>
+                  <td style="padding: 8px 0;">
+                    ${application.employee_id ?? "N/A"}
+                  </td>
+                </tr>
 
-                    <p>
-                      A new leave application has been
-                      submitted and requires your review.
-                    </p>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Department
+                  </td>
 
-                    <hr
-                      style="
-                        border: none;
-                        border-top: 1px solid #e5e7eb;
-                        margin: 25px 0;
-                      "
-                    />
+                  <td style="padding: 8px 0;">
+                    ${myDepartment ?? "N/A"}
+                  </td>
+                </tr>
 
-                    <h3>
-                      Application Details
-                    </h3>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Leave Type
+                  </td>
 
-                    <table
-                      style="
-                        width: 100%;
-                        border-collapse: collapse;
-                      "
-                    >
+                  <td style="padding: 8px 0;">
+                    ${application.leave_type}
+                  </td>
+                </tr>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Employee
-                        </td>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Start Date
+                  </td>
 
-                        <td style="padding: 8px 0;">
-                          ${employeeName}
-                        </td>
-                      </tr>
+                  <td style="padding: 8px 0;">
+                    ${application.start_date}
+                  </td>
+                </tr>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Employee Number
-                        </td>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    End Date
+                  </td>
 
-                        <td style="padding: 8px 0;">
-                          ${employee.empnumber ?? "N/A"}
-                        </td>
-                      </tr>
+                  <td style="padding: 8px 0;">
+                    ${application.end_date}
+                  </td>
+                </tr>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Department
-                        </td>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Days Requested
+                  </td>
 
-                        <td style="padding: 8px 0;">
-                          ${employee.department ?? "N/A"}
-                        </td>
-                      </tr>
+                  <td style="padding: 8px 0;">
+                    ${application.days_requested}
+                  </td>
+                </tr>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Leave Type
-                        </td>
+                <tr>
+                  <td
+                    style="
+                      padding: 8px 0;
+                      font-weight: bold;
+                    "
+                  >
+                    Reason
+                  </td>
 
-                        <td style="padding: 8px 0;">
-                          ${application.leave_type}
-                        </td>
-                      </tr>
+                  <td style="padding: 8px 0;">
+                    ${application.reason ?? "N/A"}
+                  </td>
+                </tr>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Start Date
-                        </td>
+              </table>
 
-                        <td style="padding: 8px 0;">
-                          ${application.start_date}
-                        </td>
-                      </tr>
+              <div
+                style="
+                  text-align: center;
+                  margin-top: 30px;
+                "
+              >
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          End Date
-                        </td>
+                <a
+                  href="${reviewUrl}"
+                  style="
+                    display: inline-block;
+                    padding: 13px 25px;
+                    background: #2563eb;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 7px;
+                    font-weight: bold;
+                  "
+                >
+                  Review Application
+                </a>
 
-                        <td style="padding: 8px 0;">
-                          ${application.end_date}
-                        </td>
-                      </tr>
+              </div>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Days Requested
-                        </td>
+              <p
+                style="
+                  margin-top: 30px;
+                  color: #64748b;
+                  font-size: 13px;
+                "
+              >
+                This is an automated notification
+                from the BOHECO II Leave Management
+                System.
+              </p>
 
-                        <td style="padding: 8px 0;">
-                          ${application.days_requested}
-                        </td>
-                      </tr>
+            </div>
 
-                      <tr>
-                        <td
-                          style="
-                            padding: 8px 0;
-                            font-weight: bold;
-                          "
-                        >
-                          Reason
-                        </td>
+          </div>
 
-                        <td style="padding: 8px 0;">
-                          ${application.reason ?? "N/A"}
-                        </td>
-                      </tr>
+        </body>
+      </html>
+    `;
 
-                    </table>
-
-                    <div
-                      style="
-                        text-align: center;
-                        margin-top: 30px;
-                      "
-                    >
-
-                      <a
-                        href="${reviewUrl}"
-                        style="
-                          display: inline-block;
-                          padding: 13px 25px;
-                          background: #2563eb;
-                          color: white;
-                          text-decoration: none;
-                          border-radius: 7px;
-                          font-weight: bold;
-                        "
-                      >
-                        Review Application
-                      </a>
-
-                    </div>
-
-                    <p
-                      style="
-                        margin-top: 30px;
-                        color: #64748b;
-                        font-size: 13px;
-                      "
-                    >
-                      This is an automated notification
-                      from the BOHECO II Leave Management
-                      System.
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </body>
-            </html>
-          `,
-        }),
-      }
-    );
-
-    const resendResult =
-      await resendResponse.json();
-
-    if (!resendResponse.ok) {
-      console.error(
-        "Resend error:",
-        resendResult
-      );
-
-      throw new Error(
-        resendResult?.message ||
-          "Failed to send email"
-      );
-    }
+    // -----------------------------------------
+    // Send email through Nodemailer
+    // -----------------------------------------
+    const emailResult = await transporter.sendMail({
+      from: `"BOHECO II Leave System" <${smtpUser}>`,
+      to: emailRecipients,
+      subject: `New Leave Application - ${myName}`,
+      html: emailHtml,
+    });
+    console.log("Email Sent Successfully: ", emailResult.messageId);
 
     // -----------------------------------------
     // Success
@@ -456,8 +385,8 @@ Deno.serve(async (req) => {
         success: true,
         message:
           "Leave notification email sent successfully",
-        recipient: approver.email,
-        resend: resendResult,
+        recipient: emailRecipients,
+        messageId: emailResult.messageId,
       }),
       {
         status: 200,

@@ -7,7 +7,7 @@ import {
   getAllEmployees,
   getMyAssignMemo,
   getDepartmentMeaning
-} from "../../../services/getServices";
+} from "../../../services/getservices";
 import {
   createMemo
 } from "../../../services/postservices";
@@ -16,6 +16,7 @@ import {
 } from "../../../services/updateservices";
 
 function MemoTab({employee}) {
+  const canISendMemo = employee.role === "HR";
   const [memoMode, setMemoMode] = useState("view");
   const [memoName, setMemoName] = useState("");
   const [memoDescription, setMemoDescription] = useState("");
@@ -229,7 +230,7 @@ const handleSendMemo = async (event) => {
   };
   return (
     <div className="space-y-5">
-      {employee?.role === "ADMIN" && (
+      {canISendMemo && (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>

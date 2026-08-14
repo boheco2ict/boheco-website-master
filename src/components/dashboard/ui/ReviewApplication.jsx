@@ -9,7 +9,7 @@ import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
 import {
   getLeaveApplicationById,
   getEmployeeByUserId,
-} from "../../../services/getServices";
+} from "../../../services/getservices";
 import {
   rejectApplication,
   approveApplication
@@ -89,24 +89,11 @@ export default function ReviewApplication() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // ADMIN ONLY
-  if (
-    String(employee.role).toUpperCase() !== "ADMIN"
-  ) {
-    alert("You're not an admin. Redirecting to Dashboard...");
-
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    );
-  }
   if (applications.status !== "pending") {
-    alert("Application is not pending. Redirecting to Dashboard...");
+    alert("Application is not pending. Redirecting to Leave Tab...");
     return (
       <Navigate
-        to="/dashboard"
+        to="/dashboard?tab=leave"
         replace
       />
     );

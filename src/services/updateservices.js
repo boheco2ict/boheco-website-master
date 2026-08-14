@@ -1,37 +1,27 @@
 import { supabase } from "../supabase";
 
-
-export const approveApplication = async (application) => {
-  console.log("approve application:", application);
-
+export const approveApplication = async (application, approverID) => {
   // -----------------------------------------
   // Validate application
   // -----------------------------------------
-  if (!application?.id) {
+  if (!application) {
     throw new Error(
-      "Unable to approve application: No application ID was provided."
+      "Unable to approve application: No application was provided."
+    );
+  }
+  if (!approverID) {
+    throw new Error(
+      "Unable to approve application: No approver ID was provided."
     );
   }
 
-  if (!application?.employee_id) {
-    throw new Error(
-      "Unable to approve application: No employee ID was provided."
-    );
-  }
-
-  if (!application?.leave_type) {
-    throw new Error(
-      "Unable to approve application: No leave type was provided."
-    );
-  }
-
+  console.log(application, approverID);
+  return;
   try {
     // -----------------------------------------
     // 1. Get employee leave balances
     // -----------------------------------------
-    const balances =
-      application.employee?.employee_leave_balances;
-
+    const balances = application.employee?.employee_leave_balances;
     if (!Array.isArray(balances)) {
       throw new Error(
         "Employee leave balances were not found."
@@ -50,7 +40,6 @@ export const approveApplication = async (application) => {
           .trim()
           .toLowerCase()
     );
-
     if (!balanceRow) {
       throw new Error(
         `No matching leave balance found for leave type: ${application.leave_type}`
@@ -58,7 +47,7 @@ export const approveApplication = async (application) => {
     }
 
     console.log(
-      "✅ Matching balance row:",
+      "Matching balance row:",
       balanceRow
     );
 
@@ -68,34 +57,28 @@ export const approveApplication = async (application) => {
     const currentBalance = Number(
       balanceRow.leave_balance || 0
     );
-
     const requestedDays = Number(
       application.days_requested || 0
     );
-
     console.log({
       currentBalance,
       requestedDays,
     });
-
     if (requestedDays <= 0) {
       throw new Error(
         "The requested leave days must be greater than zero."
       );
     }
-
     if (requestedDays > currentBalance) {
       throw new Error(
         `Insufficient leave balance. Available: ${currentBalance} days. Requested: ${requestedDays} days.`
       );
     }
-
-    const newBalance =
-      currentBalance - requestedDays;
-
+    const newBalance = currentBalance - requestedDays;
     console.log(
       `Leave balance: ${currentBalance} → ${newBalance}`
     );
+
     // -----------------------------------------
     // 4. Update leave balance
     // -----------------------------------------
@@ -189,38 +172,51 @@ export const approveApplication = async (application) => {
   }
 };
 
-export const rejectApplication = async (application_id, reason) => {
-
+export const rejectApplication = async (application, reason, approverID) => {
   // Validate application ID
-  if (!application_id) {
+  if (!application) {
     throw new Error(
       "Unable to reject application: No application ID was provided."
     );
   }
-
+  // Validate approver ID
+  if (!application) {
+    throw new Error(
+      "Unable to reject application: No approver ID was provided."
+    );
+  }
   // Validate rejection reason
   if (!reason || !reason.trim()) {
     throw new Error(
       "Please provide a reason for rejecting this leave application."
     );
   }
-
   try {
+    const updatedApproverIdStatus =
+      application.approver_id_status.map((approver) =>
+        Number(approver.id) === Number(approverID)
+          ? {
+              ...approver,
+              status: "rejected",
+            }
+          : approver
+    );
     const { data, error } = await supabase
       .from("leave_applications")
       .update({
+        approver_id_status: updatedApproverIdStatus,
         status: "rejected",
         rejection_reason: reason.trim(),
         rejected_at: new Date().toISOString(),
       })
-      .eq("id", application_id)
+      .eq("id", application.id)
       .select()
       .single();
 
     // Supabase error
     if (error) {
       console.error(
-        "❌ Supabase reject application error:",
+        "Supabase reject application error:",
         error
       );
 
@@ -233,23 +229,20 @@ export const rejectApplication = async (application_id, reason) => {
     // No record was updated
     if (!data) {
       console.error(
-        "❌ No leave application was updated."
+        "No leave application was updated."
       );
 
       throw new Error(
         "The leave application could not be found or was not updated."
       );
     }
-
-
     return data;
 
   } catch (error) {
     console.error(
-      "❌ Failed to reject leave application:",
+      "Failed to reject leave application:",
       error
     );
-
     // Preserve our custom errors
     throw new Error(
       error?.message ||
@@ -316,3 +309,43 @@ export const markAsReadMemo = async (memoData) => {
     );
   }
 }
+
+export const cancelApplication = async (applicationId) => {
+  if (!applicationId) {
+    console.error(
+      "Cancel Application Error: No application ID provided."
+    );
+    throw new Error("Application ID is required.");
+  }
+  const { data, error } = await supabase
+    .from("leave_applications")
+    .update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+    })
+    .eq("id", applicationId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(
+      "Cancel Application Error:",
+      error
+    );
+
+    if (error.code === "42501") {
+      throw new Error(
+        "You do not have permission to cancel this application."
+      );
+    }
+
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "Leave application was not found."
+    );
+  }
+  return data;
+};

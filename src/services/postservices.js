@@ -1,14 +1,6 @@
 import { supabase } from "../supabase";
 
-export const createMemo = async (
-  memoName,
-  memoDescription,
-  memoUrl,
-  individualTarget,
-  batchEmployeeIds,
-  recipientType,
-  memoCreatorID
-) => {
+export const createMemo = async (memoName, memoDescription, memoUrl, individualTarget, batchEmployeeIds, recipientType, memoCreatorID) => {
   const memoNameTrim = memoName.trim();
   const memoURLTrim = memoUrl.trim();
 
@@ -74,4 +66,31 @@ export const createMemo = async (
   }
 
   return true;
+};
+
+export const createLeaveApplication = async (applicationPayload) => {
+  if (!applicationPayload) {
+    throw new Error("Leave application payload is required.");
+  }
+  const { data, error } = await supabase
+    .from("leave_applications")
+    .insert(applicationPayload)
+    .select()
+    .single();
+  if (error) {
+    console.error("❌ Create Leave Application Error:", error);
+    if (error.code === "42501") {
+      console.error(
+        "🔒 RLS Policy Error: You do not have permission to create a leave application."
+      );
+      throw new Error(
+        "You do not have permission to create a leave application."
+      );
+    }
+    throw error;
+  }
+  if (!data) {
+    throw new Error("Leave application was not created.");
+  }
+  return data;
 };
