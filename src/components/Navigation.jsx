@@ -114,7 +114,7 @@ const Navigation = () => {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const sidebarExpanded = true; // Sidebar always expanded
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [winWidth, setWinWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 0
   );
@@ -153,12 +153,16 @@ const Navigation = () => {
 
   return (
     <>
-      {/* Sidebar for logged-in desktop users: permanently expanded */}
+      {/* Sidebar for logged-in desktop users: collapsed by default, expands on hover */}
       {auth && (
         <aside
+          onMouseEnter={() => setSidebarExpanded(true)}
+          onMouseLeave={() => setSidebarExpanded(false)}
           className="hidden xl:flex fixed left-0 top-0 z-50 overflow-hidden transition-all duration-300 app-sidebar"
           style={{
-            width: Math.min(Math.max(winWidth * 0.14, 220), 240),
+            width: sidebarExpanded
+              ? Math.min(Math.max(winWidth * 0.14, 220), 240)
+              : 56,
             bottom: 0,
             borderRightColor: "transparent",
           }}
@@ -176,7 +180,9 @@ const Navigation = () => {
                 }}
               />
               <div
-                className="leading-tight overflow-hidden transition-all duration-300 opacity-100 w-auto"
+                className={`leading-tight overflow-hidden transition-all duration-300 ${
+                  sidebarExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
+                }`}
               >
                 <p className="text-sm font-extrabold tracking-wide theme-text-primary whitespace-nowrap">
                   BOHECO II
@@ -246,6 +252,7 @@ const Navigation = () => {
                                   : "text-slate-600 hover:bg-slate-50"
                               }`;
                             }}
+                            title={!sidebarExpanded ? link.name : ""}
                           >
                             <span
                               className="flex items-center justify-center rounded-md bg-slate-100 transition-all duration-200 group-hover:bg-slate-200"
@@ -262,10 +269,21 @@ const Navigation = () => {
                               )}
                             </span>
                             <span
-                              className="truncate text-sm font-medium transition-all duration-300 opacity-100 w-auto"
+                              className={`truncate text-sm font-medium transition-all duration-300 ${
+                                sidebarExpanded
+                                  ? "opacity-100 w-auto"
+                                  : "opacity-0 w-0"
+                              }`}
                             >
                               {link.name}
                             </span>
+
+                            {/* Tooltip for collapsed state */}
+                            {!sidebarExpanded && (
+                              <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                                {link.name}
+                              </div>
+                            )}
                           </NavLink>
                         </div>
                       );
@@ -288,6 +306,7 @@ const Navigation = () => {
                     type="button"
                     onClick={handleLogoutRequest}
                     className="group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition-all duration-200 hover:bg-red-50"
+                    title={!sidebarExpanded ? logoutItem.name : ""}
                   >
                     <span
                       className="flex items-center justify-center rounded-md bg-red-50 transition-all duration-200 group-hover:bg-red-100"
@@ -300,10 +319,19 @@ const Navigation = () => {
                       <FaPowerOff className="h-4 w-4 block" />
                     </span>
                     <span
-                      className="truncate text-sm font-medium transition-all duration-300 opacity-100 w-auto"
+                      className={`truncate text-sm font-medium transition-all duration-300 ${
+                        sidebarExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
+                      }`}
                     >
                       {logoutItem.name}
                     </span>
+
+                    {/* Tooltip for collapsed state */}
+                    {!sidebarExpanded && (
+                      <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                        {logoutItem.name}
+                      </div>
+                    )}
                   </button>
                 </div>
               ) : null;

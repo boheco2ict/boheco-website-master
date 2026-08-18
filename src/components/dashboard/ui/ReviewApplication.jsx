@@ -14,32 +14,28 @@ import {
   rejectApplication,
   approveApplication
 } from "../../../services/updateservices";
+import {
+  formatDate_Month_Day_Year,
+  formatName_FN_MI_LN
+} from "../../../services/generalservices";
 
 export default function ReviewApplication() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [employee, setEmployee] = useState(null);
-  const [applications, setApplications] = useState([]);
+  const [applications, setApplications] = useState(null);
   const [loadingfetchE, setIsLoadingE] = useState(true);
   const [loadingfetchA, setIsLoadingA] = useState(true);
   const [processingReject, setIsProcessingReject] = useState(false);
   const [processingApproval, setIsProcessingApprove] = useState(false);
   const { user } = useAuth();
-  const formatDate = (date) =>
-  new Date(date).toLocaleDateString("en-US", {
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
-  });
   // Fetch logged-in employee
   useEffect(() => {
     const fetchemployee = async () => {
       try {
         setIsLoadingE(true);
-
         const employeeData = await getEmployeeByUserId(user.id);
-
         setEmployee(employeeData);
       } catch (error) {
         console.error("Error fetching employee:", error);
@@ -47,7 +43,6 @@ export default function ReviewApplication() {
         setIsLoadingE(false);
       }
     };
-
     if (user?.id) {
       fetchemployee();
     }
@@ -58,10 +53,7 @@ export default function ReviewApplication() {
     const fetchApplication = async () => {
       try {
         setIsLoadingA(true);
-
-        const leaveApplication =
-          await getLeaveApplicationById(id);
-
+        const leaveApplication = await getLeaveApplicationById(id);
         setApplications(leaveApplication);
       } catch (error) {
         console.error(
@@ -72,11 +64,42 @@ export default function ReviewApplication() {
         setIsLoadingA(false);
       }
     };
-
     if (id) {
       fetchApplication();
     }
   }, [id]);
+
+  const currentApprover =
+  applications?.approver_id_status?.find(
+    (approver) =>
+      String(approver.id) === String(employee?.id) &&
+      approver.status?.trim().toLowerCase() === "pending"
+  );
+  useEffect(() => {
+    if (
+      !loadingfetchE &&
+      !loadingfetchA &&
+      employee &&
+      applications &&
+      !currentApprover
+    ) {
+      alert(
+        "You are not authorized to review this leave application."
+      );
+
+      navigate("/dashboard?tab=leave", {
+        replace: true,
+      });
+    }
+  }, [
+    loadingfetchE,
+    loadingfetchA,
+    employee,
+    applications,
+    currentApprover,
+    navigate,
+  ]);
+
   if (loadingfetchE || loadingfetchA) {
     return (
       <div>
@@ -88,90 +111,71 @@ export default function ReviewApplication() {
   if (!employee) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  if (applications.status !== "pending") {
-    alert("Application is not pending. Redirecting to Leave Tab...");
-    return (
-      <Navigate
-        to="/dashboard?tab=leave"
-        replace
-      />
-    );
+  if (!currentApprover) {
+    return null;
   }
   const openRejectModal = () => {
     setRejectModalOpen(true);
   };
-  const rejectApp = async (reason) => {
+
+  const handleApprove = async () => {
     const confirmed = window.confirm(
-        "Are you sure you want to reject this leave application?"
-      );
-      if (!confirmed) return;
-    try {
-      setIsProcessingReject(true);
+      "Are you sure you want to approve this leave application?"
+    );
+    if (!confirmed) return;
 
-      const response = await rejectApplication(
-        applications.id,
-        reason
-      );
-      console.log("reject application response: ", response.id);
-      setRejectModalOpen(false);
-      alert("Leave Application Rejected Successfully. Redirecting to Dashboard...");
-      navigate("/dashboard", {
-        replace: true,
-      });
-    } catch (error) {
-      console.error(
-        "❌ Failed to reject application:",
-        error
-      );
-
-      alert(
-        error.message ||
-          "Failed to reject leave application."
-      );
-
-    } finally {
-      setIsProcessingReject(false);
-    }
-  };
-  const approveApp = async () => {
-    const confirmed = window.confirm(
-        "Are you sure you want to approve this leave application?"
-      );
-      if (!confirmed) return;
     try {
       setIsProcessingApprove(true);
-      const response = await approveApplication(applications);
-      console.log("approve application response: ", response.application.id);
-      console.log("balance application response: ", response.balance.id);
-      alert("Leave Application Approve Successfully. Redirecting to Dashboard...");
-      navigate("/dashboard", {
-        replace: true,
-      });
+      const response = await approveApplication(applications, employee.id);
+      if (response.success) {
+        alert(response.message);
+      } else {
+        console.log(response.response);
+      }
     } catch (error) {
-      console.error(
-        "❌ Failed to approve application:",
-        error
-      );
-
-      alert(
-        error.message ||
-          "Failed to approve leave application."
-      );
-
+      console.error("Failed to approve application:", error);
     } finally {
       setIsProcessingApprove(false);
     }
   }
 
-const home = () => {
-  navigate("/dashboard?tab=leave", {
-    replace: true,
-  });
-};
+  const handleReject = async (reason) => {
+    if (!reason) {
+      console.error("No Reason Provided.");
+      alert("No Reason Provided.");
+      return;
+    }
+    if (!applications) {
+      console.error("No Application Provided.");
+      alert("No Application Provided.");
+      return;
+    } 
+    const confirmed = window.confirm(
+      "Are you sure you want to reject this leave application?"
+    );
+    if (!confirmed) return;
+    try {
+      setIsProcessingReject(true);
+      const response = await rejectApplication(applications, reason, employee.id);
+      setRejectModalOpen(false);
+      if (response.success) {
+        alert(response.message);
+      } else {
+        console.log(response.response);
+      }
+    } catch (error) {
+      console.error("Failed to reject application:", error);
+    } finally {
+      setIsProcessingReject(false);
+    }
+  }
 
-  // console.log("application: ", applications);
-  // console.log("employee: ", employee);
+  const home = () => {
+    navigate("/dashboard?tab=leave", {
+      replace: true,
+    });
+  };
+
   return (
     <div
       className="min-h-screen px-4 pb-8 pt-20 sm:px-6 lg:px-10"
@@ -193,7 +197,7 @@ const home = () => {
             <p className="text-sm text-slate-500">Employee</p>
 
             <p className="font-semibold text-slate-900">
-              {applications?.name}
+              {formatName_FN_MI_LN(applications.employee?.firstname, applications.employee?.middlename, applications.employee?.lastname)}
             </p>
           </div>
 
@@ -209,7 +213,7 @@ const home = () => {
             <p className="text-sm text-slate-500">Start Date</p>
 
             <p className="font-semibold">
-              {formatDate(applications?.start_date)}
+              {formatDate_Month_Day_Year(applications?.start_date)}
             </p>
           </div>
 
@@ -217,7 +221,7 @@ const home = () => {
             <p className="text-sm text-slate-500">End Date</p>
 
             <p className="font-semibold">
-              {formatDate(applications?.end_date)}
+              {formatDate_Month_Day_Year(applications?.end_date)}
             </p>
           </div>
 
@@ -275,7 +279,7 @@ const home = () => {
           {/* Approve */}
           <button
             type="button"
-            onClick={approveApp}
+            onClick={handleApprove}
             disabled={processingApproval}
             className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
           >
@@ -291,7 +295,7 @@ const home = () => {
             onClose={() => {
               setRejectModalOpen(false);
             }}
-            onConfirm={rejectApp}
+            onConfirm={handleReject}
           />
 
           {/* Reject */}

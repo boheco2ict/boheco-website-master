@@ -185,7 +185,6 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const myID = employee?.id;
         if (!myID) {
           throw new Error("Employee ID is required.");
         }
@@ -230,7 +229,7 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
       }
     };
     fetch();
-  }, [employee?.id]);
+  }, [myID]);
 
   const resetApplicationForm = useCallback(() => {
     setApplicationType(leaveCredits[0]?.leave_type || "");
@@ -274,7 +273,7 @@ const handleSubmitApplication = useCallback(
       return;
     }
     setAppError("");
-    if (!employee?.id) {
+    if (!myID) {
       setAppError(
         "Unable to determine employee record. Please reload."
       );
@@ -306,11 +305,10 @@ const handleSubmitApplication = useCallback(
     try {
       setIsSubmitting(true);
       const response = await createLeaveApplication(payload);
-
       const { data: emailData, error: emailError } = await supabase.functions.invoke("send-leave-email", {
         body: {
           myDepartment: myDepartment,
-          application: response,
+          application: response.data,
           origin: window.location.origin,
           approverEmail: approverEmail,
           myName: myName
@@ -331,19 +329,10 @@ const handleSubmitApplication = useCallback(
           "Application submitted successfully. The approver has been notified by email."
         );
       }
-      
-      if (response.employee_id === myID) {
-        setPendingApplications((prev) => [
-          response,
-          ...prev.filter(
-            (p) => p.id !== response.id
-          ),
-        ]);
-      }
 
-      if (response?.id && !emailError && emailData?.success === true) {
-        alert("Leave Application Successfully.");
-      } else if (response?.id && emailError) {
+      if (response.success && !emailError && emailData?.success === true) {
+        alert(response.message);
+      } else if (response.success && emailError) {
         console.error("Email Error:", emailError);
         alert(
           "Leave application was created, but the email could not be sent."
@@ -364,7 +353,7 @@ const handleSubmitApplication = useCallback(
       setIsSubmitting(false);
     }
   },
-  [leaveCredits, daysRequested, myID, validateApplication, approverId, applicationType, appStart, appEnd, appReason, resetApplicationForm, myDepartment, approverEmail, myName]
+  [leaveCredits, daysRequested, myID, validateApplication, approverId, applicationType, appStart, appEnd, appReason, myDepartment, approverEmail, myName, resetApplicationForm]
 );
 
   const handleApprove = async (application) => {
@@ -379,89 +368,19 @@ const handleSubmitApplication = useCallback(
     try {
       setIsProcessingApproval(application.id);
       const response = await approveApplication(application, myID);
-      console.log("approve application response", response);
-    } catch (error) {
-      console.error("Failed to approve application:", error);
-    } finally {
-      
-    }
-
-
-
-
-
-
-
-
-
-
-    
-    try {
-      // Retrieve leave balances
-      const { data: balances } = await supabase
-        .from("employee_leave_balances")
-        .select("*")
-        .eq("employee_id", application.employee_id)
-        .throwOnError();
-
-      // Find matching leave type
-      const balanceRow = balances?.find(
-        (b) =>
-          String(b.leave_type).trim().toLowerCase() ===
-          String(application.leave_type).trim().toLowerCase()
-      );
-
-      if (!balanceRow) {
-        throw new Error(
-          `No matching balance found for leave type: ${application.leave_type}`
-        );
+      if (response.success) {
+        alert(response.message);
+      } else {
+        console.log(response.response);
       }
-
-      // Compute new balance
-      const currentBalance = Number(balanceRow.leave_balance || 0);
-      const requestedDays = Number(application.days_requested || 0);
-      const newBalance = Math.max(0, currentBalance - requestedDays);
-
-      // Update leave balance
-      const { data: updatedBalance } = await supabase
-        .from("employee_leave_balances")
-        .update({
-          leave_balance: newBalance,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", balanceRow.id)
-        .select("*")
-        .throwOnError();
-        console.log("Update balance response:", updatedBalance.length);
-      if (!updatedBalance?.length) {
-        throw new Error(
-          "Balance update was blocked or updated 0 rows."
-        );
-      }
-
-      // Approve application
-      const { data: updatedApp } = await supabase
-        .from("leave_applications")
-        .update({
-          status: "approved",
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", application.id)
-        .select("*")
-        .throwOnError();
-        console.log("Approve application response:", updatedApp.length);
-      // Update UI
       setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== updatedApp[0].id)
+        prev.filter((p) => p.id !== response.response.id)
       );
       setPendingApplications((prev) =>
-        prev.filter((p) => p.id !== updatedApp[0].id)
+        prev.filter((p) => p.id !== response.response.id)
       );
-
-      alert("Application Approved Successfully.");
     } catch (error) {
-      console.error("Approval failed:", error);
-      alert(error.message || "Failed to approve leave application.");
+      console.error("Failed to approve application:", error);
     } finally {
       setIsProcessingApproval(null);
     }
@@ -479,14 +398,18 @@ const handleSubmitApplication = useCallback(
     if (!confirmed) return;
     try {
       setIsProcessingCancel(application_id);
-      await cancelApplication(application_id);
+      const response = await cancelApplication(application_id);
       setPendingApplications((prev) =>
         prev.filter((p) => p.id !== application_id)
       );
       setAssignedApplications((prev) =>
         prev.filter((p) => p.id !== application_id)
       );
-      alert("Application Cancelled Successfully.");
+      if (response.success) {
+        alert(response.message);
+      } else {
+        console.log(response.response);
+      }
     } catch (error) {
       console.error("Failed to cancel application:", error);
     } finally {
@@ -513,16 +436,20 @@ const handleSubmitApplication = useCallback(
       setIsProcessingReject(selectedApplication.id);
       const response = await rejectApplication(selectedApplication, reason, myID);
       setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== response.id)
+        prev.filter((p) => p.id !== response.response.id)
       );
-      if (response.employee_id === myID) {
+      if (response.response.employee_id === myID) {
         setPendingApplications((prev) =>
-          prev.filter((p) => p.id !== response.id)
+          prev.filter((p) => p.id !== response.response.id)
         );
       }
       setRejectModalOpen(false);
       setSelectedApplication(null);
-      alert("Application Rejected Successfully.");
+      if (response.success) {
+        alert(response.message);
+      } else {
+        console.log(response.response);
+      }
     } catch (error) {
       console.error("Failed to reject application:", error);
     } finally {

@@ -92,5 +92,9 @@ export const createLeaveApplication = async (applicationPayload) => {
   if (!data) {
     throw new Error("Leave application was not created.");
   }
-  return data;
+  return {
+    success: true,
+    message: "Leave Application Filed Successfully.",
+    data: data
+  };
 };

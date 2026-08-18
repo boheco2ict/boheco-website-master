@@ -195,7 +195,7 @@ const handleSendMemo = async (event) => {
     try {
       setMarkingMemoId(memoData.id);
       const response = await markAsReadMemo(memoData);
-      if (response) {
+      if (response.success) {
         // Update the memo in the UI immediately
         setMyAssignMemo((prevMemos) =>
           prevMemos.map((memo) =>

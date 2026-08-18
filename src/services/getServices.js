@@ -2,76 +2,81 @@ import { supabase } from "../supabase";
 
 export const getLeaveApplicationById = async (applicationId) => {
   try {
-     if (!applicationId) {
-      console.error("Fetch Error: No employee ID provided.");
-      return [];
+    // -----------------------------------------
+    // 1. Validate application ID
+    // -----------------------------------------
+    if (!applicationId) {
+      throw new Error(
+        "Unable to fetch application: No application ID was provided."
+      );
     }
 
-    // Get leave application
-    const { data: application } = await supabase
+    // -----------------------------------------
+    // 2. Fetch leave application
+    // -----------------------------------------
+    const { data: application, error } = await supabase
       .from("leave_applications")
       .select("*")
       .eq("id", applicationId)
-      .single()
-      .throwOnError();
+      .single();
 
+    // -----------------------------------------
+    // 3. Handle Supabase error
+    // -----------------------------------------
+    if (error) {
+      console.error(
+        "❌ Fetch Application Error:",
+        error
+      );
+
+      throw new Error(
+        error.message ||
+          "Failed to fetch leave application."
+      );
+    }
+
+    // -----------------------------------------
+    // 4. Check if application exists
+    // -----------------------------------------
     if (!application) {
       console.error(
         "❌ Fetch Application Error: No application found."
       );
+
       console.error(
         "Application ID:",
         applicationId
       );
-      return null;
+
+      throw new Error(
+        "No leave application was found."
+      );
     }
 
-    // Get employee
-    const { data: employee } = await supabase
-      .from("employees")
-             .select(
-          `
-          id,
-          empnumber,
-          firstname,
-          middlename,
-          lastname,
-          employee_leave_balances (
-            leave_type,
-            leave_balance
-          )
-        `
-        )
-      .eq("id", application.employee_id)
-      .single()
-      .throwOnError();
+    const getNames = await getEmployeeNameByID_1(application.employee_id);
+    const balances = await getLeaveBalancesByIDAndLeaveType_1(application.employee_id, application.leave_type);
 
-    if (!employee) {
-      console.error(
-        "❌ Fetch Employee Error: No employee found."
-      );
-      console.error(
-        "Employee ID:",
-        application.employee_id
-      );
-      return null;
-    }
-    const name = `${employee.lastname}, ${employee.firstname} ${
-      employee.middlename?.charAt(0).toUpperCase() || ""
-    }.`;
-    // Merge application + employee
     return {
       ...application,
-      name,
-      employee
+
+      employee:
+        getNames || null,
+
+      leaveBalance:
+        balances || null,
     };
 
   } catch (error) {
     console.error(
-      "❌ Error retrieving application:",
+      "❌ Failed to fetch leave application:",
       error
     );
-    return null;
+
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while fetching the leave application."
+    );
   }
 };
 
@@ -323,57 +328,125 @@ export const getMyPendingApplicationByID = async (ID) => {
 }
 
 export const getAllPendingApplications = async () => {
-  const { data, error } = await supabase
-    .from("leave_applications")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  try {
+    // -----------------------------------------
+    // 1. Get pending leave applications
+    // -----------------------------------------
+    const { data, error } = await supabase
+      .from("leave_applications")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Fetch Pending Applications Error:", error);
-    throw error;
-  }
+    if (error) {
+      console.error(
+        "Fetch Pending Applications Error:",
+        error
+      );
 
-  if (!data || data.length === 0) {
-    return [];
-  }
+      throw new Error(
+        error.message ||
+          "Failed to fetch pending leave applications."
+      );
+    }
 
-  // Get unique employee IDs
-  const employeeIds = [
-    ...new Set(data.map((app) => app.employee_id)),
-  ];
+    // -----------------------------------------
+    // 2. No pending applications
+    // -----------------------------------------
+    if (!data || data.length === 0) {
+      console.log("No pending leave applications found.");
+      return [];
+    }
 
-  // Get names
-  const getNames = await getEmployeeNameByID(employeeIds);
-  const employeeMap = Object.fromEntries(
-    getNames.map((emp) => [emp.id, emp])
-  );
+    // -----------------------------------------
+    // 3. Get unique employee IDs
+    // -----------------------------------------
+    const employeeIds = [
+      ...new Set(
+        data
+          .map((app) => app.employee_id)
+          .filter(Boolean)
+      ),
+    ];
 
-  // Get balances
-  const balances = await getLeaveBalancesByID(employeeIds);
-  const balanceMap = Object.fromEntries(
-    balances.map((balance) => [
-      `${balance.employee_id}-${balance.leave_type
+    if (employeeIds.length === 0) {
+      throw new Error(
+        "No valid employee IDs were found."
+      );
+    }
+
+    // -----------------------------------------
+    // 4. Get employee names
+    // -----------------------------------------
+    const getNames =
+      await getEmployeeNameByID(employeeIds);
+
+    if (!Array.isArray(getNames)) {
+      throw new Error(
+        "Failed to retrieve employee information."
+      );
+    }
+
+    const employeeMap = Object.fromEntries(
+      getNames.map((emp) => [emp.id, emp])
+    );
+
+    // -----------------------------------------
+    // 5. Get employee leave balances
+    // -----------------------------------------
+    const balances =
+      await getLeaveBalancesByID(employeeIds);
+
+    if (!Array.isArray(balances)) {
+      throw new Error(
+        "Failed to retrieve employee leave balances."
+      );
+    }
+
+    const balanceMap = Object.fromEntries(
+      balances.map((balance) => [
+        `${balance.employee_id}-${String(
+          balance.leave_type
+        )
+          .trim()
+          .toUpperCase()}`,
+        balance,
+      ])
+    );
+
+    // -----------------------------------------
+    // 6. Merge application + employee + balance
+    // -----------------------------------------
+    const mergedData = data.map((app) => {
+      const balanceKey = `${app.employee_id}-${String(
+        app.leave_type
+      )
         .trim()
-        .toUpperCase()}`,
-      balance,
-    ])
-  );
+        .toUpperCase()}`;
 
-  // Merge names + leave balance
-  const mergedData = data.map((app) => {
-    const balanceKey =
-      `${app.employee_id}-${app.leave_type}`;
-    return {
-      ...app,
-      employee:
-        employeeMap[app.employee_id] || null,
+      return {
+        ...app,
 
-      leaveBalance:
-        balanceMap[balanceKey] || null,
-    };
-  });
-  return mergedData;
+        employee:
+          employeeMap[app.employee_id] || null,
+
+        leaveBalance:
+          balanceMap[balanceKey] || null,
+      };
+    });
+    return mergedData;
+  } catch (error) {
+    console.error(
+      "Failed to fetch pending leave applications:",
+      error
+    );
+
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while fetching pending leave applications."
+    );
+  }
 };
 
 const getEmployeeNameByID = async (ID) => {
@@ -389,7 +462,7 @@ const getEmployeeNameByID = async (ID) => {
       console.error("Fetch Names Error:", error);
     }
     return data || [];
-}
+};
 
 const getLeaveBalancesByID = async (ID) => {
   if (!ID) {
@@ -405,4 +478,107 @@ const getLeaveBalancesByID = async (ID) => {
     throw error;
   }
   return data || [];
+};
+
+const getEmployeeNameByID_1 = async (ID) => {
+  try {
+    if (!ID) {
+      throw new Error(
+        "Unable to fetch employee: No employee ID was provided."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("employees")
+      .select("id, firstname, middlename, lastname")
+      .eq("id", ID)
+      .single();
+
+    if (error) {
+      console.error("Fetch Names Error:", error);
+
+      throw new Error(
+        error.message ||
+          "Failed to fetch employee information."
+      );
+    }
+
+    if (!data) {
+      throw new Error(
+        `No employee found with ID: ${ID}`
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "❌ Failed to fetch employee:",
+      error
+    );
+
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while fetching employee information."
+    );
+  }
+};
+
+const getLeaveBalancesByIDAndLeaveType_1 = async (
+  ID,
+  LeaveType
+) => {
+  try {
+    if (!ID) {
+      throw new Error(
+        "Unable to fetch leave balance: No employee ID was provided."
+      );
+    }
+
+    if (!LeaveType) {
+      throw new Error(
+        "Unable to fetch leave balance: No leave type was provided."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("employee_leave_balances")
+      .select(
+        "id, employee_id, leave_type, leave_balance"
+      )
+      .eq("employee_id", ID)
+      .eq("leave_type", LeaveType)
+      .single();
+
+    if (error) {
+      console.error(
+        "Fetch Balance Error:",
+        error
+      );
+
+      throw new Error(
+        error.message ||
+          "Failed to fetch employee leave balance."
+      );
+    }
+
+    if (!data) {
+      throw new Error(
+        `No ${LeaveType} balance found for employee ID: ${ID}`
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "❌ Failed to fetch leave balance:",
+      error
+    );
+
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred while fetching leave balance."
+    );
+  }
 };
