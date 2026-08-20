@@ -130,6 +130,23 @@ Deno.serve(async (req) => {
     // -----------------------------------------
     // Email HTML
     // -----------------------------------------
+
+    const formatDate = (date) => {
+    if (!date) return "N/A";
+      const [year, month, day] = date.split("-");
+      const formattedDate = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+      );
+
+      return formattedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+
     const emailHtml = `
       <!DOCTYPE html>
 
@@ -271,7 +288,7 @@ Deno.serve(async (req) => {
                   </td>
 
                   <td style="padding: 8px 0;">
-                    ${application.start_date}
+                    ${formatDate(application.start_date)}
                   </td>
                 </tr>
 
@@ -286,7 +303,7 @@ Deno.serve(async (req) => {
                   </td>
 
                   <td style="padding: 8px 0;">
-                    ${application.end_date}
+                    ${formatDate(application.end_date)}
                   </td>
                 </tr>
 

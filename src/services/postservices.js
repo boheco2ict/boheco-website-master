@@ -3,6 +3,7 @@ import { supabase } from "../supabase";
 export const createMemo = async (memoName, memoDescription, memoUrl, individualTarget, batchEmployeeIds, recipientType, memoCreatorID) => {
   const memoNameTrim = memoName.trim();
   const memoURLTrim = memoUrl.trim();
+  const memoDescriptionTrim = memoDescription.trim();
 
   let memoRows = [];
 
@@ -20,7 +21,7 @@ export const createMemo = async (memoName, memoDescription, memoUrl, individualT
         url: memoURLTrim,
         employee_id: individualTarget,
         posted_by: memoCreatorID,
-        description: memoDescription,
+        description: memoDescriptionTrim,
         is_read: false,
       },
     ];
@@ -41,7 +42,7 @@ export const createMemo = async (memoName, memoDescription, memoUrl, individualT
       url: memoURLTrim,
       employee_id: employeeId,
       posted_by: memoCreatorID,
-      description: memoDescription,
+      description: memoDescriptionTrim,
       is_read: false,
     }));
   }
@@ -97,4 +98,338 @@ export const createLeaveApplication = async (applicationPayload) => {
     message: "Leave Application Filed Successfully.",
     data: data
   };
+};
+
+export const createOfficeOrder = async (officeOrderName, officeOrderDescription, officeOrderUrl, individualTarget, batchEmployeeIds, recipientType, officeOrderCreatorID) => {
+  const officeOrderNameTrim = officeOrderName.trim();
+  const officeOrderURLTrim = officeOrderUrl.trim();
+  const officeOrderDerscriptionTrim = officeOrderDescription.trim();
+
+  let officeOrderRows = [];
+
+  // ==============================
+  // INDIVIDUAL
+  // ==============================
+  if (recipientType === "individual") {
+    if (!individualTarget?.trim()) {
+      throw new Error("Please select an employee.");
+    }
+
+    officeOrderRows = [
+      {
+        title: officeOrderNameTrim,
+        url: officeOrderURLTrim,
+        employee_id: individualTarget,
+        posted_by: officeOrderCreatorID,
+        description: officeOrderDerscriptionTrim,
+        is_read: false,
+      },
+    ];
+  }
+
+  // ==============================
+  // BATCH
+  // ==============================
+  if (recipientType === "batch") {
+    if (!batchEmployeeIds?.length) {
+      throw new Error(
+        "No employees were selected for the batch."
+      );
+    }
+
+    officeOrderRows = batchEmployeeIds.map((employeeId) => ({
+      title: officeOrderNameTrim,
+      url: officeOrderURLTrim,
+      employee_id: employeeId,
+      posted_by: officeOrderCreatorID,
+      description: officeOrderDerscriptionTrim,
+      is_read: false,
+    }));
+  }
+
+  // ==============================
+  // VALIDATE
+  // ==============================
+  if (officeOrderRows.length === 0) {
+    throw new Error("No office order recipients found.");
+  }
+
+  // ==============================
+  // INSERT
+  // ==============================
+  const { error } = await supabase
+    .from("office_order")
+    .insert(officeOrderRows);
+
+  if (error) {
+    console.error("Create Office Order Error:", error);
+    throw error;
+  }
+
+  return true;
+};
+
+export const createPowerRateYear = async (year, pdfUrl) => {
+  const defaultRates = {
+    commercial: {
+      "1": null,
+      "2": null,
+      "3": null,
+      "4": null,
+      "5": null,
+      "6": null,
+      "7": null,
+      "8": null,
+      "9": null,
+      "10": null,
+      "11": null,
+      "12": null,
+    },
+
+    industrial: {
+      "1": null,
+      "2": null,
+      "3": null,
+      "4": null,
+      "5": null,
+      "6": null,
+      "7": null,
+      "8": null,
+      "9": null,
+      "10": null,
+      "11": null,
+      "12": null,
+    },
+
+    residential: {
+      "1": null,
+      "2": null,
+      "3": null,
+      "4": null,
+      "5": null,
+      "6": null,
+      "7": null,
+      "8": null,
+      "9": null,
+      "10": null,
+      "11": null,
+      "12": null,
+    },
+  };
+  try {
+    // -----------------------------
+    // Validate year
+    // -----------------------------
+    if (!year) {
+      return {
+        success: false,
+        message: "Year is required.",
+        data: null,
+      };
+    }
+
+    const numericYear = Number(year);
+
+    if (Number.isNaN(numericYear)) {
+      return {
+        success: false,
+        message: "Year must be a valid number.",
+        data: null,
+      };
+    }
+
+    if (numericYear < 2000 || numericYear > 2100) {
+      return {
+        success: false,
+        message: "Please enter a valid year between 2000 and 2100.",
+        data: null,
+      };
+    }
+
+    // -----------------------------
+    // Validate PDF URL
+    // -----------------------------
+    let formattedPdfUrl = null;
+
+    if (pdfUrl && pdfUrl.trim() !== "") {
+      try {
+        const url = new URL(pdfUrl.trim());
+
+        if (!["http:", "https:"].includes(url.protocol)) {
+          return {
+            success: false,
+            message: "PDF URL must use HTTP or HTTPS.",
+            data: null,
+          };
+        }
+
+        formattedPdfUrl = pdfUrl.trim();
+      } catch {
+        return {
+          success: false,
+          message: "Please enter a valid PDF URL.",
+          data: null,
+        };
+      }
+    }
+
+    // -----------------------------
+    // Check if year already exists
+    // -----------------------------
+    const { data: existingYear, error: checkError } =
+      await supabase
+        .from("power_rate_years")
+        .select("id, year")
+        .eq("year", numericYear)
+        .maybeSingle();
+
+    if (checkError) {
+      console.error(
+        "Error checking existing power rate year:",
+        checkError
+      );
+
+      return {
+        success: false,
+        message: "Unable to verify if the year already exists.",
+        data: null,
+      };
+    }
+
+    if (existingYear) {
+      return {
+        success: false,
+        message: `Power rate year ${numericYear} already exists.`,
+        data: existingYear,
+      };
+    }
+
+    // -----------------------------
+    // Insert new year
+    // -----------------------------
+    const { data, error } = await supabase
+      .from("power_rate_years")
+      .insert({
+        year: numericYear,
+        pdf_url: formattedPdfUrl,
+        rates: defaultRates,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        "Error creating power rate year:",
+        error
+      );
+
+      return {
+        success: false,
+        message: "Unable to create the power rate year.",
+        data: null,
+        error: error,
+      };
+    }
+
+    // -----------------------------
+    // Success
+    // -----------------------------
+    return {
+      success: true,
+      message: `Power rate year ${numericYear} created successfully.`,
+      data: data,
+    };
+
+  } catch (error) {
+    console.error(
+      "Unexpected error creating power rate year:",
+      error
+    );
+
+    return {
+      success: false,
+      message:
+        "An unexpected error occurred while creating the power rate year.",
+      data: null,
+      error,
+    };
+  }
+};
+
+export const createPowerAdvisory = async (imageUrl, order) => {
+  try {
+    if (!imageUrl) {
+      throw new Error("Image URL is required.");
+    }
+
+    if (
+      !Number.isInteger(Number(order)) ||
+      Number(order) < 1
+    ) {
+      throw new Error(
+        "Display order must be a positive whole number."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("power_rate_advisories")
+      .insert({
+        image_url: imageUrl,
+        display_order: Number(order),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error creating power rate advisory:",
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const createGenerationCharge = async (imageUrl, order) => {
+  try {
+    if (!imageUrl) {
+      throw new Error("Image URL is required.");
+    }
+
+    if (
+      !Number.isInteger(Number(order)) ||
+      Number(order) < 1
+    ) {
+      throw new Error(
+        "Display order must be a positive whole number."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("generation_charge")
+      .insert({
+        image_url: imageUrl,
+        display_order: Number(order),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error creating generation charge:",
+      error
+    );
+
+    throw error;
+  }
 };

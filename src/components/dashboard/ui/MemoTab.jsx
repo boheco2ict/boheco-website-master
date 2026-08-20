@@ -71,9 +71,7 @@ function MemoTab({employee}) {
         console.error("Error fetching employee: ", error);
       }
     };
-    if (employee?.role === "ADMIN") {
-      fetchallemployee();
-    }
+    fetchallemployee();
   }, [employee]);
 
   useEffect(() => {
@@ -119,7 +117,7 @@ const handleSendMemo = async (event) => {
     alert("Please enter memo name.");
     return;
   }
-  if (memoName.trim().length === 0) {
+  if (memoDescription.trim().length === 0) {
     alert("Please enter memo description.");
     return;
   }
@@ -264,11 +262,11 @@ const handleSendMemo = async (event) => {
           {memoMessage}
         </div>
       )}
-      {memoMode === "add" && !employee?.role === "ADMIN" ? (
+      {memoMode === "add" && !canISendMemo ? (
         <EmptyState
           icon={FaRegFileAlt}
           title="Access denied"
-          message="Only administrators can add memos."
+          message="Only HR can add Memos."
         />
       ) : memoMode === "add" ? (
         <form

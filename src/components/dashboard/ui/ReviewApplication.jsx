@@ -49,25 +49,48 @@ export default function ReviewApplication() {
   }, [user?.id]);
 
   // Fetch leave application
-  useEffect(() => {
-    const fetchApplication = async () => {
-      try {
-        setIsLoadingA(true);
-        const leaveApplication = await getLeaveApplicationById(id);
-        setApplications(leaveApplication);
-      } catch (error) {
-        console.error(
-          "Error fetching application:",
-          error
-        );
-      } finally {
-        setIsLoadingA(false);
+useEffect(() => {
+  const fetchApplication = async () => {
+    try {
+      setIsLoadingA(true);
+
+      const leaveApplication = await getLeaveApplicationById(id);
+      const currentUserId = employee?.id;
+
+      const approverStatus = leaveApplication?.approver_id_status?.find(
+        (approver) =>
+          Number(approver.id) === Number(currentUserId)
+      );
+
+      // User is not an approver OR already processed the application
+      if (
+        !approverStatus ||
+        approverStatus.status !== "pending"
+      ) {
+        alert("You already review this application. Redirecting to leave tab.");
+        navigate("/dashboard?tab=leave", { replace: true });
+        return;
       }
-    };
-    if (id) {
-      fetchApplication();
+
+      setApplications(leaveApplication);
+
+    } catch (error) {
+      console.error("Error fetching application:", error);
+
+      alert("Cannot find Application. Redirecting to leave tab.");
+
+      navigate("/dashboard?tab=leave", { replace: true });
+      return;
+
+    } finally {
+      setIsLoadingA(false);
     }
-  }, [id]);
+  };
+
+  if (id && employee?.id) {
+    fetchApplication();
+  }
+}, [employee?.id, id, navigate]);
 
   const currentApprover =
   applications?.approver_id_status?.find(
@@ -129,8 +152,9 @@ export default function ReviewApplication() {
       const response = await approveApplication(applications, employee.id);
       if (response.success) {
         alert(response.message);
+        navigate("/dashboard?tab=leave", { replace: true });
       } else {
-        console.log(response.response);
+        alert(response.response || "Failed to approve application.");
       }
     } catch (error) {
       console.error("Failed to approve application:", error);
@@ -157,12 +181,19 @@ export default function ReviewApplication() {
     try {
       setIsProcessingReject(true);
       const response = await rejectApplication(applications, reason, employee.id);
-      setRejectModalOpen(false);
       if (response.success) {
-        alert(response.message);
-      } else {
-        console.log(response.response);
-      }
+      setRejectModalOpen(false);
+
+      alert(response.message);
+
+      navigate("/dashboard?tab=leave", {
+        replace: true,
+      });
+    } else {
+      alert(
+        response.response || "Failed to reject application."
+      );
+    }
     } catch (error) {
       console.error("Failed to reject application:", error);
     } finally {

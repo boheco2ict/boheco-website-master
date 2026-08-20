@@ -184,6 +184,40 @@ export const getMyAssignMemo = async (employee_id) => {
   return data;
 };
 
+export const getMyAssignOfficeOrder = async (employee_id) => {
+
+  if (!employee_id) {
+    console.error(
+      "Fetch Office Order Error: No employee ID provided."
+    );
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("office_order")
+    .select(`
+      *,
+      postedBy:employees!posted_by (
+        id,
+        firstname,
+        middlename,
+        lastname
+      )
+    `)
+    .eq("employee_id", employee_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Fetch Office Order Error:", error);
+  }
+
+  if (!data) {
+    throw new Error("Assigned office order data not found.");
+  }
+
+  return data;
+};
+
 export const getDepartmentMeaning = async () => {
   const { data, error } = await supabase
     .from("departments")
@@ -581,4 +615,50 @@ const getLeaveBalancesByIDAndLeaveType_1 = async (
         : "An unexpected error occurred while fetching leave balance."
     );
   }
+};
+
+export const getPowerRateYears = async () => {
+  const { data, error } = await supabase
+    .from("power_rate_years")
+    .select("*")
+    .order("year", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching power rate years:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getPowerAdvisories = async () => {
+  const { data, error } = await supabase
+    .from("power_rate_advisories")
+    .select("*")
+    .order("display_order", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error("Error fetching power advisories:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getGenerationCharges = async () => {
+  const { data, error } = await supabase
+    .from("generation_charge")
+    .select("*")
+    .order("display_order", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error("Error fetching generation charge:", error);
+    throw error;
+  }
+
+  return data;
 };

@@ -12,20 +12,24 @@ import DdpPspp from "./pages/DdpPspp";
 import BillInquiry from "./pages/BillInquiry";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoute";
 import Award from "./pages/Award";
 import Developers from "./pages/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
+import EditorDashboard from "./pages/editor/EditorDashboard";
 import Policy from "./pages/auth/Policy";
 import EmployeeManual from "./pages/auth/EmployeeManual";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
+import Unauthorized from "./pages/Unauthorized";
 import InstallPrompt from "./components/InstallPrompt";
 import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
 
 function App() {
   const location = useLocation();
+
   const hideFooterOnRestrictedPages = [
     "/dashboard",
     "/inquiries",
@@ -33,7 +37,7 @@ function App() {
   ].some((path) => location.pathname.startsWith(path));
 
   return (
-    <div className="pt-[76px]">
+    <div>
       <Navigation />
       <PrivacyPopup />
       <InstallPrompt />
@@ -52,11 +56,24 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="unauthorized" element={<Unauthorized />} />
           <Route
-            path="dashboard"
+            path="/editor-dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <RoleRoute allowedRoles={["EDITOR"]}>
+                  <EditorDashboard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={["USER", "HR"]}>
+                  <Dashboard />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />

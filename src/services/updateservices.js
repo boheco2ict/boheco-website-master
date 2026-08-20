@@ -1,7 +1,6 @@
 import { supabase } from "../supabase";
 
 export const approveApplication = async (application, approverID) => {
-  console.log(application, approverID);
   // -----------------------------------------
   // Validate application
   // -----------------------------------------
@@ -367,6 +366,68 @@ export const markAsReadMemo = async (memoData) => {
   }
 }
 
+export const markAsReadOfficeOrder = async (officeOrderData) => {
+  if (!officeOrderData) {
+    throw new Error(
+      "Unable to mark as read: No data was provided."
+    );
+  }
+  try {
+    const { data, error } = await supabase
+      .from("office_order")
+      .update({
+        is_read: "TRUE",
+        read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", officeOrderData.id)
+      .select()
+      .single();
+
+    // Supabase error
+    if (error) {
+      console.error(
+        "Supabase mark as read error:",
+        error
+      );
+
+      throw new Error(
+        error.message ||
+          "Failed to mark as read."
+      );
+    }
+
+    // No record was updated
+    if (!data) {
+      console.error(
+        "No record was updated."
+      );
+
+      throw new Error(
+        "The record could not be found or was not updated."
+      );
+    }
+
+    return {
+      success: true,
+      message: "Office Order Marked Successfully.",
+      response: data,
+    };
+
+  } catch (error) {
+    console.error(
+      "❌ Failed to update mark as read:",
+      error
+    );
+
+    // Preserve our custom errors
+    throw new Error(
+      error?.message ||
+        "An unexpected error occurred while marking as read."
+    );
+  }
+}
+
 export const cancelApplication = async (applicationId) => {
   if (!applicationId) {
     console.error(
@@ -409,4 +470,146 @@ export const cancelApplication = async (applicationId) => {
     message: "Application Cancelled Successfully.",
     response: data,
   };
+};
+
+export const updatePowerRateYear = async (
+  id,
+  year,
+  pdfUrl,
+  rates
+) => {
+
+  try {
+    const { data, error } = await supabase
+      .from("power_rate_years")
+      .update({
+        year: year,
+        pdf_url: pdfUrl || null,
+        rates: rates,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        "Error updating power rate year:",
+        error
+      );
+
+      return {
+        success: false,
+        message: "Unable to update power rate year.",
+        data: null,
+        error,
+      };
+    }
+
+    return {
+      success: true,
+      message: "Power rates updated successfully.",
+      data,
+    };
+  } catch (error) {
+    console.error(
+      "Unexpected error updating power rate year:",
+      error
+    );
+
+    return {
+      success: false,
+      message:
+        "An unexpected error occurred while updating the power rates.",
+      data: null,
+      error,
+    };
+  }
+};
+
+export const updatePowerAdvisory = async (id, imageUrl, order) => {
+  try {
+    if (!id) {
+      throw new Error("Advisory ID is required.");
+    }
+
+    if (!imageUrl) {
+      throw new Error("Image URL is required.");
+    }
+
+    if (
+      !Number.isInteger(Number(order)) ||
+      Number(order) < 1
+    ) {
+      throw new Error(
+        "Display order must be a positive whole number."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("power_rate_advisories")
+      .update({
+        image_url: imageUrl,
+        display_order: Number(order),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error updating power rate advisory:",
+      error
+    );
+
+    throw error;
+  }
+};
+
+export const updateGenerationCharge = async (id, imageUrl, order) => {
+  try {
+    if (!id) {
+      throw new Error("ID is required.");
+    }
+
+    if (!imageUrl) {
+      throw new Error("Image URL is required.");
+    }
+
+    if (
+      !Number.isInteger(Number(order)) ||
+      Number(order) < 1
+    ) {
+      throw new Error(
+        "Display order must be a positive whole number."
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("generation_charge")
+      .update({
+        image_url: imageUrl,
+        display_order: Number(order),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error updating generation charge:",
+      error
+    );
+
+    throw error;
+  }
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import { getEmployeeByUserId } from "../services/getservices";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,30 +10,95 @@ function Login() {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(true);
+
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from
-  ? location.state.from.pathname + location.state.from.search
-  : "/dashboard";
 
+  const from = location.state?.from
+    ? location.state.from.pathname + location.state.from.search
+    : null;
+
+  // Determine the correct dashboard based on role
+  const navigateByRole = async (user, requestedPath = null) => {
+    try {
+      // Get employee information using Supabase Auth user ID
+      const employeeInfo = await getEmployeeByUserId(user.id);
+
+      if (!employeeInfo) {
+        setMsg("Employee information not found.");
+        return;
+      }
+
+      const role = employeeInfo.role;
+
+      // USER and HR
+      if (role === "USER" || role === "HR") {
+        // Only allow them to return to the normal dashboard
+        if (requestedPath === "/dashboard") {
+          navigate(requestedPath, { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+
+        return;
+      }
+
+      // EDITOR
+      if (role === "EDITOR") {
+        // Only allow editor to return to editor dashboard
+        if (requestedPath === "/editor-dashboard") {
+          navigate(requestedPath, { replace: true });
+        } else {
+          navigate("/editor-dashboard", { replace: true });
+        }
+
+        return;
+      }
+      
+      // ADMIN
+      if (role === "ADMIN") {
+        // Only allow editor to return to editor dashboard
+        if (requestedPath === "/admin-dashboard") {
+          navigate(requestedPath, { replace: true });
+        } else {
+          navigate("/admin-dashboard", { replace: true });
+        }
+
+        return;
+      }
+
+      // Unknown role
+      setMsg("Your account does not have a valid role.");
+    } catch (error) {
+      console.error("Error retrieving employee information:", error);
+      setMsg("Unable to retrieve employee information.");
+    }
+  };
+
+  // Check if user is already logged in
   useEffect(() => {
     const checkStatus = async () => {
-      const { data } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (data.session) {
-        navigate(from, { replace: true });
-        return;
+      if (session?.user) {
+        await navigateByRole(session.user, from);
       }
     };
 
     checkStatus();
-  }, [from, navigate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setMsg("");
     setLoading(true);
+
     const validRegEx = /^[^\\&']*$/;
+
     if (!email.match(validRegEx)) {
       setMsg("Unauthorized email format");
       setLoading(false);
@@ -41,7 +107,7 @@ function Login() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
+        email,
         password: pwd,
       });
 
@@ -51,11 +117,12 @@ function Login() {
         return;
       }
 
-      if (data.session) {
-        navigate(from, { replace: true });
+      if (data.user) {
+        await navigateByRole(data.user, from);
       }
     } catch (error) {
-      setMsg("Login failed");
+      console.error("Login failed:", error);
+      setMsg("Login failed.");
     } finally {
       setLoading(false);
     }
@@ -70,14 +137,23 @@ function Login() {
           onSubmit={handleSubmit}
           aria-labelledby="login-heading"
         >
-          <h1 id="login-heading" className="text-2xl font-extrabold text-slate-900 text-center">
+          <h1
+            id="login-heading"
+            className="text-2xl font-extrabold text-slate-900 text-center"
+          >
             Employee Login
           </h1>
-          <p className="mt-2 text-sm text-center text-slate-600">For BOHECO II employees only</p>
+
+          <p className="mt-2 text-sm text-center text-slate-600">
+            For BOHECO II employees only
+          </p>
 
           <div className="mt-6 space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Email</span>
+              <span className="text-sm font-semibold text-slate-700">
+                Email
+              </span>
+
               <input
                 type="email"
                 name="email"
@@ -93,7 +169,10 @@ function Login() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Password</span>
+              <span className="text-sm font-semibold text-slate-700">
+                Password
+              </span>
+
               <div className="mt-1 relative">
                 <input
                   type={show ? "password" : "text"}
@@ -106,6 +185,7 @@ function Login() {
                   autoComplete="current-password"
                   aria-label="Password"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShow((s) => !s)}
@@ -127,7 +207,9 @@ function Login() {
               <button
                 type="submit"
                 className={`w-full inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm ${
-                  loading ? "bg-amber-400" : "bg-amber-600 hover:bg-amber-700"
+                  loading
+                    ? "bg-amber-400"
+                    : "bg-amber-600 hover:bg-amber-700"
                 }`}
                 disabled={loading}
               >
@@ -136,7 +218,10 @@ function Login() {
             </div>
 
             <div className="text-center text-sm">
-              <Link to="/forgot-password" className="text-amber-600 font-medium hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-amber-600 font-medium hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>

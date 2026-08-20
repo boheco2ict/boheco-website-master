@@ -9,9 +9,6 @@ import {
 import Policy from "./Policy";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
-import {
-  getEmployeeByUserId
-} from "../../services/getservices";
 
 // UI Components
 import DashboardLoading from "../../components/dashboard/ui/DashboardLoading";
@@ -39,9 +36,9 @@ function capitalizeFullName(name) {
 }
 
 function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, employeeInfo } = useAuth();
   const location = useLocation();
-  const [employee, setEmployee] = useState(null);
+  const [employee, setEmployee] = useState(employeeInfo);
   const [employeeUserId, setEmployeeUserId] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(true);
@@ -57,17 +54,6 @@ function Dashboard() {
     phone1: "",
     phone2: "",
   });
-  // Office order state (mirrors memo logic)
-  const [orderMode, setOrderMode] = useState("view");
-  const [orderTitle, setOrderTitle] = useState("");
-  const [orderUrl, setOrderUrl] = useState("");
-  const [orderRecipientType, setOrderRecipientType] = useState("employee");
-  const [orderEmployeeTarget, setOrderEmployeeTarget] = useState("");
-  const [orderBatchTarget, setOrderBatchTarget] = useState("all");
-  const [orderMessage, setOrderMessage] = useState("");
-  const [recipientOrders, setRecipientOrders] = useState([]);
-  const [isOrderLoading, setIsOrderLoading] = useState(false);
-
   const fullName = useMemo(() => {
     const parts = [
       employee?.firstname,
@@ -83,17 +69,6 @@ function Dashboard() {
     [employee?.employee_leave_balances]
   );
 
-  const isAdmin = useMemo(
-    () =>
-      (employee?.role &&
-        ["admin", "administrator", "admin_user"].includes(
-          String(employee.role).toLowerCase()
-        )) ||
-      (employee?.position &&
-        String(employee.position).toLowerCase().includes("admin")),
-    [employee?.role, employee?.position]
-  );
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
@@ -105,58 +80,8 @@ function Dashboard() {
   }, [location.search]);
 
   useEffect(() => {
-    let isMounted = true;
-    if (authLoading) {
-      return;
-    }
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    const fetchUser = async () => {
-      try {
-        setIsLoading(true);
-        const employeeData = await getEmployeeByUserId(user.id);
-        setEmployee(employeeData);
-        setEmployeeUserId(user.id);
-      } catch (error) {
-        console.error("Error fetching employee:", error);
-      } finally {
-        setIsLoading(false);
-      }
-      if (!isMounted) return;
-    };
-    fetchUser();
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user?.id]);
-
-  const fetchRecipientOrders = useCallback(async () => {
-    if (!employee?.id) return;
-
-    setIsOrderLoading(true);
-
-    const { data, error } = await supabase
-      .from("office_order_recipients")
-      .select("id, is_read, office_order(id, title, url, created_at)")
-      .eq("employee_id", employee.id);
-
-    if (error) {
-      console.error("Failed to fetch recipient orders:", error);
-      setRecipientOrders([]);
-    } else {
-      setRecipientOrders(data || []);
-    }
-
-    setIsOrderLoading(false);
-  }, [employee?.id]);
-
-  useEffect(() => {
-    if (activeTab !== "order" || !employee?.id) return;
-    fetchRecipientOrders();
-  }, [activeTab, employee?.id, fetchRecipientOrders]);
+    setIsLoading(false);
+  }, [employeeInfo]);
 
   const handleOpenEdit = useCallback(() => {
     setEditError("");
@@ -332,143 +257,38 @@ function Dashboard() {
     [editData, employee, user?.id]
   );
 
-  const canSendOrder = useMemo(
-    () =>
-      orderTitle.trim().length > 0 &&
-      orderUrl.trim().length > 0 &&
-      (orderRecipientType !== "employee" ||
-        orderEmployeeTarget.trim().length > 0),
-    [orderTitle, orderUrl, orderRecipientType, orderEmployeeTarget]
-  );
-
-  const resetOrderForm = useCallback(() => {
-    setOrderTitle("");
-    setOrderUrl("");
-    setOrderRecipientType("employee");
-    setOrderEmployeeTarget("");
-    setOrderBatchTarget("all");
-    setOrderMessage("");
-  }, []);
-
-  const handleSendOrder = useCallback(
-    async (event) => {
-      event.preventDefault();
-
-      if (!canSendOrder) return;
-
-      try {
-        let targetEmployee = null;
-
-        if (orderRecipientType === "employee") {
-          const { data: employeeData, error: employeeError } = await supabase
-            .from("employees")
-            .select("id, empnumber")
-            .eq("empnumber", orderEmployeeTarget.trim())
-            .maybeSingle();
-
-          if (employeeError) {
-            console.error("employee lookup failed:", employeeError);
-            setOrderMessage("Unable to look up employee. Please try again.");
-            return;
-          }
-
-          if (!employeeData) {
-            setOrderMessage("Employee not found.");
-            return;
-          }
-
-          targetEmployee = employeeData;
-
-          if (!targetEmployee?.id) {
-            setOrderMessage("Employee record has no valid ID.");
-            return;
-          }
-        }
-
-        const { data: orderData, error: orderError } = await supabase
-          .from("office_order")
-          .insert({
-            title: orderTitle.trim(),
-            url: orderUrl.trim(),
-          })
-          .select()
-          .single();
-
-        if (orderError || !orderData) {
-          console.error(orderError);
-          setOrderMessage("Failed to save office order.");
-          return;
-        }
-
-        if (orderRecipientType === "employee") {
-          const { error: recipientError } = await supabase
-            .from("office_order_recipients")
-            .insert({
-              office_order_id: orderData.id,
-              employee_id: targetEmployee.id,
-              is_read: false,
-            });
-
-          if (recipientError) {
-            console.error(recipientError);
-            setOrderMessage(
-              "Office order saved, but recipient assignment failed."
-            );
-            return;
-          }
-        }
-
-        const recipient =
-          orderRecipientType === "employee"
-            ? `Employee ${orderEmployeeTarget.trim()}`
-            : orderBatchTarget === "all"
-            ? "All employees"
-            : orderBatchTarget;
-
-        setOrderMessage(
-          `Office order "${orderTitle.trim()}" sent to ${recipient}.`
-        );
-        setOrderMode("view");
-        resetOrderForm();
-
-        if (
-          orderRecipientType === "employee" &&
-          targetEmployee?.id === employee?.id
-        ) {
-          fetchRecipientOrders();
-        }
-      } catch (error) {
-        console.error(error);
-        setOrderMessage("An unexpected error occurred.");
-      }
-    },
-    [
-      canSendOrder,
-      orderTitle,
-      orderUrl,
-      orderRecipientType,
-      orderEmployeeTarget,
-      orderBatchTarget,
-      fetchRecipientOrders,
-      employee,
-      resetOrderForm,
-    ]
-  );
   return (
     <>
-      {/* top stripe removed to let navigation handle header background */}
-
-      <div
-        className="min-h-screen px-4 pb-8 pt-20 sm:px-6 lg:px-10 xl:pl-[240px] xl:pt-20"
-        style={{ background: "var(--section-bg)" }}
-      >
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+        <div className="min-h-screen w-full px-4 pb-8 pt-20 sm:px-6 lg:px-8 xl:pl-[calc(clamp(220px,14vw,240px)+24px)] xl:pt-6" style={{ background: "var(--section-bg)" }}>
+          <div className="w-full">
           {/* Main Content */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+          <section
+            className="
+              w-full
+              overflow-hidden
+              rounded-3xl
+              border
+              border-slate-200/70
+              bg-white/80
+              shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+              backdrop-blur-sm
+            "
+          >
             {/* Tab Navigation */}
-            <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-5 sm:px-6">
+            <div
+              className="
+                border-b
+                border-slate-200/70
+                bg-white/90
+                px-4
+                py-5
+                backdrop-blur-md
+                sm:px-6
+                lg:px-8
+              "
+            >
               <div className="flex flex-col gap-2">
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                   Dashboard Sections
                 </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -481,21 +301,20 @@ function Dashboard() {
                         key={tab.id}
                         type="button"
                         onClick={() => setActiveTab(tab.id)}
-                        className={`group relative flex min-h-14 flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 sm:text-sm ${
+                        className={`group relative flex min-h-16 flex-col items-center justify-center gap-2 rounded-2xl px-3 py-3 text-xs font-semibold transition-all duration-200 sm:text-sm ${
                           isActive
-                            ? "bg-gradient-to-br from-amber-50 to-amber-100 text-amber-900 shadow-md"
-                            : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                            ? "bg-amber-50 text-amber-900 shadow-sm ring-1 ring-amber-200"
+                            : "bg-slate-50/70 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                         }`}
                         title={tab.label}
                       >
                         {/* Icon Container */}
                         <span
-                          className={`flex items-center justify-center rounded-lg transition-all duration-200 ${
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${
                             isActive
-                              ? "bg-amber-200 text-amber-700"
-                              : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
+                              ? "bg-amber-500 text-white shadow-sm"
+                              : "bg-slate-200/80 text-slate-500 group-hover:bg-slate-300 group-hover:text-slate-700"
                           }`}
-                          style={{ width: "32px", height: "32px" }}
                         >
                           <Icon size={16} />
                         </span>
@@ -507,7 +326,7 @@ function Dashboard() {
 
                         {/* Active Indicator */}
                         {isActive && (
-                          <div className="absolute inset-x-0 bottom-0 h-1 rounded-b-xl bg-gradient-to-r from-amber-400 to-amber-500"></div>
+                          <div className="absolute bottom-1 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-amber-500" />
                         )}
                       </button>
                     );
@@ -517,7 +336,7 @@ function Dashboard() {
             </div>
 
             {/* Tab Content */}
-            <div className="p-4 sm:p-6 themed-bg-card themed-text">
+              <div className="min-w-0 p-4 themed-bg-card themed-text sm:p-6 lg:p-8">
               {isLoading && <DashboardLoading />}
               
               {!isLoading && activeTab === "profile" && (
@@ -545,29 +364,8 @@ function Dashboard() {
               {!isLoading && activeTab === "coop-policies" && <Policy />}
 
               {!isLoading && activeTab === "order" && (
-                <OfficeOrderTab
-                  isAdmin={isAdmin}
-                  orderMode={orderMode}
-                  setOrderMode={setOrderMode}
-                  orderTitle={orderTitle}
-                  setOrderTitle={setOrderTitle}
-                  orderUrl={orderUrl}
-                  setOrderUrl={setOrderUrl}
-                  orderRecipientType={orderRecipientType}
-                  setOrderRecipientType={setOrderRecipientType}
-                  orderEmployeeTarget={orderEmployeeTarget}
-                  setOrderEmployeeTarget={setOrderEmployeeTarget}
-                  orderBatchTarget={orderBatchTarget}
-                  setOrderBatchTarget={setOrderBatchTarget}
-                  orderMessage={orderMessage}
-                  recipientOrders={recipientOrders}
-                  isOrderLoading={isOrderLoading}
-                  onSendOrder={handleSendOrder}
-                  onCancelOrder={() => {
-                    resetOrderForm();
-                    setOrderMode("view");
-                  }}
-                  canSendOrder={canSendOrder}
+                <OfficeOrderTab 
+                  employee={employee} 
                 />
               )}
             </div>
