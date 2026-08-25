@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { formatName_FN_MI_LN } from "../utils";
 
 export const getLeaveApplicationById = async (applicationId) => {
   try {
@@ -80,6 +81,17 @@ export const getLeaveApplicationById = async (applicationId) => {
   }
 };
 
+export const getAllAuthUsers = async () => {
+  const { data, error } = await supabase.rpc("get_all_auth_users");
+
+  if (error) {
+    console.error("Get Auth Users Error:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
 export const getEmployeeByUserId = async (Id) => {
     if (!Id) {
       console.error(
@@ -133,14 +145,11 @@ export const getEmployeeByUserId = async (Id) => {
 
 export const getAllEmployees = async () => {
   const { data, error } = await supabase
-    .from("employees")
-    .select("*")
-    .not("user_id", "is", null)
-    .order("lastname", { ascending: true })
+    .rpc("get_all_employees_with_email")
     .throwOnError();
 
   if (error) {
-    console.error("❌ Fetch Employees Error:", error);
+    console.error("Fetch Employees Error:", error);
     throw error;
   }
 
@@ -661,4 +670,118 @@ export const getGenerationCharges = async () => {
   }
 
   return data;
+};
+
+export const getLeaveApprovers = async () => {
+  // ==========================================
+  // 1. Get leave approval configurations
+  // ==========================================
+  const { data, error } = await supabase
+    .from("can_approve_leave")
+    .select("*")
+    .order("department", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching leave approvers:", error);
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+
+  // ==========================================
+  // 2. Collect employee IDs
+  // ==========================================
+  const employeeIds = data.flatMap((department) =>
+    department.employee_id_email?.map(
+      (approver) => String(approver.id)
+    ) || []
+  );
+
+
+  // Remove duplicate IDs
+  const uniqueEmployeeIds = [
+    ...new Set(employeeIds),
+  ];
+
+  // No employees to look up
+  if (uniqueEmployeeIds.length === 0) {
+    return data;
+  }
+
+
+  // ==========================================
+  // 3. Get employee information
+  // ==========================================
+  const {
+    data: employees,
+    error: employeeError,
+  } = await supabase
+    .from("employees")
+    .select(
+      "id, firstname, middlename, lastname"
+    )
+    .in(
+      "id",
+      uniqueEmployeeIds.map(Number)
+    );
+
+  if (employeeError) {
+    console.error(
+      "Error fetching employee information:",
+      employeeError
+    );
+
+    throw employeeError;
+  }
+
+  // ==========================================
+  // 4. Create employee lookup map
+  // ==========================================
+  const employeeMap = new Map(
+    employees.map((employee) => [
+      String(employee.id),
+      employee,
+    ])
+  );
+
+  // ==========================================
+  // 5. Add full name to approvers
+  // ==========================================
+  const formattedData = data.map((department) => ({
+
+    ...department,
+
+    employee_id_email:
+      department.employee_id_email?.map((approver) => {
+
+        const employee = employeeMap.get(
+          String(approver.id)
+        );
+
+
+        // Employee doesn't exist
+        if (!employee) {
+          return {
+            ...approver,
+            full_name: "Employee Not Found",
+          };
+        }
+
+
+        // Build full name
+        
+        const fullName = formatName_FN_MI_LN(employee.firstname, employee.middlename, employee.lastname);
+
+        return {
+          ...approver,
+          full_name: fullName,
+        };
+
+      }) || null,
+
+  }));
+  return formattedData;
 };

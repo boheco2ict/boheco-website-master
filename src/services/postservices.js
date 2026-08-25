@@ -433,3 +433,86 @@ export const createGenerationCharge = async (imageUrl, order) => {
     throw error;
   }
 };
+
+export const createLeaveApproverDepartment = async (
+  department,
+  approvers
+) => {
+  const { data, error } = await supabase
+    .from("can_approve_leave")
+    .insert([
+      {
+        department,
+        employee_id_email: approvers || null,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating leave approver department:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createEmployee = async (data) => {
+  try {
+    const { data: newEmployee, error } = await supabase
+      .from("employees")
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create Employee Error:", error);
+
+      // Duplicate record
+      if (error.code === "23505") {
+        if (error.message.includes("user_id")) {
+          return {
+            success: false,
+            message: "This user is already assigned to an employee.",
+            response: error,
+          };
+        }
+
+        if (error.message.includes("empnumber")) {
+          return {
+            success: false,
+            message: "Employee number already exists.",
+            response: error,
+          };
+        }
+
+        return {
+          success: false,
+          message: "Duplicate employee information.",
+          response: error,
+        };
+      }
+
+      return {
+        success: false,
+        message: "Add Employee Failed.",
+        response: error,
+      };
+    }
+
+    return {
+      success: true,
+      message: "Add Employee Successfully.",
+      response: newEmployee,
+    };
+
+  } catch (error) {
+    console.error("Create Employee Exception:", error);
+
+    return {
+      success: false,
+      message: "Add Employee Failed.",
+      response: error,
+    };
+  }
+};

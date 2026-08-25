@@ -21,7 +21,7 @@ import {
 import {
   formatName_FN_MI_LN,
   formatDate_Month_Day_Year
-} from "../../../services/generalservices";
+} from "../../../utils";
 
 function LeaveCreditsTab({ leaveCredits, employee }) {
   const myID = employee.id;
@@ -371,15 +371,16 @@ const handleSubmitApplication = useCallback(
       const response = await approveApplication(application, myID);
       if (response.success) {
         alert(response.message);
+        setAssignedApplications((prev) =>
+          prev.filter((p) => p.id !== application.id)
+        );
+        setPendingApplications((prev) =>
+          prev.filter((p) => p.id !== application.id)
+        );
       } else {
-        console.log(response.response);
+        console.log(response);
       }
-      setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== response.response.id)
-      );
-      setPendingApplications((prev) =>
-        prev.filter((p) => p.id !== response.response.id)
-      );
+      
     } catch (error) {
       console.error("Failed to approve application:", error);
     } finally {

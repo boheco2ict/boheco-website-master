@@ -18,6 +18,7 @@ import Developers from "./pages/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/auth/Dashboard";
 import EditorDashboard from "./pages/editor/EditorDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import Policy from "./pages/auth/Policy";
 import EmployeeManual from "./pages/auth/EmployeeManual";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -26,15 +27,33 @@ import Settings from "./pages/Settings";
 import Unauthorized from "./pages/Unauthorized";
 import InstallPrompt from "./components/InstallPrompt";
 import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
   const location = useLocation();
 
   const hideFooterOnRestrictedPages = [
     "/dashboard",
+    "/editor-dashboard",
+    "/admin-dashboard",
     "/inquiries",
     "/reset-password",
   ].some((path) => location.pathname.startsWith(path));
+
+  const RootRedirect = () => {
+    const { employeeInfo } = useAuth();
+    if (employeeInfo?.role === "USER" || employeeInfo?.role === "HR") {
+      return <Navigate to="/dashboard" replace />;
+    } 
+    if (employeeInfo?.role === "ADMIN") {
+      return <Navigate to="/admin-dashboard" replace />;
+    } 
+    if (employeeInfo?.role === "EDITOR") {
+      return <Navigate to="/editor-dashboard" replace />;
+    } 
+    return <Home />;
+  };
+
 
   return (
     <div>
@@ -43,7 +62,7 @@ function App() {
       <InstallPrompt />
       <Routes>
         <Route path="/">
-          <Route index element={<Home />} />
+          <Route index element={<RootRedirect />} />
           <Route path="about" element={<About />} />
           <Route path="rate-advisory" element={<Advisory />} />
           <Route path="notice" element={<NeaAdvisory />} />
@@ -73,6 +92,16 @@ function App() {
               <ProtectedRoute>
                 <RoleRoute allowedRoles={["USER", "HR"]}>
                   <Dashboard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={["ADMIN"]}>
+                  <AdminDashboard />
                 </RoleRoute>
               </ProtectedRoute>
             }

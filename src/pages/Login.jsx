@@ -28,9 +28,9 @@ function Login() {
         setMsg("Employee information not found.");
         return;
       }
-
+      
       const role = employeeInfo.role;
-
+      
       // USER and HR
       if (role === "USER" || role === "HR") {
         // Only allow them to return to the normal dashboard

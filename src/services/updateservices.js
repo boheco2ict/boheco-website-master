@@ -1,6 +1,7 @@
 import { supabase } from "../supabase";
 
-export const approveApplication = async (application, approverID) => {
+export const approveApplication2 = async (application, approverID) => { //Not Used For Backup
+  console.log(application);
   // -----------------------------------------
   // Validate application
   // -----------------------------------------
@@ -213,6 +214,49 @@ export const approveApplication = async (application, approverID) => {
       "Approval failed:",
       error
     );
+
+    throw new Error(
+      error?.message ||
+        "An unexpected error occurred while approving the leave application."
+    );
+  }
+};
+
+export const approveApplication = async (application, approverID) => {
+  if (!application) {
+    throw new Error(
+      "Unable to approve application: No application was provided."
+    );
+  }
+
+  if (!approverID) {
+    throw new Error(
+      "Unable to approve application: No approver ID was provided."
+    );
+  }
+
+  try {
+    const { data, error } = await supabase.rpc(
+      "approve_leave_application",
+      {
+        p_application_id: application.id,
+        p_approver_id: String(approverID),
+      }
+    );
+
+    if (error) {
+      console.error("Approval failed:", error);
+
+      throw new Error(error.message);
+    }
+
+    return {
+      success: true,
+      message: data?.message || "Application Approved Successfully.",
+      response: data,
+    };
+  } catch (error) {
+    console.error("Approval failed:", error);
 
     throw new Error(
       error?.message ||
@@ -472,12 +516,7 @@ export const cancelApplication = async (applicationId) => {
   };
 };
 
-export const updatePowerRateYear = async (
-  id,
-  year,
-  pdfUrl,
-  rates
-) => {
+export const updatePowerRateYear = async (id, year, pdfUrl, rates) => {
 
   try {
     const { data, error } = await supabase
@@ -611,5 +650,188 @@ export const updateGenerationCharge = async (id, imageUrl, order) => {
     );
 
     throw error;
+  }
+};
+
+export const updateLeaveApproverDepartment = async (
+  id,
+  department,
+  approvers
+) => {
+  try {
+    // Validate ID
+    if (!id) {
+      return {
+        success: false,
+        message: "Department ID is required.",
+        response: null,
+      };
+    }
+
+    // Validate department
+    if (!department || !department.trim()) {
+      return {
+        success: false,
+        message: "Department is required.",
+        response: null,
+      };
+    }
+
+    // Validate approvers
+    if (!Array.isArray(approvers)) {
+      return {
+        success: false,
+        message: "Approvers must be an array.",
+        response: null,
+      };
+    }
+
+    // Validate each approver
+    for (const approver of approvers) {
+      if (!approver.id) {
+        return {
+          success: false,
+          message: "An approver is missing an employee ID.",
+          response: null,
+        };
+      }
+
+      if (!approver.email) {
+        return {
+          success: false,
+          message: "An approver is missing an email address.",
+          response: null,
+        };
+      }
+    }
+
+    // Update database
+    const { data, error } = await supabase
+      .from("can_approve_leave")
+      .update({
+        department: department.trim(),
+        employee_id_email: approvers,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    // Supabase/database error
+    if (error) {
+      console.error(
+        "Error updating leave approvers:",
+        error
+      );
+
+      // Duplicate department
+      if (error.code === "23505") {
+        return {
+          success: false,
+          message:
+            "This department already has a leave approver configuration.",
+          response: null,
+        };
+      }
+
+      return {
+        success: false,
+        message:
+          error.message ||
+          "Failed to update leave approvers.",
+        response: null,
+      };
+    }
+
+    // No record found
+    if (!data) {
+      return {
+        success: false,
+        message:
+          "Leave approver configuration was not found.",
+        response: null,
+      };
+    }
+
+    // Successful update
+    return {
+      success: true,
+      message: "Leave approvers updated successfully.",
+      response: data,
+    };
+
+  } catch (error) {
+    console.error(
+      "Unexpected error updating leave approvers:",
+      error
+    );
+
+    return {
+      success: false,
+      message:
+        error?.message ||
+        "An unexpected error occurred while updating leave approvers.",
+      response: null,
+    };
+  }
+};
+
+export const updateEmployee = async (id, dataInfo) => {
+  try {
+    const { data, error } = await supabase
+      .from("employees")
+      .update(dataInfo)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Update Error:", error);
+
+      // Duplicate value
+      if (error.code === "23505") {
+        if (error.message.includes("user_id")) {
+          return {
+            success: false,
+            message: "This user is already assigned to an employee.",
+            response: error,
+          };
+        }
+
+        if (error.message.includes("empnumber")) {
+          return {
+            success: false,
+            message: "Employee number already exists.",
+            response: error,
+          };
+        }
+
+        return {
+          success: false,
+          message: "Duplicate employee information.",
+          response: error,
+        };
+      }
+
+      return {
+        success: false,
+        message: "Update Failed.",
+        response: error,
+      };
+    }
+
+    return {
+      success: true,
+      message: "Employee Updated Successfully.",
+      response: data,
+    };
+
+  } catch (error) {
+    console.error("Update Exception:", error);
+
+    return {
+      success: false,
+      message: "Update Failed.",
+      response: error,
+    };
   }
 };

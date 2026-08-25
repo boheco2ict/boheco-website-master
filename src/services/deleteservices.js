@@ -49,3 +49,21 @@ export const deleteGenerationCharge = async (id) => {
     return false;
   }
 };
+
+export const deleteLeaveApproverDepartment = async (id) => {
+  const { error } = await supabase
+    .from("can_approve_leave")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting leave approver department:", error);
+    throw error;
+  }
+
+  return true;
+};
+
+export const deleteEmployee = async (id) => {
+  console.log("delete id",id);
+}

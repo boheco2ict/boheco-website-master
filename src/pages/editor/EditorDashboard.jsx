@@ -123,37 +123,6 @@ function EditorDashboard() {
           </div>
         </nav>
 
-        {/* Dashboard */}
-        {activeTab === "dashboard" && (
-          <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
-
-            <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-amber-100/50 blur-3xl" />
-
-            <div className="relative flex flex-col gap-2 p-6 sm:p-7 lg:p-8">
-
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Editor Workspace
-                </p>
-              </div>
-
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                Editor Dashboard
-              </h1>
-
-              <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                Manage and create official documents for BOHECO II.
-              </p>
-
-            </div>
-
-            <div className="h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
-
-          </section>
-        )}
-
         {/* Power Rates */}
         {activeTab === "power-rates" && (
           <PowerRateManagement />

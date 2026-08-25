@@ -17,7 +17,7 @@ import {
 import {
   formatDate_Month_Day_Year,
   formatName_FN_MI_LN
-} from "../../../services/generalservices";
+} from "../../../utils";
 
 export default function ReviewApplication() {
   const navigate = useNavigate();
