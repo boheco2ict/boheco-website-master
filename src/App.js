@@ -1,33 +1,35 @@
 import React from "react";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Advisory from "./pages/Advisory";
-import Partners from "./pages/Partners";
-import LifelineAdvisory from "./pages/LifelineAdvisory";
-import NeaAdvisory from "./pages/Notice";
+import Home from "./pages/others/Home";
+import About from "./pages/others/About";
+import Advisory from "./pages/others/Advisory";
+import Partners from "./pages/others/Partners";
+import LifelineAdvisory from "./pages/others/LifelineAdvisory";
+import NeaAdvisory from "./pages/others/Notice";
 import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
-import DdpPspp from "./pages/DdpPspp";
-import BillInquiry from "./pages/BillInquiry";
-import Login from "./pages/Login";
+import DdpPspp from "./pages/others/DdpPspp";
+import BillInquiry from "./pages/others/BillInquiry";
+import Login from "./pages/auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
-import Award from "./pages/Award";
-import Developers from "./pages/Developers";
+import Award from "./pages/others/Award";
+import Developers from "./pages/others/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
-import Dashboard from "./pages/auth/Dashboard";
+import Dashboard from "./pages/employee/Dashboard";
 import EditorDashboard from "./pages/editor/EditorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import Policy from "./pages/auth/Policy";
-import EmployeeManual from "./pages/auth/EmployeeManual";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Settings from "./pages/Settings";
-import Unauthorized from "./pages/Unauthorized";
+import ConsumerDashboard from "./pages/consumer/consumer_dashboard";
+import Policy from "./pages/employee/Policy";
+import EmployeeManual from "./pages/employee/EmployeeManual";
+import ForgotPassword from "./pages/others/ForgotPassword";
+import ResetPassword from "./pages/others/ResetPassword";
+import Settings from "./pages/others/Settings";
+import Unauthorized from "./pages/others/Unauthorized";
 import InstallPrompt from "./components/InstallPrompt";
 import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
 import { useAuth } from "./context/AuthContext";
+import AuthCallback from "./pages/auth/auth_callback";
 
 function App() {
   const location = useLocation();
@@ -36,24 +38,35 @@ function App() {
     "/dashboard",
     "/editor-dashboard",
     "/admin-dashboard",
+    "/consumer-dashboard",
     "/inquiries",
     "/reset-password",
+    "/auth/callback",
   ].some((path) => location.pathname.startsWith(path));
 
   const RootRedirect = () => {
-    const { employeeInfo } = useAuth();
-    if (employeeInfo?.role === "USER" || employeeInfo?.role === "HR") {
-      return <Navigate to="/dashboard" replace />;
-    } 
-    if (employeeInfo?.role === "ADMIN") {
-      return <Navigate to="/admin-dashboard" replace />;
-    } 
-    if (employeeInfo?.role === "EDITOR") {
-      return <Navigate to="/editor-dashboard" replace />;
-    } 
-    return <Home />;
-  };
+    const { employeeInfo, consumerInfo } = useAuth();
+    let role = "";
+    if (employeeInfo?.role) {
+      role = employeeInfo.role;
+    }else if (consumerInfo?.role) {
+      role = consumerInfo.role;
+    } else {
+      role = "";
+    }
 
+    if (role === "USER" || role === "HR") {
+      return <Navigate to="/dashboard" replace />;
+    } else if (role === "ADMIN") {
+      return <Navigate to="/admin-dashboard" replace />;
+    } else if (role === "EDITOR") {
+      return <Navigate to="/editor-dashboard" replace />;
+    } else if (role === "CONSUMER") {
+      return <Navigate to="/consumer-dashboard" replace />;
+    } else {
+      return <Home />;
+    }
+  };
 
   return (
     <div>
@@ -76,6 +89,18 @@ function App() {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
           <Route path="unauthorized" element={<Unauthorized />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+
+          <Route
+            path="/consumer-dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allowedRoles={["CONSUMER"]}>
+                  <ConsumerDashboard />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/editor-dashboard"
             element={
@@ -110,7 +135,9 @@ function App() {
             path="review-application/:id"
             element={
               <ProtectedRoute>
-                <ReviewApplication />
+                <RoleRoute allowedRoles={["USER", "HR"]}>
+                  <ReviewApplication />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -140,3 +167,4 @@ function App() {
 }
 
 export default App;
+// {!hideFooterOnRestrictedPages && <Footer />}

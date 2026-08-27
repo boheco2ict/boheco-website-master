@@ -1,6 +1,6 @@
-import Rates from "../components/Rates";
-import GenRates from "../components/GenRates";
-import PowerRateAdvisory from "../components/PowerRateAdvisory";
+import Rates from "../../components/Rates";
+import GenRates from "../../components/GenRates";
+import PowerRateAdvisory from "../../components/PowerRateAdvisory";
 
 function Advisory() {
   return (

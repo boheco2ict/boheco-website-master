@@ -1,24 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import { ShieldAlert, ArrowLeft, Home } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 function Unauthorized() {
     const navigate = useNavigate();
-    const { employeeInfo } = useAuth();
-
-    const role = employeeInfo?.role;
+    const { employeeInfo, consumerInfo } = useAuth();
 
     const goTo = () => {
-        if (!role) {
-            return alert("Role not found, Please try again.");
+        let role = "";
+
+        if (employeeInfo?.role) {
+            role = employeeInfo.role;
+        } else if (consumerInfo?.role) {
+            role = consumerInfo.role;
+        } else {
+            role = "";
         }
+
         if (role === "USER" || role === "HR") {
             navigate("/dashboard", { replace: true });
-        }else if (role === "EDITOR") {
+        } else if (role === "EDITOR") {
             navigate("/editor-dashboard", { replace: true });
-        }else if (role === "ADMIN") {
+        } else if (role === "ADMIN") {
             navigate("/admin-dashboard", { replace: true });
-        }else {
+        } else if (role === "CONSUMER") {
+            navigate("/consumer-dashboard", { replace: true });
+        } else {
             alert("Dashboard Not Found.");
         }
     };

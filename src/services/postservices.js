@@ -516,3 +516,72 @@ export const createEmployee = async (data) => {
     };
   }
 };
+
+export const createConsumer = async (data) => {
+  if (!data.user_id) {
+    return {
+      success: false,
+      message: "User ID is Missing.",
+      response: null
+    }
+  }
+    if (!data.account_number) {
+    return {
+      success: false,
+      message: "Account Number is Missing.",
+      response: null
+    }
+  }
+  try {
+    const { data: newConsumer, error } = await supabase
+      .from("consumers")
+      .insert({
+        user_id: data.user_id,
+        account_number: data.account_number
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create Consumer Error:", error);
+
+      // Duplicate record
+      if (error.code === "23505") {
+        if (error.message.includes("user_id")) {
+          return {
+            success: false,
+            message: "This user is already assigned to an consumer.",
+            response: error,
+          };
+        }
+
+        return {
+          success: false,
+          message: "Duplicate Consumer information.",
+          response: error,
+        };
+      }
+
+      return {
+        success: false,
+        message: "Add Consumer Failed.",
+        response: error,
+      };
+    }
+
+    return {
+      success: true,
+      message: "Add Consumer Successfully.",
+      response: newConsumer,
+    };
+
+  } catch (error) {
+    console.error("Create Consumer Exception:", error);
+
+    return {
+      success: false,
+      message: "Add Consumer Failed.",
+      response: error,
+    };
+  }
+};

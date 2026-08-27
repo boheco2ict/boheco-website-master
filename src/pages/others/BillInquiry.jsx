@@ -8,7 +8,7 @@ import {
   FaTimes,
   FaChevronDown,
 } from "react-icons/fa";
-import { extractBillDetails } from "../utils";
+import { extractBillDetails } from "../../utils";
 
 const MONTHS = [
   { value: "01", label: "January" },

@@ -93,16 +93,11 @@ export const getAllAuthUsers = async () => {
 };
 
 export const getEmployeeByUserId = async (Id) => {
-    if (!Id) {
-      console.error(
-        "❌ Fetch Employee Error: No User ID provided."
-      );
-      return [];
-    }
   if (!Id) {
-    throw new Error("User ID is required.");
+    console.error("Fetch Employee Error: No ID provided.");
+    return null;
   }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("employees")
     .select(
       `
@@ -134,13 +129,14 @@ export const getEmployeeByUserId = async (Id) => {
       `
     )
     .eq("user_id", Id)
-    .single()
-    .throwOnError();
+    .maybeSingle();
 
-  if (!data) {
-    throw new Error("Employee data not found.");
+  if (error) {
+    console.error("Fetch Employee Error:", error);
+    return null;
   }
-  return data;
+
+  return data || null;
 };
 
 export const getAllEmployees = async () => {
@@ -397,7 +393,6 @@ export const getAllPendingApplications = async () => {
     // 2. No pending applications
     // -----------------------------------------
     if (!data || data.length === 0) {
-      console.log("No pending leave applications found.");
       return [];
     }
 
@@ -784,4 +779,24 @@ export const getLeaveApprovers = async () => {
 
   }));
   return formattedData;
+};
+
+export const getConsumerByUserId = async (Id) => {
+  if (!Id) {
+    console.error("Fetch Consumer Error: No ID provided.");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("consumers")
+    .select("*")
+    .eq("user_id", Id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Fetch Consumer Error:", error);
+    return null;
+  }
+
+  return data || null;
 };
