@@ -20,90 +20,7 @@ function Login() {
   const [loginType, setLoginType] = useState("employee");
   const [consumerMsg, setConsumerMsg] = useState("");
   const [consumerLoading, setConsumerLoading] = useState(false);
-
   const navigate = useNavigate();
-  // const location = useLocation();
-
-  // const from = location.state?.from
-  //   ? location.state.from.pathname + location.state.from.search
-  //   : null;
-
-  // =========================================================
-  // EXISTING EMPLOYEE ROLE NAVIGATION - UNCHANGED
-  // =========================================================
-  // const navigateByRole = async (user, requestedPath = null) => {
-  //   console.log(user);
-  //   const loginProvider = user?.app_metadata?.provider || null;
-  //   let role = "";
-  //   let response = "";
-  //   try {
-  //     if (loginProvider === "google") {
-  //       response = await getConsumerByUserId(user.id);
-  //       role = response?.role;
-  //     } else if (loginProvider === "email"){
-  //       response = await getEmployeeByUserId(user.id);
-  //       role = response?.role;
-  //     } else {
-  //       setMsg("Your account does not have a valid role.");
-  //     }
-
-  //     if (!response && user && loginProvider === "google") {
-  //       setMsg("Sign In as Consumer but Record not Found.");
-  //       return;
-  //     }
-  //     if (!response && user && loginProvider === "email") {
-  //       setMsg("Sign In as Employee but Record not Found.");
-  //       return;
-  //     }
-
-  //     // USER and HR
-  //     if (role === "USER" || role === "HR") {
-  //       // Only allow them to return to the normal dashboard
-  //       if (requestedPath === "/dashboard") {
-  //         navigate(requestedPath, { replace: true });
-  //       } else {
-  //         navigate("/dashboard", { replace: true });
-  //       }
-  //       return;
-  //     }
-
-  //     // EDITOR
-  //     if (role === "EDITOR") {
-  //       // Only allow editor to return to editor dashboard
-  //       if (requestedPath === "/editor-dashboard") {
-  //         navigate(requestedPath, { replace: true });
-  //       } else {
-  //         navigate("/editor-dashboard", { replace: true });
-  //       }
-  //       return;
-  //     }
-
-  //     // ADMIN
-  //     if (role === "ADMIN") {
-  //       // Only allow editor to return to editor dashboard
-  //       if (requestedPath === "/admin-dashboard") {
-  //         navigate(requestedPath, { replace: true });
-  //       } else {
-  //         navigate("/admin-dashboard", { replace: true });
-  //       }
-  //       return;
-  //     }
-
-  //     // CONSUMER
-  //     if (role === "CONSUMER") {
-  //       // Only allow editor to return to editor dashboard
-  //       if (requestedPath === "/consumer-dashboard") {
-  //         navigate(requestedPath, { replace: true });
-  //       } else {
-  //         navigate("/consumer-dashboard", { replace: true });
-  //       }
-  //       return;
-  //     }
-  //   } catch (error) {
-  //     console.error("Error retrieving employee information:", error);
-  //     setMsg("Unable to retrieve employee information.");
-  //   }
-  // };
 
   // =========================================================
   // EXISTING SESSION CHECK - UNCHANGED
@@ -113,7 +30,6 @@ function Login() {
       const {data: { session },} = await supabase.auth.getSession();
       if (session?.user) {
         navigate("/auth/callback", { replace: true });
-        // await navigateByRole(session.user, from);
       }
     };
     checkStatus();
@@ -168,10 +84,15 @@ function Login() {
       setConsumerMsg("");
       setConsumerLoading(true);
 
+      const redirectUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3000/auth/callback"
+          : "https://www.boheco2.com.ph/auth/callback";
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `http://localhost:3000/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
 
@@ -188,7 +109,10 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 mt-14">
+    <div
+      className="pb-5 min-h-screen pt-[96px] px-5 flex items-center justify-center"
+      style={{ background: "var(--section-bg)" }}
+    >
       <div className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200">
 
         <div className="grid lg:grid-cols-2 min-h-[650px]">
@@ -309,7 +233,7 @@ function Login() {
               {msg && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 mb-6 py-3 text-sm text-red-700"
                 >
                   {msg}
                 </div>

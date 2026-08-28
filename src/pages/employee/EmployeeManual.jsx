@@ -105,7 +105,7 @@ function EmployeeManualPage() {
   const totalDocuments = manualData.length;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 pb-10 pt-28 sm:px-6 lg:px-10">
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4 py-5">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-5">
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
           <div className="grid gap-6 p-6 lg:grid-cols-[1fr_360px]">

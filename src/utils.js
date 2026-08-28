@@ -60,3 +60,13 @@ export const formatDate_Month_Day_Year = (date) => new Date(date).toLocaleDateSt
     day: "2-digit",
     year: "numeric",
 });
+
+export const formatBillingMonth_Year = (date) => {
+  if (!date) return "—";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};

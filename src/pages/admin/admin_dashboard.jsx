@@ -11,25 +11,13 @@ function AdminDashboard() {
 
   return (
     <div
-      className="
-        min-h-screen
-        w-full
-        px-4
-        pb-8
-        pt-20
-        sm:px-6
-        lg:px-8
-        xl:pl-[calc(clamp(220px,14vw,240px)+24px)]
-        xl:pr-6
-        xl:pt-6
-      "
+      className="w-full pl-5 pr-5 pt-[21px] pb-5 min-h-screen"
       style={{ background: "var(--section-bg)" }}
     >
       <div className="w-full">
-
         {/* Navigation */}
         <nav className="mb-6 w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-
+          
           <div className="flex min-w-max items-center px-2 sm:px-3">
 
             {/* Leave Approver */}

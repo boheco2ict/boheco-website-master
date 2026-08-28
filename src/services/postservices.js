@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { getLedger } from "./getservices"; 
 
 export const createMemo = async (memoName, memoDescription, memoUrl, individualTarget, batchEmployeeIds, recipientType, memoCreatorID) => {
   const memoNameTrim = memoName.trim();
@@ -525,56 +526,71 @@ export const createConsumer = async (data) => {
       response: null
     }
   }
-    if (!data.account_number) {
-    return {
-      success: false,
-      message: "Account Number is Missing.",
-      response: null
-    }
-  }
+  const date = `${data.month}/01/${data.year}`;
+
   try {
-    const { data: newConsumer, error } = await supabase
+    const response = await getLedger(data?.account_number, date, data?.amount);
+    if (!response) {
+      return {
+        success: false,
+        message: "No Record Found, Please Try Again.",
+        response: response,
+      };
+    } else {
+      const resData = response?.data[0];
+      if (!resData) {
+        return {
+          success: false,
+          message: "No Record Found, Please Try Again.",
+          response: response,
+        };
+      }
+
+      const { data: newConsumer, error } = await supabase
       .from("consumers")
       .insert({
-        user_id: data.user_id,
-        account_number: data.account_number
+        user_id: data?.user_id,
+        account_number: data?.account_number,
+        net_amount: data?.amount,
+        service_period_end: date,
+        
       })
       .select()
       .single();
 
-    if (error) {
-      console.error("Create Consumer Error:", error);
+      if (error) {
+        console.error("Create Consumer Error:", error);
 
-      // Duplicate record
-      if (error.code === "23505") {
-        if (error.message.includes("user_id")) {
+        // Duplicate record
+        if (error.code === "23505") {
+          if (error.message.includes("user_id")) {
+            return {
+              success: false,
+              message: "This user is already assigned to an consumer.",
+              response: error,
+            };
+          }
+
           return {
             success: false,
-            message: "This user is already assigned to an consumer.",
+            message: "Duplicate Consumer information.",
             response: error,
           };
         }
 
         return {
           success: false,
-          message: "Duplicate Consumer information.",
+          message: "Add Consumer Failed.",
           response: error,
         };
       }
 
       return {
-        success: false,
-        message: "Add Consumer Failed.",
-        response: error,
+        success: true,
+        message: "Verified Successfully.",
+        response: newConsumer,
       };
     }
-
-    return {
-      success: true,
-      message: "Add Consumer Successfully.",
-      response: newConsumer,
-    };
-
   } catch (error) {
     console.error("Create Consumer Exception:", error);
 

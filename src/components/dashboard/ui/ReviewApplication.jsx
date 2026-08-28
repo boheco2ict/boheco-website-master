@@ -301,7 +301,9 @@ export default function ReviewApplication() {
 
   return (
     <div
-    className="min-h-screen w-full min-w-0 overflow-x-hidden px-4 pb-12 pt-10 sm:px-6 xl:ml-[240px] xl:w-[calc(100%-240px)] xl:px-8" style={{ background: "var(--section-bg)" }}>
+      className="w-full pl-5 pr-5 pt-[20px] pb-5 min-h-screen"
+      style={{ background: "var(--section-bg)" }}
+    >
       <div className="mx-auto w-full max-w-[1600px]">
         {/* Main Card */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

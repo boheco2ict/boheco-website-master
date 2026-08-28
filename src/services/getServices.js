@@ -800,3 +800,36 @@ export const getConsumerByUserId = async (Id) => {
 
   return data || null;
 };
+
+export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => {
+  if (!AccountNumber && !ServicePeriodEnd && !NetAmount) {
+    return null;
+  }
+  const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
+  try {
+    const response = await fetch(API,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          AccountNumber,
+          ServicePeriodEnd,
+          NetAmount,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error("Get Ledger Error:", error);
+    return null;
+  }
+};

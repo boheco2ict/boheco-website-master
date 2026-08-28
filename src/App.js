@@ -5,8 +5,7 @@ import Advisory from "./pages/others/Advisory";
 import Partners from "./pages/others/Partners";
 import LifelineAdvisory from "./pages/others/LifelineAdvisory";
 import NeaAdvisory from "./pages/others/Notice";
-import { Route, Routes, Navigate, useLocation } from "react-router-dom";
-import Navigation from "./components/Navigation";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Footer from "./components/Footer";
 import DdpPspp from "./pages/others/DdpPspp";
 import BillInquiry from "./pages/others/BillInquiry";
@@ -18,51 +17,40 @@ import Developers from "./pages/others/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/employee/Dashboard";
 import EditorDashboard from "./pages/editor/EditorDashboard";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import ConsumerDashboard from "./pages/consumer/consumer_dashboard";
 import Policy from "./pages/employee/Policy";
 import EmployeeManual from "./pages/employee/EmployeeManual";
 import ForgotPassword from "./pages/others/ForgotPassword";
-import ResetPassword from "./pages/others/ResetPassword";
 import Settings from "./pages/others/Settings";
 import Unauthorized from "./pages/others/Unauthorized";
 import InstallPrompt from "./components/InstallPrompt";
 import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
 import { useAuth } from "./context/AuthContext";
 import AuthCallback from "./pages/auth/auth_callback";
+import Header from "./components/Header";
+import AdminDashboard from "./pages/admin/admin_dashboard";
+import EmployeeLayout from "./pages/EmployeeLayout";
+import ConsumerLayout from "./pages/ConsumerLayout";
 
 function App() {
-  const location = useLocation();
+  const { user, loading } = useAuth();
 
-  const hideFooterOnRestrictedPages = [
-    "/dashboard",
-    "/editor-dashboard",
-    "/admin-dashboard",
-    "/consumer-dashboard",
-    "/inquiries",
-    "/reset-password",
-    "/auth/callback",
-  ].some((path) => location.pathname.startsWith(path));
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <div className="w-10 h-10 mx-auto mb-4 border-4 border-slate-300 border-t-emerald-600 rounded-full animate-spin" />
+          <p className="text-sm text-slate-600">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const RootRedirect = () => {
-    const { employeeInfo, consumerInfo } = useAuth();
-    let role = "";
-    if (employeeInfo?.role) {
-      role = employeeInfo.role;
-    }else if (consumerInfo?.role) {
-      role = consumerInfo.role;
-    } else {
-      role = "";
-    }
-
-    if (role === "USER" || role === "HR") {
-      return <Navigate to="/dashboard" replace />;
-    } else if (role === "ADMIN") {
-      return <Navigate to="/admin-dashboard" replace />;
-    } else if (role === "EDITOR") {
-      return <Navigate to="/editor-dashboard" replace />;
-    } else if (role === "CONSUMER") {
-      return <Navigate to="/consumer-dashboard" replace />;
+    if (user) {
+      return <Navigate to="/auth/callback" replace />;
     } else {
       return <Home />;
     }
@@ -70,12 +58,21 @@ function App() {
 
   return (
     <div>
-      <Navigation />
       <PrivacyPopup />
       <InstallPrompt />
+
+      {/* Public Header */}
+      {!user && <Header />}
+
       <Routes>
         <Route path="/">
+          
+          {/* ============================= */}
+          {/* PUBLIC ROUTES */}
+          {/* ============================= */}
+
           <Route index element={<RootRedirect />} />
+
           <Route path="about" element={<About />} />
           <Route path="rate-advisory" element={<Advisory />} />
           <Route path="notice" element={<NeaAdvisory />} />
@@ -87,84 +84,150 @@ function App() {
           <Route path="developers" element={<Developers />} />
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="unauthorized" element={<Unauthorized />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route
+            path="auth/callback"
+            element={
+              <ProtectedRoute>
+                <AuthCallback />
+              </ProtectedRoute>
+            }
+          />
 
-          <Route
-            path="/consumer-dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["CONSUMER"]}>
-                  <ConsumerDashboard />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/editor-dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["EDITOR"]}>
-                  <EditorDashboard />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["USER", "HR"]}>
-                  <Dashboard />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["ADMIN"]}>
-                  <AdminDashboard />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="review-application/:id"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["USER", "HR"]}>
-                  <ReviewApplication />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="coop-policies" element={<Policy />} />
-          <Route
-            path="employee-manuals"
-            element={
-              <ProtectedRoute>
-                <EmployeeManual />
-              </ProtectedRoute>
-            }
-          />
+          {/* ============================= */}
+          {/* EMPLOYEE LAYOUT */}
+          {/* USER / HR / ADMIN / EDITOR */}
+          {/* ============================= */}
+
+          <Route element={<EmployeeLayout />}>
+
+            {/* USER / HR */}
+            <Route
+              path="dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["USER", "HR"]}>
+                    <Dashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ADMIN */}
+            <Route
+              path="admin-dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["ADMIN"]}>
+                    <AdminDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* EDITOR */}
+            <Route
+              path="editor-dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <EditorDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* USER / HR */}
+            <Route
+              path="review-application/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["USER", "HR"]}>
+                    <ReviewApplication />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="settings"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["USER", "HR", "ADMIN", "EDITOR"]}>
+                    <Settings />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="coop-policies"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["USER", "HR", "ADMIN", "EDITOR"]}>
+                    <Policy />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="employee-manuals"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["USER", "HR", "ADMIN", "EDITOR"]}>
+                    <EmployeeManual />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+          </Route>
+
+
+          {/* ============================= */}
+          {/* CONSUMER ROUTES */}
+          {/* ============================= */}
+          <Route element={<ConsumerLayout />}>
+
+            <Route
+              path="consumer-dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["CONSUMER"]}>
+                    <ConsumerDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="consumer-settings"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["CONSUMER"]}>
+                    <Settings />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+
+          </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* ============================= */}
+        {/* CATCH ALL */}
+        {/* ============================= */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+
       </Routes>
-      {!hideFooterOnRestrictedPages && <Footer />}
+      <Footer />
     </div>
   );
 }
 
 export default App;
-// {!hideFooterOnRestrictedPages && <Footer />}

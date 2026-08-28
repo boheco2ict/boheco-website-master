@@ -1,29 +1,128 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { FaCog, FaLock, FaChevronRight, FaTimes } from "react-icons/fa";
+import ResetPassword from "./ResetPassword";
 
 const Settings = () => {
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
   return (
     <div
-      className="min-h-screen px-4 pb-12 pt-20 sm:px-6 lg:px-10"
+      className="w-full px-5 pt-[21px] min-h-screen"
       style={{ background: "var(--section-bg)" }}
     >
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            Manage your account settings, password, and profile preferences from
-            here.
-          </p>
+
+        {/* Page Header */}
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <FaCog className="text-lg" />
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Settings
+              </h1>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Manage your account and security preferences.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-1">
-          <Link
-            to="/reset-password"
-            className="rounded-2xl border border-slate-200 bg-amber-50 px-6 py-8 text-center text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
-          >
-            Reset Password
-          </Link>
+        {/* Account Settings */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+          {/* Section Header */}
+          <div className="border-b border-slate-200 px-6 py-5">
+            <h2 className="text-base font-semibold text-slate-900">
+              Account Settings
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Update and manage your account information and security.
+            </p>
+          </div>
+
+          {/* Settings Items */}
+          <div className="p-3">
+
+            {/* Reset Password */}
+            <button
+              type="button"
+              onClick={() => setShowResetPassword(true)}
+              className="group w-full flex items-center gap-4 rounded-xl px-4 py-4 text-left transition hover:bg-amber-50"
+            >
+              {/* Icon */}
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 transition group-hover:bg-amber-200">
+                <FaLock className="text-base" />
+              </div>
+
+              {/* Text */}
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-slate-800">
+                  Reset Password
+                </h3>
+
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Change your current password to keep your account secure.
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition group-hover:bg-white group-hover:text-amber-700">
+                <FaChevronRight className="text-xs" />
+              </div>
+            </button>
+
+          </div>
+        </section>
+
+        {/* Security Notice */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <div className="flex gap-3">
+            <div className="mt-0.5 text-amber-700">
+              <FaLock className="text-sm" />
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900">
+                Keep your account secure
+              </h3>
+
+              <p className="mt-1 text-xs leading-5 text-amber-800">
+                Use a strong password and avoid sharing your account
+                credentials with anyone.
+              </p>
+            </div>
+          </div>
         </div>
+
       </div>
+
+      {/* =========================================
+          RESET PASSWORD MODAL
+      ========================================== */}
+      {showResetPassword && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
+          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
+
+            {/* Close */}
+            <button
+              type="button"
+              onClick={() => setShowResetPassword(false)}
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Close"
+            >
+              <FaTimes className="text-sm" />
+            </button>
+
+            <ResetPassword modal />
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

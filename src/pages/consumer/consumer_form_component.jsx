@@ -12,6 +12,14 @@ const ConsumerForm = ({ ID, onSuccess }) => {
     amount: "",
   });
 
+  const initialForm = {
+    user_id: ID || "",
+    account_number: "",
+    month: "",
+    year: "",
+    amount: "",
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -23,16 +31,15 @@ const ConsumerForm = ({ ID, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       setSaving(true);
       const response = await createConsumer(form);
       if (response.success) {
-        alert("Account Verified Successfully.");
+        alert(response.message);
         onSuccess();
       } else {
-        alert("Account Verification Failed.");
-        console.log(response);
+        setForm(initialForm);
+        alert(response.message);
       }
     } catch (error) {
       console.error(error);
@@ -132,8 +139,6 @@ const ConsumerForm = ({ ID, onSuccess }) => {
                   value={form.amount}
                   onChange={handleChange}
                   placeholder="0.00"
-                  min="0"
-                  step="0.01"
                   required
                   className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 hover:border-slate-400"
                 />
@@ -208,7 +213,7 @@ const ConsumerForm = ({ ID, onSuccess }) => {
               disabled={saving}
               className="inline-flex items-center justify-center rounded-lg bg-slate-800 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 active:scale-[0.98]"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Verifying..." : "Verify"}
             </button>
           </div>
         </div>

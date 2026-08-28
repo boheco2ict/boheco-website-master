@@ -258,7 +258,10 @@ function Dashboard() {
   );
 
   return (
-        <div className="min-h-screen w-full px-4 pb-8 pt-20 sm:px-6 lg:px-8 xl:pl-[calc(clamp(220px,14vw,240px)+24px)] xl:pt-6" style={{ background: "var(--section-bg)" }}>
+        <div
+          className="w-full pl-5 pr-5 pt-[20px] pb-5 min-h-screen"
+          style={{ background: "var(--section-bg)" }}
+        >
           <div className="w-full">
           {/* Main Content */}
           <section
