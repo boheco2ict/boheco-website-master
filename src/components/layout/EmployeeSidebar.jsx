@@ -8,14 +8,15 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase";
-import ConfirmModal from "./ConfirmModal";
+import { supabase } from "../../supabase";
+import ConfirmModal from "../ConfirmModal";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const { employeeInfo, loading } = useAuth();
   const navigate = useNavigate();
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -45,21 +46,25 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   }
 
   // =========================================
+  // GET USER ROLE
+  // =========================================
+  const role = employeeInfo?.role;
+
+  // =========================================
   // GET DASHBOARD LINK BASED ON ROLE
   // =========================================
   const getDashboardLink = () => {
-    let role = employeeInfo?.role;
-
     switch (role) {
       case "EDITOR":
         return "/editor-dashboard";
-      case "CONSUMER":
-        return "/consumer-dashboard";
+
       case "ADMIN":
         return "/admin-dashboard";
+
       case "USER":
       case "HR":
         return "/dashboard";
+
       default:
         return null;
     }
@@ -67,12 +72,77 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
   const dashboardLink = getDashboardLink();
 
+  // =========================================
+  // SIDEBAR ITEMS
+  // =========================================
   const items = [
-    ["Dashboard", FaTachometerAlt, dashboardLink],
-    ["Coop Policies", FaFolderOpen, "/coop-policies"],
-    ["Employee Manual", FaFileAlt, "/employee-manuals"],
-    ["Settings", FaCog, "/settings"],
+    {
+      label: "Dashboard",
+      icon: FaTachometerAlt,
+      path: dashboardLink,
+      roles: ["USER", "HR", "EDITOR", "ADMIN"],
+    },
+
+    {
+      label: "Coop Policies",
+      icon: FaFolderOpen,
+      path: "/coop-policies",
+      roles: ["USER", "HR"],
+    },
+
+    {
+      label: "Employee Manual",
+      icon: FaFileAlt,
+      path: "/employee-manuals",
+      roles: ["USER", "HR"],
+    },
+
+    {
+      label: "Power Rates",
+      icon: FaFileAlt,
+      path: "/editor-power-rates",
+      roles: ["EDITOR"],
+    },
+    {
+      label: "Rate Advisory",
+      icon: FaFileAlt,
+      path: "/editor-rate-advisory",
+      roles: ["EDITOR"],
+    },
+        {
+      label: "Generation Charge",
+      icon: FaFileAlt,
+      path: "/editor-generation-charge",
+      roles: ["EDITOR"],
+    },
+
+    {
+      label: "Manage Employee",
+      icon: FaFileAlt,
+      path: "/admin-manage-employee",
+      roles: ["ADMIN"],
+    },
+        {
+      label: "Leave Approver",
+      icon: FaFileAlt,
+      path: "/admin-leave-approver",
+      roles: ["ADMIN"],
+    },
+
+    {
+      label: "Settings",
+      icon: FaCog,
+      path: "/settings",
+      roles: ["USER", "HR", "EDITOR", "ADMIN"],
+    },
   ];
+
+  // =========================================
+  // FILTER ITEMS BASED ON ROLE
+  // =========================================
+  const visibleItems = items.filter((item) =>
+    item.roles.includes(role)
+  );
 
   return (
     <aside
@@ -129,98 +199,67 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
       {/* Navigation */}
       <nav className="space-y-2 p-2">
-        {items.map(([label, Icon, path]) => (
-          <div key={label}>
-            {path ? (
-              <a
-                href={path}
-                title={collapsed ? label : ""}
-                className="
-                  group
-                  flex
-                  h-[52px]
-                  items-center
-                  rounded-xl
-                  px-3
-                  transition-all
-                  duration-200
-                  hover:bg-[#FFF1BD]
-                "
-              >
-                {/* Icon */}
-                <span
+        {visibleItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <div key={item.label}>
+              {item.path ? (
+                <a
+                  href={item.path}
+                  title={collapsed ? item.label : ""}
                   className="
+                    group
                     flex
-                    h-8
-                    w-8
-                    flex-shrink-0
+                    h-[52px]
                     items-center
-                    justify-center
-                    rounded-lg
-                    bg-[#FFF8E1]
-                    text-[#B45309]
-                    transition
-                    group-hover:bg-white
+                    rounded-xl
+                    px-3
+                    transition-all
+                    duration-200
+                    hover:bg-[#FFF1BD]
                   "
                 >
-                  <Icon className="text-sm" />
-                </span>
-
-                {/* Label */}
-                {!collapsed && (
+                  {/* Icon */}
                   <span
                     className="
-                      ml-3
-                      whitespace-nowrap
-                      text-[13px]
-                      font-medium
-                      text-[#44403C]
+                      flex
+                      h-8
+                      w-8
+                      flex-shrink-0
+                      items-center
+                      justify-center
+                      rounded-lg
+                      bg-[#FFF8E1]
+                      text-[#B45309]
                       transition
-                      group-hover:text-[#78350F]
+                      group-hover:bg-white
                     "
                   >
-                    {label}
+                    <Icon className="text-sm" />
                   </span>
-                )}
-              </a>
-            ) : (
-              <div
-                title={collapsed ? label : ""}
-                className="
-                  flex
-                  h-[52px]
-                  items-center
-                  rounded-xl
-                  px-3
-                  opacity-50
-                  cursor-not-allowed
-                "
-              >
-                <span
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    flex-shrink-0
-                    items-center
-                    justify-center
-                    rounded-lg
-                    bg-slate-100
-                    text-slate-400
-                  "
-                >
-                  <Icon className="text-sm" />
-                </span>
 
-                {!collapsed && (
-                  <span className="ml-3 text-[13px] font-medium text-slate-400">
-                    {label}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+                  {/* Label */}
+                  {!collapsed && (
+                    <span
+                      className="
+                        ml-3
+                        whitespace-nowrap
+                        text-[13px]
+                        font-medium
+                        text-[#44403C]
+                        transition
+                        group-hover:text-[#78350F]
+                      "
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </a>
+              ) : null}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Logout */}

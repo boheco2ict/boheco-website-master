@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Header from "../components/EmployeeHeader";
-import Sidebar from "../components/EmployeeSidebar";
+import Header from "./ConsumerHeader";
+import Sidebar from "./ConsumerSidebar";
 
-const EmployeeLayout = () => {
+const Layout = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -29,4 +29,4 @@ const EmployeeLayout = () => {
   );
 };
 
-export default EmployeeLayout;
+export default Layout;

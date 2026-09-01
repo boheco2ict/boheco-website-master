@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import ConsumerForm from "../consumer/consumer_form_component";
-import EmployeeForm from "../employee/employee_form_component";
+import { FaSignOutAlt } from "react-icons/fa";
+import ConsumerForm from "../consumer/form";
+import EmployeeNoRecord from "../employee/no_record";
+import { supabase } from "../../supabase";
 
 function AuthCallback() {
   const navigate = useNavigate();
@@ -20,20 +22,20 @@ function AuthCallback() {
 
     // Authenticated consumer with existing profile
     if (consumerInfo) {
-      let role = consumerInfo?.role || "";
+      const role = consumerInfo?.role || "";
 
       // CONSUMER
       if (role === "CONSUMER") {
         navigate("/consumer-dashboard", { replace: true });
         return;
       }
-      
+
       return;
     }
 
     // Authenticated employee with existing profile
     if (employeeInfo) {
-      let role = employeeInfo?.role || "";
+      const role = employeeInfo?.role || "";
 
       // USER or HR
       if (role === "USER" || role === "HR") {
@@ -55,8 +57,8 @@ function AuthCallback() {
 
       return;
     }
+
     // User exists but has no consumer/employee information
-    // ConsumerForm will be displayed
   }, [loading, user, consumerInfo, employeeInfo, navigate]);
 
   // Completely pause rendering while AuthContext is loading
@@ -85,23 +87,58 @@ function AuthCallback() {
 
   const handleFormResponse = () => {
     window.location.reload();
-  }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // ignore errors
+    }
+
+    navigate("/login");
+  };
 
   // User exists but has no profile
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      {user && user.app_metadata.provider === "google" && !consumerInfo && 
-        <ConsumerForm 
-          ID={user.id} 
-          onSuccess={handleFormResponse}
-        />
-      }
-      {user && user.app_metadata.provider === "email" && !employeeInfo && 
-        <EmployeeForm 
-          ID={user.id}
-          onSuccess={handleFormResponse}
-        />
-      }
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 relative">
+
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="
+          absolute top-6 right-6
+          flex items-center gap-2
+          px-4 py-2
+          bg-white
+          text-slate-700
+          border border-slate-200
+          rounded-lg
+          shadow-sm
+          hover:bg-slate-50
+          hover:text-red-600
+          transition-all duration-200
+        "
+      >
+        <FaSignOutAlt />
+        <span>Logout</span>
+      </button>
+
+      {/* Forms */}
+      {user &&
+        user.app_metadata.provider === "google" &&
+        !consumerInfo && (
+          <ConsumerForm
+            ID={user.id}
+            onSuccess={handleFormResponse}
+          />
+        )}
+
+      {user &&
+        user.app_metadata.provider === "email" &&
+        !employeeInfo && (
+          <EmployeeNoRecord data={user} />
+        )}
     </div>
   );
 }

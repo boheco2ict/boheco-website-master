@@ -515,13 +515,13 @@ const GenerationChargeManagement = () => {
   // ==========================================
 
   return (
-    <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="w-full pl-5 pr-5 pt-[21px] pb-5 min-h-screen" style={{ background: "var(--section-bg)" }}>
 
       {/* ========================================
           HEADER
       ======================================== */}
 
-      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-5 py-5 sm:px-6">
+      <div className="border-b rounded-2xl border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-5 py-5 sm:px-6">
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
@@ -963,7 +963,7 @@ const GenerationChargeManagement = () => {
 
       )}
 
-    </section>
+    </div>
   );
 };
 

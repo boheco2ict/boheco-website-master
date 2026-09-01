@@ -6,10 +6,10 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase";
-import ConfirmModal from "./ConfirmModal";
+import { supabase } from "../../supabase";
+import ConfirmModal from "../ConfirmModal";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const { loading } = useAuth();
@@ -43,7 +43,8 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   }
 
   const items = [
-    ["Ledger", FaBook, "/consumer-dashboard"],
+    ["Dashboard", FaBook, "/consumer-dashboard"],
+    ["Ledger", FaBook, "/consumer-ledger"],
     ["Settings", FaCog, "/consumer-settings"],
   ];
 

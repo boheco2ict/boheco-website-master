@@ -6,7 +6,7 @@ import Partners from "./pages/others/Partners";
 import LifelineAdvisory from "./pages/others/LifelineAdvisory";
 import NeaAdvisory from "./pages/others/Notice";
 import { Route, Routes, Navigate } from "react-router-dom";
-import Footer from "./components/Footer";
+import Footer from "./components/layout/Footer";
 import DdpPspp from "./pages/others/DdpPspp";
 import BillInquiry from "./pages/others/BillInquiry";
 import Login from "./pages/auth/Login";
@@ -17,7 +17,7 @@ import Developers from "./pages/others/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/employee/Dashboard";
 import EditorDashboard from "./pages/editor/EditorDashboard";
-import ConsumerDashboard from "./pages/consumer/consumer_dashboard";
+import ConsumerDashboard from "./pages/consumer/dashboard";
 import Policy from "./pages/employee/Policy";
 import EmployeeManual from "./pages/employee/EmployeeManual";
 import ForgotPassword from "./pages/others/ForgotPassword";
@@ -29,8 +29,15 @@ import { useAuth } from "./context/AuthContext";
 import AuthCallback from "./pages/auth/auth_callback";
 import Header from "./components/Header";
 import AdminDashboard from "./pages/admin/admin_dashboard";
-import EmployeeLayout from "./pages/EmployeeLayout";
-import ConsumerLayout from "./pages/ConsumerLayout";
+import EmployeeLayout from "./components/layout/EmployeeLayout";
+import ConsumerLayout from "./components/layout/ConsumerLayout";
+import NotFound from "./pages/others/NotFound";
+import ConsumerLedger from "./pages/consumer/ledger";
+import GenerationChargeManagement from "./pages/editor/GenerationChargeManagement";
+import PowerRateManagement from "./pages/editor/PowerRateManagement";
+import PowerRateAdvisoryManagement from "./pages/editor/PowerRateAdvisoryManagement";
+import LeaveApprover from "./pages/admin/leave_approver";
+import ManageEmployee from "./pages/admin/employee_management";
 
 function App() {
   const { user, loading } = useAuth();
@@ -101,7 +108,6 @@ function App() {
 
           <Route element={<EmployeeLayout />}>
 
-            {/* USER / HR */}
             <Route
               path="dashboard"
               element={
@@ -124,6 +130,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="admin-manage-employee"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["ADMIN"]}>
+                    <ManageEmployee />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin-leave-approver"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["ADMIN"]}>
+                    <LeaveApprover />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
 
             {/* EDITOR */}
             <Route
@@ -132,6 +158,36 @@ function App() {
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={["EDITOR"]}>
                     <EditorDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="editor-power-rates"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <PowerRateManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="editor-rate-advisory"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <PowerRateAdvisoryManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="editor-generation-charge"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <GenerationChargeManagement />
                   </RoleRoute>
                 </ProtectedRoute>
               }
@@ -189,13 +245,23 @@ function App() {
           {/* CONSUMER ROUTES */}
           {/* ============================= */}
           <Route element={<ConsumerLayout />}>
-
+            
             <Route
               path="consumer-dashboard"
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={["CONSUMER"]}>
                     <ConsumerDashboard />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="consumer-ledger"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["CONSUMER"]}>
+                    <ConsumerLedger />
                   </RoleRoute>
                 </ProtectedRoute>
               }
@@ -221,7 +287,7 @@ function App() {
 
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={<NotFound />}
         />
 
       </Routes>

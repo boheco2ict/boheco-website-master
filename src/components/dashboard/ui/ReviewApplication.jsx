@@ -18,8 +18,7 @@ import { useAuth } from "../../../context/AuthContext";
 import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
 
 import {
-  getLeaveApplicationById,
-  getEmployeeByUserId,
+  getLeaveApplicationById
 } from "../../../services/getservices";
 
 import {
@@ -35,83 +34,59 @@ import {
 export default function ReviewApplication() {
   const navigate = useNavigate();
   const { id } = useParams();
-
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [employee, setEmployee] = useState(null);
   const [applications, setApplications] = useState(null);
-
-  const [loadingfetchE, setIsLoadingE] = useState(true);
   const [loadingfetchA, setIsLoadingA] = useState(true);
-
   const [processingReject, setIsProcessingReject] = useState(false);
   const [processingApproval, setIsProcessingApprove] = useState(false);
+  const { employeeInfo, loading: authLoading } = useAuth();
 
-  const { user } = useAuth();
-
-  // Fetch logged-in employee
   useEffect(() => {
-    const fetchemployee = async () => {
-      try {
-        setIsLoadingE(true);
-
-        const employeeData = await getEmployeeByUserId(user.id);
-
-        setEmployee(employeeData);
-      } catch (error) {
-        console.error("Error fetching employee:", error);
-      } finally {
-        setIsLoadingE(false);
-      }
-    };
-
-    if (user?.id) {
-      fetchemployee();
+    if (authLoading) {
+      return;
     }
-  }, [user?.id]);
+    setEmployee(employeeInfo);
+  }, [employeeInfo, authLoading]);
 
   // Fetch leave application
   useEffect(() => {
     const fetchApplication = async () => {
       try {
         setIsLoadingA(true);
-
         const leaveApplication = await getLeaveApplicationById(id);
         const currentUserId = employee?.id;
+        const approverStatus = leaveApplication?.approver_id_status?.find((approver) => Number(approver.id) === Number(currentUserId));
 
-        const approverStatus =
-          leaveApplication?.approver_id_status?.find(
-            (approver) =>
-              Number(approver.id) === Number(currentUserId)
-          );
-
-        // User is not an approver OR already processed the application
-        if (
-          !approverStatus ||
-          approverStatus.status !== "pending"
-        ) {
-          alert(
-            "You already review this application. Redirecting to leave tab."
-          );
-
-          navigate("/dashboard?tab=leave", {
-            replace: true,
-          });
-
-          return;
+        if (approverStatus) {
+          if (approverStatus.status !== "pending") {
+            alert(
+              "You already review this application. Redirecting to Leave Tab."
+            );
+            navigate("/dashboard?tab=leave", {
+              replace: true,
+            });
+            return;
+          }
+          if (!approverStatus.id === currentUserId) {
+            alert(
+              "You are not the Approver of this Application. Redirecting to Leave Tab."
+            );
+            navigate("/dashboard?tab=leave", {
+              replace: true,
+            });
+            return;
+          }
         }
-
         setApplications(leaveApplication);
       } catch (error) {
         console.error("Error fetching application:", error);
-
         alert(
-          "Cannot find Application. Redirecting to leave tab."
+          "Cannot find Application. Redirecting to Leave Tab."
         );
-
         navigate("/dashboard?tab=leave", {
           replace: true,
         });
-
         return;
       } finally {
         setIsLoadingA(false);
@@ -130,49 +105,9 @@ export default function ReviewApplication() {
         approver.status?.trim().toLowerCase() === "pending"
     );
 
-  useEffect(() => {
-    if (
-      !loadingfetchE &&
-      !loadingfetchA &&
-      employee &&
-      applications &&
-      !currentApprover
-    ) {
-      alert(
-        "You are not authorized to review this leave application."
-      );
-
-      navigate("/dashboard?tab=leave", {
-        replace: true,
-      });
-    }
-  }, [
-    loadingfetchE,
-    loadingfetchA,
-    employee,
-    applications,
-    currentApprover,
-    navigate,
-  ]);
-
-  if (loadingfetchE || loadingfetchA) {
+  if (!employee || loadingfetchA) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ background: "var(--section-bg)" }}
-      >
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-amber-600" />
-
-          <h2 className="text-lg font-bold text-slate-900">
-            Loading Application
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Please wait while we retrieve the leave application details.
-          </p>
-        </div>
-      </div>
+      <div></div>
     );
   }
 

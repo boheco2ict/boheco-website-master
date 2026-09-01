@@ -1,19 +1,36 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function RoleRoute({ children, allowedRoles }) {
-  const { user, employeeInfo, consumerInfo, loading } = useAuth();
+function RoleRoute({ children, allowedRoles = [] }) {
+  const {
+    user,
+    employeeInfo,
+    consumerInfo,
+    loading,
+  } = useAuth();
+
   const location = useLocation();
 
+  // =========================================
+  // AUTHENTICATION / PROFILE LOADING
+  // =========================================
   if (loading) {
     return (
-      <div className="h-screen flex justify-center items-center text-2xl">
-        Please Wait...
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-amber-500" />
+
+          <p className="text-sm font-medium text-slate-500">
+            Checking your account...
+          </p>
+        </div>
       </div>
     );
   }
 
-  // Not logged in
+  // =========================================
+  // NOT AUTHENTICATED
+  // =========================================
   if (!user) {
     return (
       <Navigate
@@ -24,38 +41,46 @@ function RoleRoute({ children, allowedRoles }) {
     );
   }
 
-  /*
-   * CONSUMER
-   *
-   * If the route allows CONSUMER, check consumerInfo
-   * instead of employeeInfo.
-   */
+  // =========================================
+  // DETERMINE ACCOUNT TYPE
+  // =========================================
+  const isConsumer = !!consumerInfo;
+  const isEmployee = !!employeeInfo;
+
+  // =========================================
+  // CONSUMER ROUTES
+  // =========================================
   if (allowedRoles.includes("CONSUMER")) {
-    if (!consumerInfo) {
+    // User must have a consumer profile
+    if (!isConsumer) {
       return <Navigate to="/unauthorized" replace />;
     }
+
+    // Consumer is allowed
     return children;
   }
 
-  /*
-   * EMPLOYEE
-   *
-   * Employee routes continue using employeeInfo.role.
-   */
-  if (!employeeInfo) {
-    return (
-      <div className="h-screen flex justify-center items-center text-2xl">
-        Loading employee information...
-      </div>
-    );
+  // =========================================
+  // EMPLOYEE ROUTES
+  // =========================================
+  if (allowedRoles.length > 0) {
+    // User must have an employee profile
+    if (!isEmployee) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+
+    // Check employee role
+    if (!allowedRoles.includes(employeeInfo.role)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+
+    return children;
   }
 
-  // Logged in but wrong employee role
-  if (!allowedRoles.includes(employeeInfo.role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return children;
+  // =========================================
+  // NO ALLOWED ROLES SPECIFIED
+  // =========================================
+  return <Navigate to="/unauthorized" replace />;
 }
 
 export default RoleRoute;

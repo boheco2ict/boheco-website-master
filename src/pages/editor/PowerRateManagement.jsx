@@ -5,6 +5,7 @@ import {
   FaSave,
   FaTimes,
   FaFilePdf,
+  FaBolt
 } from "react-icons/fa";
 
 import { getPowerRateYears } from "../../services/getservices";
@@ -549,7 +550,7 @@ function PowerRateManagement() {
 
   return (
     <div
-      className="w-full"
+      className="w-full pl-5 pr-5 pt-[21px] pb-5 min-h-screen"
       style={{ background: "var(--section-bg)" }}
     >
       <div className="w-full">
@@ -558,41 +559,65 @@ function PowerRateManagement() {
         {/* HEADER */}
         {/* ========================================= */}
 
-        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+<div className="mb-6 flex flex-col gap-4 rounded-2xl bg-[#111827] px-6 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
-              Power Rate Management
-            </p>
+  {/* Left Content */}
+  <div className="flex items-center gap-4">
 
-            <h1 className="mt-1 text-3xl font-extrabold text-slate-900">
-              Manage Power Rates
-            </h1>
+    {/* Icon */}
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-slate-950">
+      <FaBolt className="text-lg" />
+    </div>
 
-            <p className="mt-2 text-sm text-slate-500">
-              View, add, and update annual power rates.
-            </p>
-          </div>
+    {/* Title + Description */}
+    <div>
+      <h1 className="text-lg font-bold text-white">
+        Manage Power Rates
+      </h1>
 
-          <button
-            type="button"
-            onClick={() => {
-              setYearForm({
-                year: "",
-                pdf_url: "",
-              });
+      <p className="mt-0.5 text-sm text-slate-300">
+        View, add, and update annual power rates.
+      </p>
+    </div>
 
-              setError("");
-              setMessage("");
+  </div>
 
-              setShowAddYear(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600"
-          >
-            <FaPlus />
-            Add Year
-          </button>
-        </div>
+  {/* Button */}
+  <button
+    type="button"
+    onClick={() => {
+      setYearForm({
+        year: "",
+        pdf_url: "",
+      });
+
+      setError("");
+      setMessage("");
+
+      setShowAddYear(true);
+    }}
+    className="
+      inline-flex
+      items-center
+      justify-center
+      gap-2
+      rounded-lg
+      bg-amber-400
+      px-5
+      py-3
+      text-sm
+      font-bold
+      text-slate-950
+      transition
+      hover:bg-amber-300
+      active:scale-[0.98]
+    "
+  >
+    <FaPlus />
+    Add Year
+  </button>
+
+</div>
 
         {/* ========================================= */}
         {/* MESSAGES */}

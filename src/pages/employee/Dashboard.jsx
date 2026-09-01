@@ -11,11 +11,11 @@ import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
 
 // UI Components
-import DashboardLoading from "../../components/dashboard/ui/DashboardLoading";
 import ProfileTab from "../../components/dashboard/ui/ProfileTab";
 import LeaveCreditsTab from "../../components/dashboard/ui/LeaveCreditsTab";
 import MemoTab from "../../components/dashboard/ui/MemoTab";
 import OfficeOrderTab from "../../components/dashboard/ui/OfficeOrderTab";
+import Profile from "../../components/dashboard/ui/Profile";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -258,300 +258,161 @@ function Dashboard() {
   );
 
   return (
-        <div
-          className="w-full pl-5 pr-5 pt-[20px] pb-5 min-h-screen"
-          style={{ background: "var(--section-bg)" }}
-        >
-          <div className="w-full">
-          {/* Main Content */}
-          <section
-            className="
-              w-full
-              overflow-hidden
-              rounded-3xl
-              border
-              border-slate-200/70
-              bg-white/80
-              shadow-[0_20px_60px_rgba(15,23,42,0.08)]
-              backdrop-blur-sm
-            "
-          >
-            {/* Tab Navigation */}
-            <div
-              className="
-                border-b
-                border-slate-200/70
-                bg-white/90
-                px-4
-                py-5
-                backdrop-blur-md
-                sm:px-6
-                lg:px-8
-              "
-            >
-              <div className="flex flex-col gap-2">
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Dashboard Sections
-                </h2>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {tabs.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
+    <div
+      className="min-h-screen w-full px-4 pb-8 pt-5 sm:px-5"
+    >
+      <div className="mx-auto w-full max-w-[1600px]">
 
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`group relative flex min-h-16 flex-col items-center justify-center gap-2 rounded-2xl px-3 py-3 text-xs font-semibold transition-all duration-200 sm:text-sm ${
-                          isActive
-                            ? "bg-amber-50 text-amber-900 shadow-sm ring-1 ring-amber-200"
-                            : "bg-slate-50/70 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }`}
-                        title={tab.label}
-                      >
-                        {/* Icon Container */}
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${
-                            isActive
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-slate-200/80 text-slate-500 group-hover:bg-slate-300 group-hover:text-slate-700"
-                          }`}
-                        >
-                          <Icon size={16} />
-                        </span>
+        {/* =========================================
+            DASHBOARD NAVIGATION
+        ========================================= */}
+        <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-                        {/* Label */}
-                        <span className="text-center leading-tight">
-                          {tab.label}
-                        </span>
+          {/* Header */}
+          <div className="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 sm:px-6">
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              Employee Portal
+            </span>
 
-                        {/* Active Indicator */}
-                        {isActive && (
-                          <div className="absolute bottom-1 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-amber-500" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <h2 className="text-xl font-bold text-slate-900">
+              Dashboard
+            </h2>
 
-            {/* Tab Content */}
-              <div className="min-w-0 p-4 themed-bg-card themed-text sm:p-6 lg:p-8">
-              {isLoading && <DashboardLoading />}
-              
-              {!isLoading && activeTab === "profile" && (
-                
-                <ProfileTab
-                  employee={employee}
-                  fullName={fullName}
-                  onEditClick={handleOpenEdit}
-                />
-              )}
+            <p className="text-sm text-slate-500">
+              Access your profile, leave credits, memos, policies, and office orders.
+            </p>
+          </div>
 
-              {!isLoading && activeTab === "leave" && (
-                <LeaveCreditsTab
-                  leaveCredits={leaveCredits}
-                  employee={employee}
-                />
-              )}
+          {/* Tabs */}
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max px-3 py-3 sm:px-4">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
 
-              {!isLoading && activeTab === "memo" && (
-                <MemoTab
-                  employee={employee}
-                />
-              )}
-
-              {!isLoading && activeTab === "coop-policies" && <Policy />}
-
-              {!isLoading && activeTab === "order" && (
-                <OfficeOrderTab 
-                  employee={employee} 
-                />
-              )}
-            </div>
-          </section>
-        </div>
-
-        {isEditOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: "rgba(15,23,42,0.5)", padding: "1.5rem" }}
-          >
-            <div
-              className="w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl themed-bg-card"
-              style={{ border: "1px solid var(--muted)" }}
-            >
-              <div className="flex flex-col gap-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between themed-bg-section themed-border">
-                <div>
-                  <h3 className="text-lg font-semibold themed-text">
-                    Edit Profile
-                  </h3>
-                  <p className="text-sm themed-muted">
-                    Update your full name, address, and phone numbers.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="rounded-md border px-3 py-2 text-sm font-semibold transition hover:bg-slate-100"
-                  style={{
-                    borderColor: "var(--muted)",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-
-              <form
-                onSubmit={handleSaveEdit}
-                className="space-y-4 p-6 themed-bg-card themed-text"
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-semibold themed-muted">
-                      First Name
-                    </label>
-                    <input
-                      name="firstname"
-                      value={editData.firstname}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                      style={{ border: "1px solid var(--muted)" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold themed-muted">
-                      Middle Name
-                    </label>
-                    <input
-                      name="middlename"
-                      value={editData.middlename}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                      style={{ border: "1px solid var(--muted)" }}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-semibold themed-muted">
-                      Last Name
-                    </label>
-                    <input
-                      name="lastname"
-                      value={editData.lastname}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                      style={{ border: "1px solid var(--muted)" }}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label
-                      className="block text-sm font-semibold"
-                      style={{ color: "var(--muted)" }}
-                    >
-                      Address
-                    </label>
-                    <input
-                      name="address"
-                      value={editData.address}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none"
-                      style={{
-                        border: "1px solid var(--muted)",
-                        background: "var(--card-bg)",
-                        color: "var(--text-primary)",
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold themed-muted">
-                      Mobile Number
-                    </label>
-                    <input
-                      name="phone1"
-                      value={editData.phone1}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                      style={{ border: "1px solid var(--muted)" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold themed-muted">
-                      Telephone Number
-                    </label>
-                    <input
-                      name="phone2"
-                      value={editData.phone2}
-                      onChange={handleEditChange}
-                      className="mt-2 w-full rounded-lg px-3 py-2 text-sm outline-none themed-bg-card themed-text"
-                      style={{ border: "1px solid var(--muted)" }}
-                    />
-                  </div>
-                </div>
-
-                {editError && (
-                  <div
-                    className="rounded-md px-4 py-3 text-sm"
-                    style={{
-                      border: "1px solid var(--muted)",
-                      background: "#fff6f6",
-                      color: "#7f1d1d",
-                    }}
-                  >
-                    {editError}
-                  </div>
-                )}
-
-                <div
-                  className="flex flex-col gap-3 themed-border pt-4 sm:flex-row sm:justify-end"
-                  style={{ borderTopStyle: "solid" }}
-                >
+                return (
                   <button
+                    key={tab.id}
                     type="button"
-                    onClick={() => setIsEditOpen(false)}
-                    className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition hover:bg-slate-100"
-                    style={{
-                      border: "1px solid var(--muted)",
-                      background: "var(--card-bg)",
-                      color: "var(--text-primary)",
-                    }}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      group relative flex items-center gap-2.5
+                      rounded-xl px-4 py-3
+                      text-sm font-semibold
+                      transition-all duration-200
+                      mx-2
+                      ${
+                        isActive
+                          ? "bg-amber-50 text-amber-800"
+                          : "bg-slate-50 text-slate-500 hover:text-slate-800"
+                      }
+                    `}
+                    title={tab.label}
                   >
-                    Cancel
+                    {/* Icon */}
+                    <span
+                      className={`
+                        flex h-8 w-8 items-center justify-center
+                        rounded-lg transition-all duration-200
+                        ${
+                          isActive
+                            ? "bg-amber-500 text-white shadow-sm"
+                            : "bg-slate-200 text-slate-400 group-hover:bg-transparent group-hover:text-slate-600"
+                        }
+                      `}
+                    >
+                      <Icon size={15} />
+                    </span>
+
+                    {/* Label */}
+                    <span>{tab.label}</span>
+
+                    {/* Active Indicator */}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-amber-500" />
+                    )}
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    style={{ opacity: isSaving ? 0.7 : 1 }}
-                  >
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </button>
-                </div>
-              </form>
+                );
+              })}
             </div>
           </div>
-        )}
+        </section>
 
+        {/* =========================================
+            CONTENT
+        ========================================= */}
+        <main className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="p-5 sm:p-6 lg:p-8">
+            {!isLoading && activeTab === "profile" && (
+              <ProfileTab
+                employee={employee}
+                fullName={fullName}
+                onEditClick={handleOpenEdit}
+              />
+            )}
+
+            {!isLoading && activeTab === "leave" && (
+              <LeaveCreditsTab
+                leaveCredits={leaveCredits}
+                employee={employee}
+              />
+            )}
+
+            {!isLoading && activeTab === "memo" && (
+              <MemoTab employee={employee} />
+            )}
+
+            {!isLoading && activeTab === "coop-policies" && <Policy />}
+
+            {!isLoading && activeTab === "order" && (
+              <OfficeOrderTab employee={employee} />
+            )}
+          </div>
+        </main>
+
+        {/* =========================================
+            PROFILE MODAL
+        ========================================= */}
+        <Profile
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          editData={editData}
+          handleEditChange={handleEditChange}
+          handleSaveEdit={handleSaveEdit}
+          editError={editError}
+          isSaving={isSaving}
+        />
+
+        {/* =========================================
+            DEVELOPMENT DEBUG
+        ========================================= */}
         {false && process.env.NODE_ENV === "development" && (
           <div className="fixed bottom-4 right-4 z-50 w-96 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
-            <div className="mb-2 font-semibold text-sm">Debug</div>
-            <div>
-              <strong>auth user id:</strong> {employeeUserId || "(none)"}
+            <div className="mb-2 text-sm font-semibold">
+              Debug
             </div>
+
             <div>
-              <strong>employee.user_id:</strong> {employee?.user_id || "(none)"}
+              <strong>auth user id:</strong>{" "}
+              {employeeUserId || "(none)"}
             </div>
+
+            <div>
+              <strong>employee.user_id:</strong>{" "}
+              {employee?.user_id || "(none)"}
+            </div>
+
             <div className="mt-2">
               <strong>editData:</strong>
+
               <pre className="whitespace-pre-wrap">
                 {JSON.stringify(editData, null, 2)}
               </pre>
             </div>
+
             <div className="mt-2">
               <strong>lastUpdateResult:</strong>
+
               <pre className="whitespace-pre-wrap">
                 {JSON.stringify(lastUpdateResult, null, 2)}
               </pre>
@@ -559,7 +420,7 @@ function Dashboard() {
           </div>
         )}
       </div>
-   
+    </div>
   );
 }
 

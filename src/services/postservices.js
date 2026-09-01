@@ -523,74 +523,116 @@ export const createConsumer = async (data) => {
     return {
       success: false,
       message: "User ID is Missing.",
-      response: null
-    }
+      response: null,
+    };
   }
+
   const date = `${data.month}/01/${data.year}`;
 
   try {
-    const response = await getLedger(data?.account_number, date, data?.amount);
+    // Check if account number already exists
+    const { data: existingConsumer, error: existingError } = await supabase
+      .from("consumers")
+      .select("id, account_number")
+      .eq("account_number", data?.account_number)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("Check Existing Consumer Error:", existingError);
+
+      return {
+        success: false,
+        message: "Unable to verify account number.",
+        response: existingError,
+      };
+    }
+
+    // Account number already exists
+    if (existingConsumer) {
+      return {
+        success: false,
+        message: "This account number is already registered as a consumer.",
+        response: existingConsumer,
+      };
+    }
+
+    // Verify account through ledger
+    const response = await getLedger(
+      data?.account_number,
+      date,
+      data?.amount
+    );
+
     if (!response) {
       return {
         success: false,
         message: "No Record Found, Please Try Again.",
         response: response,
       };
-    } else {
-      const resData = response?.data[0];
-      if (!resData) {
-        return {
-          success: false,
-          message: "No Record Found, Please Try Again.",
-          response: response,
-        };
-      }
+    }
 
-      const { data: newConsumer, error } = await supabase
+    const resData = response?.data[0];
+
+    if (!resData) {
+      return {
+        success: false,
+        message: "No Record Found, Please Try Again.",
+        response: response,
+      };
+    }
+
+    // Create consumer
+    const { data: newConsumer, error } = await supabase
       .from("consumers")
       .insert({
         user_id: data?.user_id,
         account_number: data?.account_number,
         net_amount: data?.amount,
         service_period_end: date,
-        
       })
       .select()
       .single();
 
-      if (error) {
-        console.error("Create Consumer Error:", error);
+    if (error) {
+      console.error("Create Consumer Error:", error);
 
-        // Duplicate record
-        if (error.code === "23505") {
-          if (error.message.includes("user_id")) {
-            return {
-              success: false,
-              message: "This user is already assigned to an consumer.",
-              response: error,
-            };
-          }
-
+      // Duplicate record
+      if (error.code === "23505") {
+        if (error.message.includes("user_id")) {
           return {
             success: false,
-            message: "Duplicate Consumer information.",
+            message: "This user is already assigned to a consumer.",
+            response: error,
+          };
+        }
+
+        if (error.message.includes("account_number")) {
+          return {
+            success: false,
+            message: "This account number is already registered as a consumer.",
             response: error,
           };
         }
 
         return {
           success: false,
-          message: "Add Consumer Failed.",
+          message: "Duplicate Consumer information.",
           response: error,
         };
       }
 
       return {
-        success: true,
-        message: "Verified Successfully.",
-        response: newConsumer,
+        success: false,
+        message: "Add Consumer Failed.",
+        response: error,
       };
     }
+
+    return {
+      success: true,
+      message: "Verified Successfully.",
+      response: newConsumer,
+    };
   } catch (error) {
     console.error("Create Consumer Exception:", error);
 

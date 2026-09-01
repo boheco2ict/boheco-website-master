@@ -252,7 +252,7 @@ export const approveApplication = async (application, approverID) => {
 
     return {
       success: true,
-      message: data?.message || "Application Approved Successfully.",
+      message: "Application Approved Successfully.",
       response: data,
     };
   } catch (error) {
