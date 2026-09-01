@@ -7,72 +7,144 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../context/AuthContext";
 
-function sortManuals(data) {
+const OLD_POLICIES_GROUP = "Compilation of Old Policies";
+
+const DEFAULT_POLICY_DOCUMENTS = [
+  {
+    id: "fallback-1",
+    title: "BOHECO II Cooperative Constitution",
+    group: "General Policies",
+    url: "/coop-policies/boheco-cooperative-constitution.txt",
+  },
+  {
+    id: "fallback-2",
+    title: "Membership Rights and Responsibilities",
+    group: "General Policies",
+    url: "/coop-policies/membership-rights-and-responsibilities.txt",
+  },
+  {
+    id: "fallback-3",
+    title: "Governance and Operations Policy",
+    group: "General Policies",
+    url: "/coop-policies/governance-and-operations.txt",
+  },
+];
+
+function getGroupSortValue(group) {
+  const normalizedGroup = String(group || "").trim();
+
+  if (normalizedGroup === OLD_POLICIES_GROUP) return Number.MIN_SAFE_INTEGER;
+  if (/^\d{4}$/.test(normalizedGroup)) return Number(normalizedGroup);
+
+  return null;
+}
+
+function comparePolicyGroups(aGroup, bGroup) {
+  const normalizedA = String(aGroup || "").trim();
+  const normalizedB = String(bGroup || "").trim();
+
+  if (normalizedA === OLD_POLICIES_GROUP && normalizedB !== OLD_POLICIES_GROUP)
+    return 1;
+  if (normalizedB === OLD_POLICIES_GROUP && normalizedA !== OLD_POLICIES_GROUP)
+    return -1;
+
+  const orderA = getGroupSortValue(normalizedA);
+  const orderB = getGroupSortValue(normalizedB);
+  const isYearA = orderA !== null;
+  const isYearB = orderB !== null;
+
+  if (isYearA && isYearB) return orderB - orderA;
+  if (isYearA) return -1;
+  if (isYearB) return 1;
+
+  return normalizedA.localeCompare(normalizedB);
+}
+
+function sortPolicies(data) {
   return [...data].sort((a, b) => {
-    const aGroup = String(a.group || "").trim();
-    const bGroup = String(b.group || "").trim();
-    const groupComparison = aGroup.localeCompare(bGroup);
+    const aGroup = a.group || "";
+    const bGroup = b.group || "";
 
+    const groupComparison = comparePolicyGroups(aGroup, bGroup);
     if (groupComparison !== 0) return groupComparison;
 
-    return String(a.title || "").localeCompare(String(b.title || ""));
+    return (a.title || "").localeCompare(b.title || "");
   });
 }
 
-function groupManuals(data) {
-  return data.reduce((groups, manual) => {
-    const group = String(manual.group || "General").trim() || "General";
+function groupPolicies(data) {
+  return data.reduce((groups, policy) => {
+    const group = policy.group || "Uncategorized";
 
     if (!groups[group]) {
       groups[group] = [];
     }
 
-    groups[group].push(manual);
+    groups[group].push(policy);
     return groups;
   }, {});
 }
 
-function EmployeeManualPage() {
-  const [manualData, setManualData] = useState([]);
+function Policy() {
+  const { user, loading: authLoading } = useAuth();
+  const [policyData, setPolicyData] = useState([]);
   const [activeGroup, setActiveGroup] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const loadManuals = async () => {
+    if (authLoading) return;
+
+    if (!user) {
+      setIsLoading(false);
+      setErrorMessage(
+        "Coop Policies are restricted to signed-in users. Please log in to view the full policy list."
+      );
+      setPolicyData(DEFAULT_POLICY_DOCUMENTS);
+      return;
+    }
+
+    const loadPolicies = async () => {
       setIsLoading(true);
       setErrorMessage("");
 
       const { data, error } = await supabase
-        .from("employee_manual")
-        .select("id, title, url, created_at, group")
-        .order("created_at", { ascending: true });
+        .from("policy")
+        .select("*")
+        .order("id", { ascending: true });
 
       if (error) {
-        console.error("Employee manual fetch error:", error);
+        console.error("Policy fetch error:", error);
         setErrorMessage(
-          "We could not load the employee manual from the server. Please try again later."
+          "We could not load the cooperative policies from the server, showing sample policy documents instead."
         );
-        setManualData([]);
+        setPolicyData(sortPolicies(DEFAULT_POLICY_DOCUMENTS));
         setIsLoading(false);
         return;
       }
 
-      const safeData = Array.isArray(data) ? data : [];
+      if (!data || !data.length) {
+        setErrorMessage(
+          "No cooperative policy entries were found in the database. Please verify your Supabase RLS settings or sign in again."
+        );
+      }
 
-      setManualData(sortManuals(safeData));
+      setPolicyData(
+        sortPolicies(data && data.length ? data : DEFAULT_POLICY_DOCUMENTS)
+      );
       setIsLoading(false);
     };
 
-    loadManuals();
-  }, []);
+    loadPolicies();
+  }, [authLoading, user]);
 
-  const manualGroups = useMemo(() => groupManuals(manualData), [manualData]);
+  const policyGroups = useMemo(() => groupPolicies(policyData), [policyData]);
   const groupNames = useMemo(() => {
-    return Object.keys(manualGroups).sort((a, b) => a.localeCompare(b));
-  }, [manualGroups]);
+    return Object.keys(policyGroups).sort((a, b) => comparePolicyGroups(a, b));
+  }, [policyGroups]);
 
   const filteredGroups = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -80,20 +152,17 @@ function EmployeeManualPage() {
     return groupNames.reduce((result, group) => {
       if (activeGroup !== "All" && group !== activeGroup) return result;
 
-      const manuals = (manualGroups[group] || []).filter((manual) => {
-        const haystack = `${manual.title || ""} ${
-          manual.group || ""
-        }`.toLowerCase();
-        return haystack.includes(query);
-      });
+      const policies = (policyGroups[group] || []).filter((policy) =>
+        policy.title?.toLowerCase().includes(query)
+      );
 
-      if (manuals.length) {
-        result[group] = manuals;
+      if (policies.length) {
+        result[group] = policies;
       }
 
       return result;
     }, {});
-  }, [activeGroup, groupNames, manualGroups, searchTerm]);
+  }, [activeGroup, groupNames, policyGroups, searchTerm]);
 
   const visibleGroupNames = groupNames.filter(
     (group) => filteredGroups[group]?.length
@@ -102,24 +171,24 @@ function EmployeeManualPage() {
     (count, group) => count + (filteredGroups[group]?.length || 0),
     0
   );
-  const totalDocuments = manualData.length;
+  const totalPolicies = policyData.length;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 pb-10 pt-28 sm:px-6 lg:px-10">
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4 py-5">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-5">
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
           <div className="grid gap-6 p-6 lg:grid-cols-[1fr_360px]">
             <div className="space-y-4">
               <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-                Employee Manual
+                Coop Policies
               </span>
               <div className="space-y-3">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                  Access the employee manual documents you need.
+                  Access the cooperative policies you need with confidence.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-slate-600">
-                  Browse the latest employee manual files, filter by section, or
-                  search by title to find the right reference quickly.
+                  Browse the latest policy documents, filter by category, or
+                  search by title to find the right governance guide quickly.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -128,7 +197,7 @@ function EmployeeManualPage() {
                     Total documents
                   </p>
                   <p className="mt-2 text-3xl font-bold text-slate-950">
-                    {totalDocuments}
+                    {totalPolicies}
                   </p>
                 </div>
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -147,21 +216,21 @@ function EmployeeManualPage() {
                 Search & filter
               </p>
               <h2 className="mt-3 text-lg font-semibold text-slate-900">
-                Find the manual you need.
+                Find the policy you need.
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Use search and group filters to narrow down the employee manual
-                documents instantly.
+                Use search and group filters to narrow down the cooperative
+                policies instantly.
               </p>
 
               <label className="relative mt-6 block">
-                <span className="sr-only">Search employee manuals</span>
+                <span className="sr-only">Search policies</span>
                 <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search manual title"
+                  placeholder="Search policy title"
                   className="h-12 w-full rounded-2xl border border-slate-300 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
                 />
               </label>
@@ -174,7 +243,7 @@ function EmployeeManualPage() {
                   value={activeGroup}
                   onChange={(event) => setActiveGroup(event.target.value)}
                   className="mt-2 h-12 w-full min-w-0 rounded-2xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-                  aria-label="Filter manuals by group"
+                  aria-label="Filter policies by group"
                 >
                   {["All", ...groupNames].map((group) => (
                     <option key={group} value={group}>
@@ -198,7 +267,7 @@ function EmployeeManualPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-700">
-                Manual results
+                Policy results
               </p>
               <p className="mt-1 text-sm text-slate-500">
                 Showing {filteredCount}{" "}
@@ -225,21 +294,21 @@ function EmployeeManualPage() {
         </section>
 
         <section className="space-y-4">
-          {isLoading && <ManualLoading />}
+          {isLoading && <PolicyLoading />}
 
           {!isLoading && !visibleGroupNames.length && (
-            <EmptyManualState
-              title="No manuals found"
+            <EmptyPolicyState
+              title="No policies found"
               message="Try a different search term or select another group."
             />
           )}
 
           {!isLoading &&
             visibleGroupNames.map((group) => (
-              <ManualGroup
+              <PolicyGroup
                 key={group}
                 group={group}
-                manuals={filteredGroups[group] || []}
+                policies={filteredGroups[group] || []}
               />
             ))}
         </section>
@@ -248,23 +317,23 @@ function EmployeeManualPage() {
   );
 }
 
-function ManualGroup({ group, manuals }) {
+function PolicyGroup({ group, policies }) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{group}</h2>
           <p className="text-sm text-slate-500">
-            {manuals.length} document{manuals.length === 1 ? "" : "s"}
+            {policies.length} policy document{policies.length === 1 ? "" : "s"}
           </p>
         </div>
       </div>
 
       <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-2">
-        {manuals.map((manual) => (
-          <ManualCard
-            key={manual.id || manual.url || manual.title}
-            manual={manual}
+        {policies.map((policy) => (
+          <PolicyCard
+            key={policy.id || policy.url || policy.title}
+            policy={policy}
           />
         ))}
       </div>
@@ -272,13 +341,13 @@ function ManualGroup({ group, manuals }) {
   );
 }
 
-function ManualCard({ manual }) {
+function PolicyCard({ policy }) {
   return (
     <a
-      href={manual.url || "#"}
+      href={policy.url}
       target="_blank"
       rel="noreferrer"
-      aria-label={`Open employee manual: ${manual.title || "Untitled manual"}`}
+      aria-label={`Open policy document: ${policy.title || "Untitled policy"}`}
       className="group flex min-h-[92px] items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-amber-300 hover:bg-amber-50/60 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
     >
       <div className="flex h-12 w-12 flex-none items-center justify-center rounded-md bg-red-50 text-red-600">
@@ -287,10 +356,10 @@ function ManualCard({ manual }) {
 
       <div className="min-w-0 flex-1">
         <p className="break-words text-sm font-bold leading-5 text-slate-900">
-          {manual.title || "Untitled manual"}
+          {policy.title || "Untitled policy"}
         </p>
         <p className="mt-1 text-xs font-medium text-slate-500">
-          Open employee manual document
+          Open policy document
         </p>
       </div>
 
@@ -301,7 +370,7 @@ function ManualCard({ manual }) {
   );
 }
 
-function ManualLoading() {
+function PolicyLoading() {
   return (
     <div className="grid gap-4">
       {Array.from({ length: 2 }).map((_, groupIndex) => (
@@ -324,7 +393,7 @@ function ManualLoading() {
   );
 }
 
-function EmptyManualState({ title, message }) {
+function EmptyPolicyState({ title, message }) {
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
@@ -338,4 +407,4 @@ function EmptyManualState({ title, message }) {
   );
 }
 
-export default EmployeeManualPage;
+export default Policy;

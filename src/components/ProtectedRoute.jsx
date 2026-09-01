@@ -1,9 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  // Loading
+  const location = useLocation();
+
   if (loading) {
     return (
       <div className="h-screen flex justify-center items-center text-4xl">
@@ -11,8 +12,15 @@ function ProtectedRoute({ children }) {
       </div>
     );
   }
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   return children;

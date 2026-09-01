@@ -4,7 +4,7 @@ const img = ["/assets/bohecslog.png"];
 
 const LandingPage = () => {
   return (
-    <header className="container px-5 pt-4 pb-12 mx-auto min-h-[56vh] flex items-center justify-center flex-col text-center">
+    <header className="mt-14 container px-5 pt-4 pb-12 mx-auto min-h-[56vh] flex items-center justify-center flex-col text-center">
       <img
         draggable={false}
         src={img[0]}

@@ -27,8 +27,28 @@ import ConfirmModal from "./ConfirmModal";
 const img = ["/assets/l.png"];
 
 const Navigation = () => {
-  const { user } = useAuth();
+  const { user, employeeInfo } = useAuth();
   const auth = !!user;
+
+  const getDashboardLink = (role) => {
+    switch (role) {
+      case "EDITOR":
+        return "editor-dashboard";
+
+      case "ADMIN":
+        return "admin-dashboard";
+
+      case "USER":
+      case "HR":
+        return "dashboard";
+
+      default:
+        return null;
+    }
+  };
+
+  const dashboardLink = getDashboardLink(employeeInfo?.role);
+
   const Links = [
     { id: 1, name: "HOME", link: "/" },
     { id: 2, name: "ABOUT", link: "about" },
@@ -44,7 +64,7 @@ const Navigation = () => {
   ];
 
   const AuthLink = [
-    { id: 12, name: "DASHBOARD", link: "dashboard" },
+    { id: 12, name: "DASHBOARD", link: dashboardLink },
     { id: 13, name: "SETTINGS", link: "settings" },
     { id: 14, name: "LOGOUT", type: "action", action: "logout" },
   ];
@@ -63,7 +83,10 @@ const Navigation = () => {
 
   const location = useLocation();
 
-  const isDashboardPath = location.pathname.startsWith("/dashboard");
+  const isDashboardPath =
+  location.pathname.startsWith("/dashboard") ||
+  location.pathname.startsWith("/editor-dashboard") ||
+  location.pathname.startsWith("/admin-dashboard");
   const visibleLinks = auth
     ? Links.filter((link) => link.link !== "/")
     : isDashboardPath
@@ -79,7 +102,7 @@ const Navigation = () => {
   if (auth) {
     const byLink = (key) => menuLink.find((l) => l.link === key);
 
-    const dash = byLink("dashboard");
+    const dash = dashboardLink ? byLink(dashboardLink) : null;
     const inquiries = byLink("inquiries");
     const coopPolicies = byLink("coop-policies");
     const employeeManual = byLink("employee-manuals");
@@ -114,7 +137,7 @@ const Navigation = () => {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const sidebarExpanded = true;
   const [winWidth, setWinWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 0
   );
@@ -156,13 +179,9 @@ const Navigation = () => {
       {/* Sidebar for logged-in desktop users: collapsed by default, expands on hover */}
       {auth && (
         <aside
-          onMouseEnter={() => setSidebarExpanded(true)}
-          onMouseLeave={() => setSidebarExpanded(false)}
           className="hidden xl:flex fixed left-0 top-0 z-50 overflow-hidden transition-all duration-300 app-sidebar"
           style={{
-            width: sidebarExpanded
-              ? Math.min(Math.max(winWidth * 0.14, 220), 240)
-              : 56,
+            width: Math.min(Math.max(winWidth * 0.14, 220), 240),
             bottom: 0,
             borderRightColor: "transparent",
           }}
@@ -207,7 +226,13 @@ const Navigation = () => {
                   <>
                     {nonLogout.map((link) => {
                       const getIcon = (lnk) => {
-                        if (lnk.link === "dashboard") return FaTachometerAlt;
+                        if (
+                          lnk.link === "dashboard" ||
+                          lnk.link === "editor-dashboard" ||
+                          lnk.link === "admin-dashboard"
+                        ) {
+                          return FaTachometerAlt;
+                        }
                         if (lnk.link === "inquiries")
                           return FaFileInvoiceDollar;
                         if (lnk.link === "coop-policies") return FaFolderOpen;
@@ -239,6 +264,8 @@ const Navigation = () => {
                             end={
                               link.link === "/" ||
                               link.link === "dashboard" ||
+                              link.link === "editor-dashboard" ||
+                              link.link === "admin-dashboard" ||
                               link.link === "coop-policies"
                             }
                             className={({ isActive }) => {
@@ -492,6 +519,8 @@ const Navigation = () => {
                     end={
                       link.link === "/" ||
                       link.link === "dashboard" ||
+                      link.link === "editor-dashboard" ||
+                      link.link === "admin-dashboard" ||
                       link.link === "coop-policies"
                     }
                     className={({ isActive }) =>
@@ -527,6 +556,8 @@ const Navigation = () => {
                           case "awards":
                             return FaTrophy;
                           case "dashboard":
+                          case "editor-dashboard":
+                          case "admin-dashboard":
                             return FaTachometerAlt;
                           case "coop-policies":
                             return FaFolderOpen;
