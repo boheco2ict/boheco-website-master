@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
    */
   const loadUserInformation = async (currentUser) => {
     const loginProvider = currentUser?.app_metadata?.provider || null;
-    
+
     if (!currentUser) {
       setEmployeeInfo(null);
       setConsumerInfo(null);
