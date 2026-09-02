@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { FaCog, FaLock, FaChevronRight, FaTimes, FaUserEdit } from "react-icons/fa";
+import { FaCog, FaLock, FaChevronRight, FaTimes } from "react-icons/fa";
 import ResetPassword from "./ResetPassword";
 import { useAuth } from "../../context/AuthContext";
-import UpdateForm from "../../pages/consumer/update_info_form";
 
 const Settings = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const { user, employeeInfo, consumerInfo, loading } = useAuth();
-  const [showConsumerForm, setShowConsumerForm] = useState(false);
   const [role, setRole] = useState("");
 
   useEffect(() => {
@@ -96,34 +94,6 @@ const Settings = () => {
                 </div>
               </button>
             )}
-            {role === "CONSUMER" && (
-              <button
-                type="button"
-                onClick={() => setShowConsumerForm(true)}
-                className="group w-full flex items-center gap-4 rounded-xl px-4 py-4 text-left transition hover:bg-amber-50"
-              >
-                {/* Icon */}
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 transition group-hover:bg-amber-200">
-                  <FaUserEdit className="text-base" />
-                </div>
-
-                {/* Text */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Change Account Information
-                  </h3>
-
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Update your account information to keep your account details accurate.
-                  </p>
-                </div>
-
-                {/* Arrow */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition group-hover:bg-white group-hover:text-amber-700">
-                  <FaChevronRight className="text-xs" />
-                </div>
-              </button>
-            )}
           </div>
         </section>
 
@@ -167,15 +137,6 @@ const Settings = () => {
           </div>
         </div>
       )}
-
-      <UpdateForm
-        isOpen={showConsumerForm}
-        onClose={() => setShowConsumerForm(false)}
-        onSuccess={() => {
-          setShowConsumerForm(false);
-          window.location.reload();
-        }}
-      />
     </div>
   );
 };
