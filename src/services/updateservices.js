@@ -520,7 +520,7 @@ export const updatePowerRateYear = async (id, year, pdfUrl, rates) => {
 
   try {
     const { data, error } = await supabase
-      .from("power_rate_years")
+      .from("power_rates")
       .update({
         year: year,
         pdf_url: pdfUrl || null,

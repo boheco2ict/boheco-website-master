@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { FaCog, FaLock, FaChevronRight, FaTimes, FaUserEdit } from "react-icons/fa";
 import ResetPassword from "./ResetPassword";
 import { useAuth } from "../../context/AuthContext";
-import UpdateForm from "../../pages/consumer/update_info_form";
+import ManageAccountConsumer from "../../pages/consumer/manage_account";
 
 const Settings = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const { user, employeeInfo, consumerInfo, loading } = useAuth();
-  const [showConsumerForm, setShowConsumerForm] = useState(false);
+  const [showManageAccountConsumer, setShowManageAccountConsumer] = useState(false);
   const [role, setRole] = useState("");
 
   useEffect(() => {
@@ -99,7 +99,7 @@ const Settings = () => {
             {role === "CONSUMER" && (
               <button
                 type="button"
-                onClick={() => setShowConsumerForm(true)}
+                onClick={() => setShowManageAccountConsumer(true)}
                 className="group w-full flex items-center gap-4 rounded-xl px-4 py-4 text-left transition hover:bg-amber-50"
               >
                 {/* Icon */}
@@ -110,11 +110,11 @@ const Settings = () => {
                 {/* Text */}
                 <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-semibold text-slate-800">
-                    Change Account Information
+                    Manage Account
                   </h3>
 
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Update your account information to keep your account details accurate.
+                    Add or Remove BOHECO accounts linked to your profile for easier account management.
                   </p>
                 </div>
 
@@ -168,13 +168,9 @@ const Settings = () => {
         </div>
       )}
 
-      <UpdateForm
-        isOpen={showConsumerForm}
-        onClose={() => setShowConsumerForm(false)}
-        onSuccess={() => {
-          setShowConsumerForm(false);
-          window.location.reload();
-        }}
+      <ManageAccountConsumer
+        isOpen={showManageAccountConsumer}
+        onClose={() => setShowManageAccountConsumer(false)}
       />
     </div>
   );

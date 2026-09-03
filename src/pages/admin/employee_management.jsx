@@ -353,7 +353,7 @@ const EmployeeManagement = () => {
   |--------------------------------------------------------------------------
   */
   return (
-    <div className="min-h-screen w-full" style={{ background: "var(--section-bg)" }}>
+    <div className="min-h-screen w-full p-5" style={{ background: "var(--section-bg)" }}>
       <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">

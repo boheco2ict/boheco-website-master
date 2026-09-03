@@ -280,7 +280,7 @@ const LeaveApproverManagement = () => {
   // =====================================================
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen p-5 bg-slate-50">
       <div className="mb-7 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">

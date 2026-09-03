@@ -8,8 +8,8 @@ import { supabase } from "../supabase";
 // ==========================================
 
 const showResidential = true;
-const showCommercial = true;
-const showIndustrial = true;
+const showLowVoltage = true;
+const showHighVoltage = true;
 
 // ==========================================
 // AVAILABLE RATE CLASSES
@@ -22,14 +22,14 @@ const rateClasses = [
     visible: showResidential,
   },
   {
-    id: "commercial",
-    label: "Commercial",
-    visible: showCommercial,
+    id: "lowvoltage",
+    label: "Low Voltage",
+    visible: showLowVoltage,
   },
   {
-    id: "industrial",
-    label: "Industrial",
-    visible: showIndustrial,
+    id: "highvoltage",
+    label: "High Voltage",
+    visible: showHighVoltage,
   },
 ].filter((rateClass) => rateClass.visible);
 
@@ -154,7 +154,7 @@ const Rates = () => {
       setRatesError("");
 
       const { data, error } = await supabase
-        .from("power_rate_years")
+        .from("power_rates")
         .select(
           "id, year, pdf_url, rates"
         )
@@ -174,11 +174,6 @@ const Rates = () => {
 
         return;
       }
-
-      console.log(
-        "Loaded power rates:",
-        data
-      );
 
       setRateYears(data || []);
     } catch (error) {
