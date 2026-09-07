@@ -33,18 +33,18 @@ const RATE_CLASSES = [
     label: "Residential",
   },
   {
-    id: "commercial",
-    label: "Commercial",
+    id: "lowvoltage",
+    label: "Low Voltage",
   },
   {
-    id: "industrial",
-    label: "Industrial",
+    id: "highvoltage",
+    label: "High Voltage",
   },
 ];
 
 const EMPTY_RATES = {
-  commercial: {},
-  industrial: {},
+  lowvoltage: {},
+  highvoltage: {},
   residential: {},
 };
 
@@ -101,8 +101,8 @@ function PowerRateManagement() {
         setSelectedYear(firstYear);
 
         setRates({
-          commercial: firstYear.rates?.commercial || {},
-          industrial: firstYear.rates?.industrial || {},
+          lowvoltage: firstYear.rates?.lowvoltage || {},
+          highvoltage: firstYear.rates?.highvoltage || {},
           residential: firstYear.rates?.residential || {},
         });
       } else {
@@ -128,8 +128,8 @@ function PowerRateManagement() {
     setSelectedYear(year);
 
     setRates({
-      commercial: year.rates?.commercial || {},
-      industrial: year.rates?.industrial || {},
+      lowvoltage: year.rates?.lowvoltage || {},
+      highvoltage: year.rates?.highvoltage || {},
       residential: year.rates?.residential || {},
     });
 
@@ -178,8 +178,8 @@ function PowerRateManagement() {
 
       for (const rateClass of [
         "residential",
-        "commercial",
-        "industrial",
+        "lowvoltage",
+        "highvoltage",
       ]) {
         for (const month of MONTHS) {
           const value = rates?.[rateClass]?.[month.number];
@@ -219,14 +219,14 @@ function PowerRateManagement() {
 
       const formattedRates = {
         residential: {},
-        commercial: {},
-        industrial: {},
+        lowvoltage: {},
+        highvoltage: {},
       };
 
       for (const rateClass of [
         "residential",
-        "commercial",
-        "industrial",
+        "lowvoltage",
+        "highvoltage",
       ]) {
         for (const month of MONTHS) {
           const value =
@@ -370,10 +370,10 @@ function PowerRateManagement() {
       setSelectedYear(newYear);
 
       setRates({
-        commercial:
-          newYear.rates?.commercial || {},
-        industrial:
-          newYear.rates?.industrial || {},
+        lowvoltage:
+          newYear.rates?.lowvoltage || {},
+        highvoltage:
+          newYear.rates?.highvoltage || {},
         residential:
           newYear.rates?.residential || {},
       });
@@ -502,10 +502,10 @@ function PowerRateManagement() {
       setSelectedYear(updatedYear);
 
       setRates({
-        commercial:
-          updatedYear.rates?.commercial || {},
-        industrial:
-          updatedYear.rates?.industrial || {},
+        lowvoltage:
+          updatedYear.rates?.lowvoltage || {},
+        highvoltage:
+          updatedYear.rates?.highvoltage || {},
         residential:
           updatedYear.rates?.residential || {},
       });

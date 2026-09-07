@@ -623,7 +623,7 @@ const getLeaveBalancesByIDAndLeaveType_1 = async (
 
 export const getPowerRateYears = async () => {
   const { data, error } = await supabase
-    .from("power_rate_years")
+    .from("power_rates")
     .select("*")
     .order("year", { ascending: false });
 
@@ -789,7 +789,10 @@ export const getConsumerByUserId = async (Id) => {
 
   const { data, error } = await supabase
     .from("consumers")
-    .select("*")
+    .select(`
+      *,
+      consumers_boheco_account (*)
+    `)
     .eq("user_id", Id)
     .maybeSingle();
 
@@ -801,11 +804,72 @@ export const getConsumerByUserId = async (Id) => {
   return data || null;
 };
 
+export const getLedgerAll = async (accounts) => {
+  if (!Array.isArray(accounts) || accounts.length === 0) {
+    return null;
+  }
+
+  const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
+
+  try {
+    const results = await Promise.all(
+      accounts.map(async (account) => {
+        const response = await fetch(API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            AccountNumber: account.account_number,
+            ServicePeriodEnd: account.service_period_end,
+            NetAmount: account.net_amount,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Request failed for account ${account.account_number}: ${response.status}`
+          );
+        }
+
+        const result = await response.json();
+
+        // API returns { status, data: [...] }
+        const records = result?.data;
+
+        if (!Array.isArray(records) || records.length === 0) {
+          return null;
+        }
+
+        // Get latest record
+        const latestRecord = records.reduce((latest, current) => {
+          if (!latest) return current;
+
+          return new Date(current.ServicePeriodEnd) >
+            new Date(latest.ServicePeriodEnd)
+            ? current
+            : latest;
+        }, null);
+
+        return latestRecord;
+      })
+    );
+
+    return results.filter(Boolean);
+  } catch (error) {
+    console.error("Get Ledger Error:", error);
+    return null;
+  }
+};
+
 export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => {
+
   if (!AccountNumber && !ServicePeriodEnd && !NetAmount) {
     return null;
   }
+
   const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
+  
   try {
     const response = await fetch(API,
       {

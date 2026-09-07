@@ -38,23 +38,10 @@ function AuthCallback() {
       const role = employeeInfo?.role || "";
 
       // USER or HR
-      if (role === "USER" || role === "HR") {
+      if (role === "USER" || role === "HR" || role === "EDITOR" || role === "ADMIN") {
         navigate("/dashboard", { replace: true });
         return;
       }
-
-      // EDITOR
-      if (role === "EDITOR") {
-        navigate("/editor-dashboard", { replace: true });
-        return;
-      }
-
-      // ADMIN
-      if (role === "ADMIN") {
-        navigate("/admin-dashboard", { replace: true });
-        return;
-      }
-
       return;
     }
 

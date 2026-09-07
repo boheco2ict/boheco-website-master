@@ -6,19 +6,27 @@ import {
   FaPowerOff,
   FaChevronLeft,
   FaChevronRight,
+  FaChevronDown,
+  FaEdit,
+  FaUserShield,
 } from "react-icons/fa";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../supabase";
 import ConfirmModal from "../ConfirmModal";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const { employeeInfo, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Dropdown states
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   const handleLogoutRequest = () => setShowLogoutConfirm(true);
 
@@ -51,35 +59,13 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const role = employeeInfo?.role;
 
   // =========================================
-  // GET DASHBOARD LINK BASED ON ROLE
-  // =========================================
-  const getDashboardLink = () => {
-    switch (role) {
-      case "EDITOR":
-        return "/editor-dashboard";
-
-      case "ADMIN":
-        return "/admin-dashboard";
-
-      case "USER":
-      case "HR":
-        return "/dashboard";
-
-      default:
-        return null;
-    }
-  };
-
-  const dashboardLink = getDashboardLink();
-
-  // =========================================
   // SIDEBAR ITEMS
   // =========================================
   const items = [
     {
       label: "Dashboard",
       icon: FaTachometerAlt,
-      path: dashboardLink,
+      path: "/dashboard",
       roles: ["USER", "HR", "EDITOR", "ADMIN"],
     },
 
@@ -87,48 +73,63 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       label: "Coop Policies",
       icon: FaFolderOpen,
       path: "/coop-policies",
-      roles: ["USER", "HR"],
+      roles: ["USER", "HR", "EDITOR", "ADMIN"],
     },
 
     {
       label: "Employee Manual",
       icon: FaFileAlt,
       path: "/employee-manuals",
-      roles: ["USER", "HR"],
+      roles: ["USER", "HR", "EDITOR", "ADMIN"],
     },
 
+    // =========================================
+    // EDITOR DROPDOWN
+    // =========================================
     {
-      label: "Power Rates",
-      icon: FaFileAlt,
-      path: "/editor-power-rates",
+      label: "Editor",
+      icon: FaEdit,
+      dropdown: "editor",
       roles: ["EDITOR"],
-    },
-    {
-      label: "Rate Advisory",
-      icon: FaFileAlt,
-      path: "/editor-rate-advisory",
-      roles: ["EDITOR"],
-    },
+      children: [
         {
-      label: "Generation Charge",
-      icon: FaFileAlt,
-      path: "/editor-generation-charge",
-      roles: ["EDITOR"],
-    },
-
-    {
-      label: "Manage Employee",
-      icon: FaFileAlt,
-      path: "/admin-manage-employee",
-      roles: ["ADMIN"],
-    },
+          label: "Power Rates",
+          path: "/editor-power-rates",
+        },
         {
-      label: "Leave Approver",
-      icon: FaFileAlt,
-      path: "/admin-leave-approver",
-      roles: ["ADMIN"],
+          label: "Rate Advisory",
+          path: "/editor-rate-advisory",
+        },
+        {
+          label: "Generation Charge",
+          path: "/editor-generation-charge",
+        },
+      ],
     },
 
+    // =========================================
+    // ADMIN DROPDOWN
+    // =========================================
+    {
+      label: "Admin",
+      icon: FaUserShield,
+      dropdown: "admin",
+      roles: ["ADMIN"],
+      children: [
+        {
+          label: "Manage Employee",
+          path: "/admin-manage-employee",
+        },
+        {
+          label: "Leave Approver",
+          path: "/admin-leave-approver",
+        },
+      ],
+    },
+
+    // =========================================
+    // SETTINGS
+    // =========================================
     {
       label: "Settings",
       icon: FaCog,
@@ -143,6 +144,44 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   const visibleItems = items.filter((item) =>
     item.roles.includes(role)
   );
+
+  // =========================================
+  // CHECK IF DROPDOWN CHILD IS ACTIVE
+  // =========================================
+  const isDropdownActive = (item) => {
+    if (!item.children) return false;
+
+    return item.children.some(
+      (child) => location.pathname === child.path
+    );
+  };
+
+  // =========================================
+  // HANDLE DROPDOWN
+  // =========================================
+  const handleDropdownToggle = (dropdown) => {
+    if (collapsed) {
+      setCollapsed(false);
+
+      if (dropdown === "editor") {
+        setEditorOpen(true);
+      }
+
+      if (dropdown === "admin") {
+        setAdminOpen(true);
+      }
+
+      return;
+    }
+
+    if (dropdown === "editor") {
+      setEditorOpen((prev) => !prev);
+    }
+
+    if (dropdown === "admin") {
+      setAdminOpen((prev) => !prev);
+    }
+  };
 
   return (
     <aside
@@ -165,7 +204,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         onCancel={handleCancelLogout}
       />
 
-      {/* Collapse Button */}
+      {/* =========================================
+          COLLAPSE BUTTON
+      ========================================= */}
       <button
         type="button"
         onClick={() => setCollapsed((prev) => !prev)}
@@ -197,28 +238,49 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         )}
       </button>
 
-      {/* Navigation */}
+      {/* =========================================
+          NAVIGATION
+      ========================================= */}
       <nav className="space-y-2 p-2">
         {visibleItems.map((item) => {
           const Icon = item.icon;
 
-          return (
-            <div key={item.label}>
-              {item.path ? (
-                <a
-                  href={item.path}
+          // =========================================
+          // DROPDOWN ITEM
+          // =========================================
+          if (item.children) {
+            const isActive = isDropdownActive(item);
+
+            const isOpen =
+              item.dropdown === "editor"
+                ? editorOpen
+                : adminOpen;
+
+            return (
+              <div key={item.label}>
+                {/* Dropdown Header */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDropdownToggle(item.dropdown)
+                  }
                   title={collapsed ? item.label : ""}
-                  className="
+                  className={`
                     group
                     flex
                     h-[52px]
+                    w-full
                     items-center
                     rounded-xl
                     px-3
                     transition-all
                     duration-200
-                    hover:bg-[#FFF1BD]
-                  "
+                    ${
+                      isActive
+                        ? "bg-[#FFF1BD]"
+                        : "hover:bg-[#FFF1BD]"
+                    }
+                  `}
                 >
                   {/* Icon */}
                   <span
@@ -241,28 +303,163 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
                   {/* Label */}
                   {!collapsed && (
-                    <span
-                      className="
-                        ml-3
-                        whitespace-nowrap
-                        text-[13px]
-                        font-medium
-                        text-[#44403C]
-                        transition
-                        group-hover:text-[#78350F]
-                      "
-                    >
-                      {item.label}
-                    </span>
+                    <>
+                      <span
+                        className="
+                          ml-3
+                          flex-1
+                          text-left
+                          whitespace-nowrap
+                          text-[13px]
+                          font-medium
+                          text-[#44403C]
+                          transition
+                          group-hover:text-[#78350F]
+                        "
+                      >
+                        {item.label}
+                      </span>
+
+                      <FaChevronDown
+                        className={`
+                          text-[10px]
+                          text-[#78716C]
+                          transition-transform
+                          duration-200
+                          ${isOpen ? "rotate-180" : ""}
+                        `}
+                      />
+                    </>
                   )}
-                </a>
-              ) : null}
+                </button>
+
+                {/* =========================================
+                    DROPDOWN CHILDREN
+                ========================================= */}
+                {!collapsed && isOpen && (
+                  <div className="ml-4 mt-1 space-y-1 border-l border-[#E7DFD0] pl-3">
+                    {item.children.map((child) => {
+                      const childActive =
+                        location.pathname === child.path;
+
+                      return (
+                        <button
+                          key={child.label}
+                          type="button"
+                          onClick={() => navigate(child.path)}
+                          className={`
+                            flex
+                            w-full
+                            items-center
+                            rounded-lg
+                            px-3
+                            py-2.5
+                            text-left
+                            text-[12px]
+                            transition
+                            ${
+                              childActive
+                                ? "bg-[#FFF1BD] font-semibold text-[#78350F]"
+                                : "text-[#57534E] hover:bg-[#FFF8E1] hover:text-[#78350F]"
+                            }
+                          `}
+                        >
+                          <span
+                            className={`
+                              mr-2
+                              h-1.5
+                              w-1.5
+                              rounded-full
+                              ${
+                                childActive
+                                  ? "bg-[#B45309]"
+                                  : "bg-[#D6D3D1]"
+                              }
+                            `}
+                          />
+
+                          {child.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // =========================================
+          // NORMAL SIDEBAR ITEM
+          // =========================================
+          const isActive = location.pathname === item.path;
+
+          return (
+            <div key={item.label}>
+              <button
+                type="button"
+                onClick={() => navigate(item.path)}
+                title={collapsed ? item.label : ""}
+                className={`
+                  group
+                  flex
+                  h-[52px]
+                  w-full
+                  items-center
+                  rounded-xl
+                  px-3
+                  transition-all
+                  duration-200
+                  ${
+                    isActive
+                      ? "bg-[#FFF1BD]"
+                      : "hover:bg-[#FFF1BD]"
+                  }
+                `}
+              >
+                {/* Icon */}
+                <span
+                  className="
+                    flex
+                    h-8
+                    w-8
+                    flex-shrink-0
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-[#FFF8E1]
+                    text-[#B45309]
+                    transition
+                    group-hover:bg-white
+                  "
+                >
+                  <Icon className="text-sm" />
+                </span>
+
+                {/* Label */}
+                {!collapsed && (
+                  <span
+                    className="
+                      ml-3
+                      whitespace-nowrap
+                      text-[13px]
+                      font-medium
+                      text-[#44403C]
+                      transition
+                      group-hover:text-[#78350F]
+                    "
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </button>
             </div>
           );
         })}
       </nav>
 
-      {/* Logout */}
+      {/* =========================================
+          LOGOUT
+      ========================================= */}
       <div className="absolute bottom-0 w-full border-t border-[#E7DFD0] p-2">
         <button
           type="button"
