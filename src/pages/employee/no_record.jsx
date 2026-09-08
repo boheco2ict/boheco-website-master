@@ -1,8 +1,5 @@
-const NoRecord = (data) => {
+const NoRecord = () => {
   const message = "No Record Found";
-  if (data) {
-    console.log(data);
-  }
   return (
     <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-lg p-8 text-center">

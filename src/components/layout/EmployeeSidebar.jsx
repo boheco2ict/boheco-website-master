@@ -104,6 +104,10 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           label: "Generation Charge",
           path: "/editor-generation-charge",
         },
+        {
+          label: "Power Interruption",
+          path: "/editor-power-interruption",
+        },
       ],
     },
 

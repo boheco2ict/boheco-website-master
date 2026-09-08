@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { supabase } from "../../supabase";
 import { createConsumerAccountBinding } from "../../services/postservices";
 import { deleteConsumerBindAccount } from "../../services/deleteservices";
 import {
@@ -115,6 +114,10 @@ const ManageAccount = ({ isOpen, onClose }) => {
   };
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove this account?"
+    );
+    if (!confirmDelete) return;
     try {
       setLoading(true);
       setError("");

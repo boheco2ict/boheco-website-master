@@ -519,28 +519,27 @@ export const createEmployee = async (data) => {
 };
 
 export const createConsumer = async (data) => {
-  if (!data.user_id) {
+  if (!data?.user_id) {
     return {
       success: false,
       message: "User ID is Missing.",
-      response: null,
+      data: null,
     };
   }
 
   const date = `${data.month}/01/${data.year}`;
 
   try {
-   // =========================================
+    // =========================================
     // CHECK IF ACCOUNT NUMBER ALREADY EXISTS
     // INSIDE consumers_boheco_account
     // =========================================
-    const accountNumber = String(data?.account_number);
 
     const { data: existingAccount, error: existingError } =
       await supabase
         .from("consumers_boheco_account")
         .select("id, consumer_id, account_number")
-        .eq("account_number", accountNumber)
+        .eq("account_number", data.account_number)
         .limit(1)
         .maybeSingle();
 
@@ -553,30 +552,38 @@ export const createConsumer = async (data) => {
       return {
         success: false,
         message: "Unable to verify account number.",
+        data: null,
       };
     }
 
-    // Account number already exists
+    // =========================================
+    // ACCOUNT NUMBER ALREADY EXISTS
+    // =========================================
+
     if (existingAccount) {
+
       return {
         success: false,
         message: "This account number is already registered.",
+        data: null,
       };
     }
 
     // =========================================
     // VERIFY ACCOUNT THROUGH LEDGER
     // =========================================
+
     const getLedgerResponse = await getLedger(
-      data?.account_number,
+      data.account_number,
       date,
-      data?.amount
+      data.amount
     );
 
     if (!getLedgerResponse) {
       return {
         success: false,
         message: "No Record Found, Please Try Again.",
+        data: null,
       };
     }
 
@@ -586,68 +593,96 @@ export const createConsumer = async (data) => {
       return {
         success: false,
         message: "No Record Found, Please Try Again.",
+        data: null,
       };
     }
 
     // =========================================
     // CREATE CONSUMER
     // =========================================
-    const AccountName = resData?.ConsumerName || null;
-    const USER_ID = data?.user_id || null;
 
-    const { data: consumer, error: consumerError } = await supabase
-      .from("consumers")
-      .insert({
-        user_id: USER_ID,
-      })
-      .select("id")
-      .single();
+    const AccountName = resData?.ConsumerName || null;
+
+    const { data: consumer, error: consumerError } =
+      await supabase
+        .from("consumers")
+        .insert({
+          user_id: data.user_id,
+        })
+        .select("id")
+        .single();
 
     if (consumerError) {
-      console.error("Create Consumer Error:", consumerError);
+      console.error(
+        "Create Consumer Error:",
+        consumerError
+      );
 
       return {
         success: false,
         message: "Add Consumer Failed.",
+        data: null,
       };
     }
 
-    if (!consumer || !consumer.id) {
+    if (!consumer?.id) {
       return {
         success: false,
         message: "Add Consumer Failed.",
+        data: null,
       };
     }
+
+    // =========================================
+    // BIND BOHECO ACCOUNT TO CONSUMER
+    // =========================================
 
     const { error: accountError } = await supabase
       .from("consumers_boheco_account")
       .insert({
         consumer_id: consumer.id,
-        account_number: data?.account_number,
+        account_number: data.account_number,
         service_period_end: date,
-        net_amount: data?.amount,
+        net_amount: data.amount,
         account_name: AccountName,
       });
 
     if (accountError) {
-      console.error("Create Account Binding Error:", accountError);
+      console.error(
+        "Create Account Binding Error:",
+        accountError
+      );
 
       return {
         success: false,
         message: "Consumer Created, but Account Binding Failed.",
+        data: null,
       };
     }
+
+    // =========================================
+    // SUCCESS
+    // =========================================
 
     return {
       success: true,
       message: "Verified Successfully.",
+      data: {
+        consumer_id: consumer.id,
+        account_number: data.account_number,
+        account_name: AccountName,
+      },
     };
   } catch (error) {
-    console.error("Create Consumer Exception:", error);
+    console.error(
+      "Create Consumer Exception:",
+      error
+    );
 
     return {
       success: false,
       message: "Add Consumer Failed.",
+      data: null,
     };
   }
 };
@@ -761,4 +796,39 @@ try {
       data: null,
     };
   }
+};
+
+export const createPowerInterruption = async (imageUrl, description, type) => {
+  const cleanImageUrl = imageUrl?.trim();
+  const cleanType = type?.trim();
+  const cleanDescription = description?.trim();
+
+  console.log(cleanImageUrl, cleanType, cleanDescription);
+
+  if (!cleanImageUrl) {
+    throw new Error("Image URL is required to create a power interruption.");
+  }
+  if (!cleanType) {
+    throw new Error("Type is required to create a power interruption.");
+  }
+  if (!cleanDescription) {
+    throw new Error("Description is required to create a power interruption.");
+  }
+
+  const { data, error } = await supabase
+    .from("power_interruption")
+    .insert({
+      image_url: cleanImageUrl,
+      type: cleanType,
+      description: cleanDescription,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating power interruption:", error);
+    throw error;
+  }
+
+  return data;
 };
