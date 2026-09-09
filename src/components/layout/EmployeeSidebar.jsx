@@ -13,8 +13,8 @@ import {
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "../../supabase";
-import ConfirmModal from "../ConfirmModal";
+import { supabase } from "../../services/supabase";
+import ConfirmModal from "../reusable/ConfirmModal";
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
   const { employeeInfo, loading } = useAuth();

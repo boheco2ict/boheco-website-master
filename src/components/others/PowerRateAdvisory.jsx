@@ -5,7 +5,7 @@ import {
   FaImage,
   FaBolt,
 } from "react-icons/fa";
-import { getPowerAdvisories } from "../services/getservices";
+import { getPowerAdvisories } from "../../services/getservices";
 
 const PowerRateAdvisory = () => {
   const [advisories, setAdvisories] = useState([]);

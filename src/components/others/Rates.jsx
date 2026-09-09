@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import RatesTable from "./RatesTable";
 import { FaBolt } from "react-icons/fa";
-import { supabase } from "../supabase";
+import { supabase } from "../../services/supabase";
 
 // ==========================================
 // RATE CLASS VISIBILITY

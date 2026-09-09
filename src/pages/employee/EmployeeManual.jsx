@@ -6,7 +6,7 @@ import {
   FaFolderOpen,
   FaSearch,
 } from "react-icons/fa";
-import { supabase } from "../../supabase";
+import { supabase } from "../../services/supabase";
 
 function sortManuals(data) {
   return [...data].sort((a, b) => {

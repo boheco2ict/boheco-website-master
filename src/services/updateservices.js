@@ -1,4 +1,4 @@
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 
 export const approveApplication2 = async (application, approverID) => { //Not Used For Backup
   console.log(application);

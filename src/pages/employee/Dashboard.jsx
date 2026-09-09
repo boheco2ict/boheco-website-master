@@ -7,15 +7,15 @@ import {
   FaUser,
 } from "react-icons/fa";
 import Policy from "./Policy";
-import { supabase } from "../../supabase";
+import { supabase } from "../../services/supabase";
 import { useAuth } from "../../context/AuthContext";
 
 // UI Components
-import ProfileTab from "../../components/dashboard/ui/ProfileTab";
-import LeaveCreditsTab from "../../components/dashboard/ui/LeaveCreditsTab";
-import MemoTab from "../../components/dashboard/ui/MemoTab";
-import OfficeOrderTab from "../../components/dashboard/ui/OfficeOrderTab";
-import Profile from "../../components/dashboard/ui/Profile";
+import ProfileTab from "../../components/employee/ProfileTab";
+import LeaveCreditsTab from "../../components/employee/LeaveCreditsTab";
+import MemoTab from "../../components/employee/MemoTab";
+import OfficeOrderTab from "../../components/employee/OfficeOrderTab";
+import Profile from "../../components/employee/Profile";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },

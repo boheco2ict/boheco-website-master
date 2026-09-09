@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createConsumer } from "../../services/postservices";
-import AlertModal from "../../components/AlertModal";
+import AlertModal from "../reusable/AlertModal";
 
 const ConsumerForm = ({ ID, onSuccess }) => {
   const currentYear = new Date().getFullYear();

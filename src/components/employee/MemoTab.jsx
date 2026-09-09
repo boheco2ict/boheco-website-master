@@ -1,67 +1,68 @@
 import { useEffect, useState } from "react";
 import { FaRegFileAlt } from "react-icons/fa";
-import EmptyState from "./EmptyState";
-import FormatDate from "./FormatDate";
-import Pagination from "../../Pagination";
+import EmptyState from "../reusable/EmptyState";
+import FormatDate from "../reusable/FormatDate";
+import Pagination from "../reusable/Pagination";
 import {
   getAllEmployees,
-  getMyAssignOfficeOrder,
+  getMyAssignMemo,
   getDepartmentMeaning
-} from "../../../services/getservices";
+} from "../../services/getservices";
 import {
-  createOfficeOrder
-} from "../../../services/postservices";
+  createMemo
+} from "../../services/postservices";
 import {
-  markAsReadOfficeOrder
-} from "../../../services/updateservices";
+  markAsReadMemo
+} from "../../services/updateservices";
 
-function OfficeOrderTab({employee}) {
+function MemoTab({employee}) {
   const canISendMemo = employee.role === "HR";
-  const [officeOrderMode, setOfficeOrderMode] = useState("view");
-  const [officeOrderName, setOfficeOrderName] = useState("");
-  const [officeOrderDescription, setOfficeOrderDescription] = useState("");
-  const [officeOrderUrl, setOfficeOrderUrl] = useState("");
+  const [memoMode, setMemoMode] = useState("view");
+  const [memoName, setMemoName] = useState("");
+  const [memoDescription, setMemoDescription] = useState("");
+  const [memoUrl, setMemoUrl] = useState("");
   const [recipientType, setRecipientType] = useState("individual");
   const [individualTarget, setIndividualTarget] = useState("");
   const [batchTarget, setBatchTarget] = useState("All");
   const [allEmployee, setAllEmployee] = useState("");
-  const [officeOrderMessage, setOfficeOrderMessage] = useState("");
+  const [memoMessage, setMemoMessage] = useState("");
   const [batchEmployeeIds, setBatchEmployeeIds] = useState([]);
   const [departmentFilter, setDepartmentFilter] = useState("");
-  const [isOfficeOrderLoading, setIsOfficeOrderLoading] = useState(false);
+  const [isMemoLoading, setIsMemoLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [myAssignOfficeOrder, setMyAssignOfficeOrder] = useState([]);
-  const [markingOfficeOrderId, setMarkingOfficeOrderId] = useState(null);
+  const [myAssignMemo, setMyAssignMemo] = useState([]);
+  const [markingMemoId, setMarkingMemoId] = useState(null);
   const [departmentMeaning, setDepartmentMeaning] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const totalPages = Math.ceil(
-    myAssignOfficeOrder.length / itemsPerPage
+    myAssignMemo.length / itemsPerPage
   );
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentMemos = myAssignOfficeOrder.slice(
+  const currentMemos = myAssignMemo.slice(
     startIndex,
     startIndex + itemsPerPage
   );
   useEffect(() => {
-    const fetch = async () => {
+    const fetchMyAssignMemo = async () => {
       try {
-        setIsOfficeOrderLoading(true);
-        const response = await getMyAssignOfficeOrder(employee.id);
-        setMyAssignOfficeOrder(response);
+        setIsMemoLoading(true);
+        const response = await getMyAssignMemo(employee.id);
+        setMyAssignMemo(response);
       } catch (error) {
-        console.error("Error fetching my assign office order: ", error);
+        console.error("Error fetching my assign memo: ", error);
       } finally {
-        setIsOfficeOrderLoading(false);
+        setIsMemoLoading(false);
       }
     };
-    
-    fetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (employee) {
+      fetchMyAssignMemo();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employee?.id, employee?.role]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchallemployee = async () => {
       try {
         const employeeData = await getAllEmployees();
         setAllEmployee(employeeData);
@@ -70,12 +71,11 @@ function OfficeOrderTab({employee}) {
         console.error("Error fetching employee: ", error);
       }
     };
-
-    fetch();
+    fetchallemployee();
   }, [employee]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchDepartmentMeaning = async () => {
       try {
         const data = await getDepartmentMeaning();
         setDepartmentMeaning(data);
@@ -84,8 +84,7 @@ function OfficeOrderTab({employee}) {
         console.error("Error fetching department meaning: ", error);
       }
     };
-
-    fetch();
+    fetchDepartmentMeaning();
   }, [employee]);
 
   useEffect(() => {
@@ -97,33 +96,33 @@ function OfficeOrderTab({employee}) {
     }
   }, [allEmployee, batchTarget]);
   // =========================================================
-  // RESET OFFICE ORDER FORM
+  // RESET MEMO FORM
   // =========================================================
   const resetMemoForm = () => {
-    setOfficeOrderName("");
-    setOfficeOrderUrl("");
+    setMemoName("");
+    setMemoUrl("");
     setRecipientType("individual");
     setIndividualTarget("");
     setBatchTarget("All");
-    setOfficeOrderMessage("");
-    setOfficeOrderDescription("");
+    setMemoMessage("");
+    setMemoDescription("");
   };
 
   // =========================================================
-  // SEND OFFICE ORDER
+  // SEND MEMO
   // =========================================================
 const handleSendMemo = async (event) => {
   event.preventDefault();
-  if (officeOrderName.trim().length === 0) {
-    alert("Please enter office order name.");
+  if (memoName.trim().length === 0) {
+    alert("Please enter memo name.");
     return;
   }
-  if (officeOrderDescription.trim().length === 0) {
-    alert("Please enter office order description.");
+  if (memoDescription.trim().length === 0) {
+    alert("Please enter memo description.");
     return;
   }
-  if (officeOrderUrl.trim().length === 0) {
-    alert("Please enter office order URL.");
+  if (memoUrl.trim().length === 0) {
+    alert("Please enter memo URL.");
     return;
   }
   if (recipientType === "individual") {
@@ -140,83 +139,82 @@ const handleSendMemo = async (event) => {
   }
 
   const confirmed = window.confirm(
-    "Are you sure you want to send this office order?"
+    "Are you sure you want to send this memo?"
   );
   if (!confirmed) return;
   setSubmitLoading(true);
 
   try {
-    const response = await createOfficeOrder(
-      officeOrderName,
-      officeOrderDescription,
-      officeOrderUrl,
+    const response = await createMemo(
+      memoName,
+      memoDescription,
+      memoUrl,
       individualTarget,
       batchEmployeeIds,
       recipientType,
       employee.id
     );
-    setOfficeOrderMessage("Office Order Sent Successfully.");
-    setOfficeOrderMode("view");
-    console.log("create office order response", response);
+    setMemoMessage("Memo Sent Successfully.");
+    setMemoMode("view");
+    console.log("create memo response", response);
     resetMemoForm();
   } catch (error) {
-    console.error("Error sending office order:", error);
-    setOfficeOrderMessage(
-      error?.message || "Failed to send office order."
+    console.error("Error sending memo:", error);
+    setMemoMessage(
+      error?.message || "Failed to send memo."
     );
   } finally {
     setSubmitLoading(false);
   }
 };
   // =========================================================
-  // MARK OFFICE ORDER AS READ
+  // MARK MEMO AS READ
   // =========================================================
-  const handleOpenMemo = async (officeOrderData) => {
-    if (!officeOrderData) {
-      alert("No office order data available.");
+  const handleOpenMemo = async (memoData) => {
+    if (!memoData) {
+      alert("No memo data available.");
       return;
     }
-    if (officeOrderData.url) {
-      if (officeOrderData.is_read === false) {
-        handleMarkAsRead(officeOrderData);
+    if (memoData.url) {
+      if (memoData.is_read === false) {
+        handleMarkAsRead(memoData);
       }
-      window.open(officeOrderData.url, "_blank", "noopener,noreferrer");
+      window.open(memoData.url, "_blank", "noopener,noreferrer");
     }
   }
-  const handleMarkAsRead = async (officeOrderData) => {
-    if (!officeOrderData) {
-      alert("No office order data available.");
+  const handleMarkAsRead = async (memoData) => {
+    if (!memoData) {
+      alert("No memo data available.");
       return;
     }
 
-    if (officeOrderData.is_read) return;
+    if (memoData.is_read) return;
 
     try {
-      setMarkingOfficeOrderId(officeOrderData.id);
-      const response = await markAsReadOfficeOrder(officeOrderData);
-      console.log("mark as read", response);
+      setMarkingMemoId(memoData.id);
+      const response = await markAsReadMemo(memoData);
       if (response.success) {
-        // Update the office order in the UI immediately
-        setMyAssignOfficeOrder((prevMemos) =>
-          prevMemos.map((officeorder) =>
-            officeorder.id === officeOrderData.id
+        // Update the memo in the UI immediately
+        setMyAssignMemo((prevMemos) =>
+          prevMemos.map((memo) =>
+            memo.id === memoData.id
               ? {
-                  ...officeorder,
+                  ...memo,
                   is_read: true,
                   read_at: new Date().toISOString(),
                 }
-              : officeorder
+              : memo
           )
         );
         setCurrentPage(1);
       }
     } catch (error) {
       console.error("Error marking as read:", error);
-      setOfficeOrderMessage(
+      setMemoMessage(
         error?.message || "Failed to mark as read."
       );
     } finally {
-      setMarkingOfficeOrderId(null);
+      setMarkingMemoId(null);
     }
   };
   const getDepartmentName = (departmentCode) => {
@@ -235,90 +233,90 @@ const handleSendMemo = async (event) => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">
-                Office Orders
+                Memos
               </p>
               <h2 className="text-2xl font-semibold text-slate-900">
-                Employee Office Orders Management
+                Employee Memo Management
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                Paste a Google Drive office order URL, then choose a
+                Paste a Google Drive memo URL, then choose a
                 specific employee or a batch to send.
               </p>
             </div>
             <button
               type="button"
               onClick={() => {
-                setOfficeOrderMessage("");
-                setOfficeOrderMode("add");
+                setMemoMessage("");
+                setMemoMode("add");
               }}
               className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
             >
-              Add Office Order
+              Add Memo
             </button>
           </div>
         </div>
       )}
 
-      {officeOrderMessage && (
+      {memoMessage && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          {officeOrderMessage}
+          {memoMessage}
         </div>
       )}
-      {officeOrderMode === "add" && !canISendMemo ? (
+      {memoMode === "add" && !canISendMemo ? (
         <EmptyState
           icon={FaRegFileAlt}
           title="Access denied"
           message="Only HR can add Memos."
         />
-      ) : officeOrderMode === "add" ? (
+      ) : memoMode === "add" ? (
         <form
           onSubmit={handleSendMemo}
           className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div className="space-y-6">
-            {/* OFFICE ORDER NAME */}
+            {/* MEMO NAME */}
             <div>
               <label className="block text-sm font-semibold text-slate-700">
-                Office Order Name
+                Memo Name
               </label>
 
               <input
                 type="text"
-                value={officeOrderName}
+                value={memoName}
                 onChange={(event) =>
-                  setOfficeOrderName(event.target.value)
+                  setMemoName(event.target.value)
                 }
-                placeholder="Enter office order name"
+                placeholder="Enter memo name"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
               />
             </div>
-            {/* OFFICE ORDER DESCRIPTION */}
+            {/* MEMO DESCRIPTION */}
             <div>
               <label className="block text-sm font-semibold text-slate-700">
-                Office Order Description
+                Memo Description
               </label>
 
               <input
                 type="text"
-                value={officeOrderDescription}
+                value={memoDescription}
                 onChange={(event) =>
-                  setOfficeOrderDescription(event.target.value)
+                  setMemoDescription(event.target.value)
                 }
-                placeholder="Enter office order description"
+                placeholder="Enter memo description"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
               />
             </div>
-            {/* OFFICE ORDER URL */}
+            {/* MEMO URL */}
             <div>
               <label className="block text-sm font-semibold text-slate-700">
-                Office Order URL
+                Memo URL
               </label>
 
               <input
                 type="url"
-                value={officeOrderUrl}
+                value={memoUrl}
                 onChange={(event) =>
-                  setOfficeOrderUrl(event.target.value)
+                  setMemoUrl(event.target.value)
                 }
                 placeholder="https://drive.google.com/file/d/..."
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
@@ -328,7 +326,7 @@ const handleSendMemo = async (event) => {
             {/* RECIPIENT */}
             <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-700">
-                Send Office Order To
+                Send Memo To
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -480,7 +478,7 @@ const handleSendMemo = async (event) => {
               type="button"
               onClick={() => {
                 resetMemoForm();
-                setOfficeOrderMode("view");
+                setMemoMode("view");
               }}
               className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
             >
@@ -492,34 +490,34 @@ const handleSendMemo = async (event) => {
               disabled={submitLoading}
               className="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 hover:bg-amber-700"
             >
-              Send Office Order
+              Send Memo
             </button>
           </div>
         </form>
       ) : (
         /* ===================================================
-           ASSIGNED Office Order
+           ASSIGNED MEMOS
         ==================================================== */
         <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">
-                Assigned Office Order
+                Assigned Memos
               </h3>
 
               <p className="text-sm text-slate-600">
-                View office order assigned to you here.
+                View memos assigned to you here.
               </p>
             </div>
 
-            {isOfficeOrderLoading && (
+            {isMemoLoading && (
               <span className="text-sm text-slate-500">
-                Loading office order...
+                Loading memos…
               </span>
             )}
           </div>
 
-          {isOfficeOrderLoading ? (
+          {isMemoLoading ? (
             <div className="mt-6 grid gap-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <div
@@ -528,7 +526,7 @@ const handleSendMemo = async (event) => {
                 />
               ))}
             </div>
-          ) : myAssignOfficeOrder?.length > 0 ? (
+          ) : myAssignMemo?.length > 0 ? (
             <div className="mt-6 space-y-4">
               {currentMemos.map((item) => (
                 <div
@@ -545,7 +543,7 @@ const handleSendMemo = async (event) => {
                   )}
 
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                    {/* Office Order Information */}
+                    {/* Memo Information */}
                     <div className="min-w-0 flex-1">
                       {/* Header */}
                       <div className="flex flex-wrap items-center gap-2">
@@ -557,13 +555,13 @@ const handleSendMemo = async (event) => {
                         )}
 
                         <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                          Office Order
+                          Memorandum
                         </span>
                       </div>
 
                       {/* Title */}
                       <h4 className="mt-2 text-lg font-bold leading-snug themed-text">
-                        {item.title || "Untitled Office Order"}
+                        {item.title || "Untitled Memo"}
                       </h4>
 
                       {/* Description */}
@@ -573,7 +571,7 @@ const handleSendMemo = async (event) => {
                         </p>
                       )}
 
-                      {/* Office Order Details */}
+                      {/* Memo Details */}
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {/* Posted Date */}
                         <div className="flex items-start gap-3">
@@ -628,7 +626,7 @@ const handleSendMemo = async (event) => {
                         }}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 sm:w-auto"
                       >
-                        <span>View Office Order</span>
+                        <span>View Memo</span>
                         <span className="text-base">
                           →
                         </span>
@@ -638,16 +636,16 @@ const handleSendMemo = async (event) => {
                       {!item.is_read && (
                         <button
                           type="button"
-                          disabled={markingOfficeOrderId === item.id}
+                          disabled={markingMemoId === item.id}
                           onClick={() => handleMarkAsRead(item)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <span>
-                            {markingOfficeOrderId === item.id ? "✓" : "✓"}
+                            {markingMemoId === item.id ? "✓" : "✓"}
                           </span>
 
                           <span>
-                            {markingOfficeOrderId === item.id
+                            {markingMemoId === item.id
                               ? "Marking..."
                               : "Mark as Read"}
                           </span>
@@ -671,8 +669,8 @@ const handleSendMemo = async (event) => {
           ) : (
             <EmptyState
               icon={FaRegFileAlt}
-              title="No office order assigned"
-              message="Office Order sent to you will appear here."
+              title="No memos assigned"
+              message="Memos sent to you will appear here."
             />
           )}
         </div>
@@ -681,4 +679,4 @@ const handleSendMemo = async (event) => {
   );
 }
 
-export default OfficeOrderTab;
+export default MemoTab;

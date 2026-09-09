@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../supabase";
+import { supabase } from "../../services/supabase";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function ResetPassword({ modal = false }) {

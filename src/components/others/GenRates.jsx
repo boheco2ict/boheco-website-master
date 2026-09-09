@@ -6,7 +6,7 @@ import {
   FaFileInvoiceDollar,
 } from "react-icons/fa";
 
-import { getGenerationCharges } from "../services/getservices";
+import { getGenerationCharges } from "../../services/getservices";
 
 const GenRates = () => {
   const [generationCharges, setGenerationCharges] =

@@ -2,9 +2,9 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { FaSignOutAlt } from "react-icons/fa";
-import ConsumerForm from "../consumer/form";
-import EmployeeNoRecord from "../employee/no_record";
-import { supabase } from "../../supabase";
+import ConsumerForm from "../../components/consumer/form";
+import EmployeeNoRecord from "../../components/employee/no_record";
+import { supabase } from "../../services/supabase";
 
 function AuthCallback() {
   const navigate = useNavigate();
@@ -32,10 +32,6 @@ function AuthCallback() {
       }
 
       return;
-    }
-
-    if (user && user.app_metadata.provider === "google" && !consumerInfo) {
-      
     }
 
     // Authenticated employee with existing profile

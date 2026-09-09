@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaTimes, FaCalendarAlt } from "react-icons/fa";
-import { supabase } from "../../../supabase";
-import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
-import Pagination from "../../Pagination";
+import { supabase } from "../../services/supabase";
+import RejectApplicationReasonModal from "./RejectApplicationReasonModal";
+import Pagination from "../reusable/Pagination";
 import {
   getLeaveApproverByDepartment,
   getMyHistoryApplicationByID,
   getMyPendingApplicationByID,
   getAllPendingApplications
-} from "../../../services/getservices";
+} from "../../services/getservices";
 import {
   createLeaveApplication
-} from "../../../services/postservices";
+} from "../../services/postservices";
 import {
   cancelApplication,
   rejectApplication,
   approveApplication
-} from "../../../services/updateservices";
+} from "../../services/updateservices";
 import {
   formatName_FN_MI_LN,
   formatDate_Month_Day_Year
-} from "../../../utils";
+} from "../../utils/utils";
 
 function LeaveCreditsTab({ leaveCredits, employee }) {
   const myID = employee.id;

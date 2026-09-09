@@ -10,8 +10,8 @@ import { getLedger } from "../../services/getservices";
 import {
   formatBillingMonth_Year,
   formatDate_Month_Day_Year,
-} from "../../utils";
-import Pagination from "../../components/Pagination";
+} from "../../utils/utils";
+import Pagination from "../reusable/Pagination";
 
 const ConsumerLedger = ({ isOpen, onClose, account }) => {
   const [bills, setBills] = useState([]);

@@ -1,5 +1,5 @@
-import { supabase } from "../supabase";
-import { formatName_FN_MI_LN } from "../utils";
+import { supabase } from "./supabase";
+import { formatName_FN_MI_LN } from "../utils/utils";
 const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {

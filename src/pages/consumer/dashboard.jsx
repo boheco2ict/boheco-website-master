@@ -1,9 +1,9 @@
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
 import { getLedgerAll } from "../../services/getservices";
-import ConsumerInformation from "./consumer_information";
-import LatestBill from "./latest_bill";
-import NoAccountFound from "./no_account_found";
+import ConsumerInformation from "../../components/consumer/consumer_information";
+import LatestBill from "../../components/consumer/latest_bill";
+import NoAccountFound from "../../components/consumer/no_account_found";
 import { FaSpinner } from "react-icons/fa";
 
 const Dashboard = () => {

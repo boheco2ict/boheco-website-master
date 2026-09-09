@@ -14,22 +14,22 @@ import {
   FaUser,
 } from "react-icons/fa";
 
-import { useAuth } from "../../../context/AuthContext";
-import RejectApplicationReasonModal from "../../RejectApplicationReasonModal";
+import { useAuth } from "../../context/AuthContext";
+import RejectApplicationReasonModal from "./RejectApplicationReasonModal";
 
 import {
   getLeaveApplicationById
-} from "../../../services/getservices";
+} from "../../services/getservices";
 
 import {
   rejectApplication,
   approveApplication,
-} from "../../../services/updateservices";
+} from "../../services/updateservices";
 
 import {
   formatDate_Month_Day_Year,
   formatName_FN_MI_LN,
-} from "../../../utils";
+} from "../../utils/utils";
 
 export default function ReviewApplication() {
   const navigate = useNavigate();

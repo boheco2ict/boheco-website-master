@@ -1,13 +1,13 @@
-import Badge from "./Badge";
-import InfoCard from "./InfoCard";
+import Badge from "../reusable/Badge";
+import InfoCard from "../reusable/InfoCard";
 import {
   FaBriefcase,
   FaCalendarAlt,
   FaEdit,
   FaUser,
 } from "react-icons/fa";
-import FormatValue from "./FormatValue";
-import FormatDate from "./FormatDate";
+import FormatValue from "../reusable/FormatValue";
+import FormatDate from "../reusable/FormatDate";
 
 const profileFields = [
   { label: "Employee Number", key: "empnumber" },
