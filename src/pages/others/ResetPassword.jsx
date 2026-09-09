@@ -88,8 +88,7 @@ function ResetPassword({ modal = false }) {
       setMsg(error.message);
       return;
     }
-
-    navigate("/login");
+    alert("Password Updated Successfully.");
   };
 
   const content = (
@@ -107,7 +106,7 @@ function ResetPassword({ modal = false }) {
         </p>
 
         <p className="mt-4 inline-flex rounded-2xl bg-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-          For BOHECO&nbsp;II employees only
+          For BOHECO&nbsp;II Employees Only
         </p>
       </div>
 

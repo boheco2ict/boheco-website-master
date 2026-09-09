@@ -67,3 +67,71 @@ export const deleteLeaveApproverDepartment = async (id) => {
 export const deleteEmployee = async (id) => {
   console.log("delete id",id);
 }
+
+export const deleteConsumerBindAccount = async (id) => {
+  try {
+    if (!id) {
+      return {
+        success: false,
+        message: "Account ID is Required.",
+        data: null,
+      };
+    }
+
+    const { data, error } = await supabase
+      .from("consumers_boheco_account")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      // console.error("Delete Consumer Account Error:", error);
+
+      return {
+        success: false,
+        message: "Failed to Remove.",
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: "Account Remove Successfully.",
+      data,
+    };
+  } catch (error) {
+    // console.error("Delete Consumer Account Error:", error);
+
+    return {
+      success: false,
+      message: "Something went wrong while remove.",
+      data: null,
+    };
+  }
+};
+
+export const deletePowerInterruption = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("Power Interruption ID is required.");
+    }
+
+    const { error } = await supabase
+      .from("power_interruption")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Error deleting power interruption:",
+      error
+    );
+    return false;
+  }
+};

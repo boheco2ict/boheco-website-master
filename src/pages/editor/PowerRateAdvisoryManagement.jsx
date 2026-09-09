@@ -181,7 +181,7 @@ const PowerRateAdvisoryManagement = () => {
     const extension =
       file.name.split(".").pop();
 
-    const fileName = `Power${Date.now()}.${extension}`;
+    const fileName = `P_${Date.now()}.${extension}`;
 
     const filePath = `${STORAGE_FOLDER}/${fileName}`;
 

@@ -16,7 +16,6 @@ import Award from "./pages/others/Award";
 import Developers from "./pages/others/Developers";
 import PrivacyPopup from "./components/PrivacyPopup";
 import Dashboard from "./pages/employee/Dashboard";
-import EditorDashboard from "./pages/editor/EditorDashboard";
 import ConsumerDashboard from "./pages/consumer/dashboard";
 import Policy from "./pages/employee/Policy";
 import EmployeeManual from "./pages/employee/EmployeeManual";
@@ -28,16 +27,16 @@ import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
 import { useAuth } from "./context/AuthContext";
 import AuthCallback from "./pages/auth/auth_callback";
 import Header from "./components/Header";
-import AdminDashboard from "./pages/admin/admin_dashboard";
 import EmployeeLayout from "./components/layout/EmployeeLayout";
 import ConsumerLayout from "./components/layout/ConsumerLayout";
 import NotFound from "./pages/others/NotFound";
-import ConsumerLedger from "./pages/consumer/ledger";
 import GenerationChargeManagement from "./pages/editor/GenerationChargeManagement";
 import PowerRateManagement from "./pages/editor/PowerRateManagement";
 import PowerRateAdvisoryManagement from "./pages/editor/PowerRateAdvisoryManagement";
 import LeaveApprover from "./pages/admin/leave_approver";
 import ManageEmployee from "./pages/admin/employee_management";
+import PowerInterruption from "./pages/others/PowerInterruption";
+import PowerInterruptionManagement from "./pages/editor/PowerInterruptionManagement";
 
 function App() {
   const { user, loading } = useAuth();
@@ -91,6 +90,7 @@ function App() {
           <Route path="developers" element={<Developers />} />
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="power-interruption" element={<PowerInterruption />} />
           <Route path="unauthorized" element={<Unauthorized />} />
           <Route
             path="auth/callback"
@@ -112,7 +112,7 @@ function App() {
               path="dashboard"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={["USER", "HR"]}>
+                  <RoleRoute allowedRoles={["USER", "HR", "ADMIN", "EDITOR"]}>
                     <Dashboard />
                   </RoleRoute>
                 </ProtectedRoute>
@@ -120,16 +120,6 @@ function App() {
             />
 
             {/* ADMIN */}
-            <Route
-              path="admin-dashboard"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute allowedRoles={["ADMIN"]}>
-                    <AdminDashboard />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="admin-manage-employee"
               element={
@@ -152,16 +142,6 @@ function App() {
             />
 
             {/* EDITOR */}
-            <Route
-              path="editor-dashboard"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute allowedRoles={["EDITOR"]}>
-                    <EditorDashboard />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="editor-power-rates"
               element={
@@ -192,13 +172,23 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="editor-power-interruption"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <PowerInterruptionManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
 
-            {/* USER / HR */}
+            {/* ALL ROLES */}
             <Route
               path="review-application/:id"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={["USER", "HR"]}>
+                  <RoleRoute allowedRoles={["USER", "HR", "ADMIN", "EDITOR"]}>
                     <ReviewApplication />
                   </RoleRoute>
                 </ProtectedRoute>
@@ -240,7 +230,6 @@ function App() {
 
           </Route>
 
-
           {/* ============================= */}
           {/* CONSUMER ROUTES */}
           {/* ============================= */}
@@ -257,17 +246,6 @@ function App() {
               }
             />
             <Route
-              path="consumer-ledger"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute allowedRoles={["CONSUMER"]}>
-                    <ConsumerLedger />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
               path="consumer-settings"
               element={
                 <ProtectedRoute>
@@ -282,13 +260,10 @@ function App() {
         </Route>
 
         {/* ============================= */}
-        {/* CATCH ALL */}
+        {/* CATCH ALL INVALID ROUTES */}
         {/* ============================= */}
 
-        <Route
-          path="*"
-          element={<NotFound />}
-        />
+        <Route path="*" element={<NotFound />} />
 
       </Routes>
       <Footer />

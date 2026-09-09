@@ -7,13 +7,14 @@ const Header = () => {
 
     const Links = [
         { id: 1, name: "ABOUT", link: "about" },
-        { id: 2, name: "RATE ADVISORY", link: "rate-advisory" },
-        { id: 3, name: "NOTICE", link: "notice" },
-        { id: 4, name: "DDP & PSPPs", link: "ddpandpspp" },
-        { id: 5, name: "LIFELINE RATE", link: "lifeline" },
-        { id: 6, name: "PAYMENT PARTNERS", link: "partners" },
-        { id: 7, name: "BILL INQUIRIES", link: "inquiries" },
-        { id: 8, name: "AWARDS", link: "awards" },
+        { id: 2, name: "POWER INTERRUPTION", link: "power-interruption" },
+        { id: 3, name: "RATE ADVISORY", link: "rate-advisory" },
+        { id: 4, name: "NOTICE", link: "notice" },
+        { id: 5, name: "DDP & PSPPs", link: "ddpandpspp" },
+        { id: 6, name: "LIFELINE RATE", link: "lifeline" },
+        { id: 7, name: "PAYMENT PARTNERS", link: "partners" },
+        { id: 8, name: "BILL INQUIRIES", link: "inquiries" },
+        { id: 9, name: "AWARDS", link: "awards" },
     ];
 
   return (

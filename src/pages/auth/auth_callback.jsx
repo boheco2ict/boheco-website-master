@@ -20,6 +20,7 @@ function AuthCallback() {
       return;
     }
 
+
     // Authenticated consumer with existing profile
     if (consumerInfo) {
       const role = consumerInfo?.role || "";
@@ -33,28 +34,19 @@ function AuthCallback() {
       return;
     }
 
+    if (user && user.app_metadata.provider === "google" && !consumerInfo) {
+      
+    }
+
     // Authenticated employee with existing profile
     if (employeeInfo) {
       const role = employeeInfo?.role || "";
 
       // USER or HR
-      if (role === "USER" || role === "HR") {
+      if (role === "USER" || role === "HR" || role === "EDITOR" || role === "ADMIN") {
         navigate("/dashboard", { replace: true });
         return;
       }
-
-      // EDITOR
-      if (role === "EDITOR") {
-        navigate("/editor-dashboard", { replace: true });
-        return;
-      }
-
-      // ADMIN
-      if (role === "ADMIN") {
-        navigate("/admin-dashboard", { replace: true });
-        return;
-      }
-
       return;
     }
 
@@ -90,6 +82,10 @@ function AuthCallback() {
   };
 
   const handleLogout = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to Logout? You will need to log in again to access your account."
+    );
+    if (!confirm) return;
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -125,20 +121,16 @@ function AuthCallback() {
       </button>
 
       {/* Forms */}
-      {user &&
-        user.app_metadata.provider === "google" &&
-        !consumerInfo && (
-          <ConsumerForm
-            ID={user.id}
-            onSuccess={handleFormResponse}
-          />
-        )}
+      {user && user.app_metadata.provider === "google" && !consumerInfo && (
+        <ConsumerForm
+          ID={user.id}
+          onSuccess={handleFormResponse}
+        />
+      )}
 
-      {user &&
-        user.app_metadata.provider === "email" &&
-        !employeeInfo && (
-          <EmployeeNoRecord data={user} />
-        )}
+      {user && user.app_metadata.provider === "email" && !employeeInfo && (
+        <EmployeeNoRecord />
+      )}
     </div>
   );
 }

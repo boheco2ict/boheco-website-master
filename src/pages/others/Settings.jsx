@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { FaCog, FaLock, FaChevronRight, FaTimes } from "react-icons/fa";
 import ResetPassword from "./ResetPassword";
 import { useAuth } from "../../context/AuthContext";
+import ManageAccountConsumer from "../../pages/consumer/manage_account";
 
 const Settings = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const { user, employeeInfo, consumerInfo, loading } = useAuth();
+  const [showManageAccountConsumer, setShowManageAccountConsumer] = useState(false);
   const [role, setRole] = useState("");
 
   useEffect(() => {
@@ -137,6 +139,11 @@ const Settings = () => {
           </div>
         </div>
       )}
+
+      <ManageAccountConsumer
+        isOpen={showManageAccountConsumer}
+        onClose={() => setShowManageAccountConsumer(false)}
+      />
     </div>
   );
 };

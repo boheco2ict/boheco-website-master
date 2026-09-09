@@ -205,7 +205,7 @@ const GenerationChargeManagement = () => {
       file.name.split(".").pop();
 
     const fileName =
-      `Gen${Date.now()}.${extension}`;
+      `G_${Date.now()}.${extension}`;
 
     const filePath =
       `${STORAGE_FOLDER}/${fileName}`;
