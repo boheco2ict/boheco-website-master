@@ -35,6 +35,8 @@ import PowerRateManagement from "./pages/editor/PowerRateManagement";
 import PowerRateAdvisoryManagement from "./pages/editor/PowerRateAdvisoryManagement";
 import LeaveApprover from "./pages/admin/leave_approver";
 import ManageEmployee from "./pages/admin/employee_management";
+import PowerInterruption from "./pages/others/PowerInterruption";
+import PowerInterruptionManagement from "./pages/editor/PowerInterruptionManagement";
 
 function App() {
   const { user, loading } = useAuth();
@@ -88,6 +90,7 @@ function App() {
           <Route path="developers" element={<Developers />} />
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="power-interruption" element={<PowerInterruption />} />
           <Route path="unauthorized" element={<Unauthorized />} />
           <Route
             path="auth/callback"
@@ -165,6 +168,16 @@ function App() {
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={["EDITOR"]}>
                     <GenerationChargeManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="editor-power-interruption"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <PowerInterruptionManagement />
                   </RoleRoute>
                 </ProtectedRoute>
               }

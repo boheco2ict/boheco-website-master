@@ -110,3 +110,28 @@ export const deleteConsumerBindAccount = async (id) => {
     };
   }
 };
+
+export const deletePowerInterruption = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("Power Interruption ID is required.");
+    }
+
+    const { error } = await supabase
+      .from("power_interruption")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Error deleting power interruption:",
+      error
+    );
+    return false;
+  }
+};

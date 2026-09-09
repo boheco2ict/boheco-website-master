@@ -835,3 +835,42 @@ export const updateEmployee = async (id, dataInfo) => {
     };
   }
 };
+
+export const updatePowerInterruption = async (id, imageUrl, description, type) => {
+  if (!id) {
+    throw new Error("ID is required.");
+  }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
+  if (!description) {
+    throw new Error("Description is required.");
+  }
+  if (!type) {
+    throw new Error("Type is required.");
+  }  
+  try {
+    const { data, error } = await supabase
+      .from("power_interruption")
+      .update({
+        image_url: imageUrl,
+        type: type,
+        description: description,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error updating power interruption:",
+      error
+    );
+    throw error;
+  }
+}

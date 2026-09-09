@@ -493,6 +493,11 @@ const handleSubmitApplication = useCallback(
           <button
             type="button"
             onClick={() => {
+              let isApproverExist = approverName.length > 0;
+              if (!isApproverExist) {
+                alert("No Leave Approver Assigned.");
+                return;
+              }
               setIsApplying(true);
               setAppError("");
               setAppSuccess("");

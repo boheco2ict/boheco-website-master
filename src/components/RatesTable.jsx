@@ -31,7 +31,7 @@ const RatesTable = ({ year, rateClass, thead, tbody, url }) => {
             </div>
 
             <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-              {year} {rateClass.charAt(0).toUpperCase() + rateClass.slice(1)} Power Rates
+              {year} {rateClass === "residential" ? "Residential" : rateClass === "lowvoltage" ? "Low Voltage" : rateClass === "highvoltage" ? "High Voltage" : {rateClass}} Power Rates
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">

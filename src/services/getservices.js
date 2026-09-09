@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { formatName_FN_MI_LN } from "../utils";
+const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {
   try {
@@ -809,8 +810,6 @@ export const getLedgerAll = async (accounts) => {
     return null;
   }
 
-  const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
-
   try {
     const results = await Promise.all(
       accounts.map(async (account) => {
@@ -868,8 +867,6 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
     return null;
   }
 
-  const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
-  
   try {
     const response = await fetch(API,
       {
@@ -896,4 +893,23 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
     console.error("Get Ledger Error:", error);
     return null;
   }
+};
+
+export const getPowerInterruption = async () => {
+  const { data, error } = await supabase
+    .from("power_interruption")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    console.error("Error fetching power interruptions:", error);
+    throw error;
+  }
+
+  return {
+    schedule: data.filter((item) => item.type === "schedule") || [],
+    unschedule: data.filter((item) => item.type === "unschedule") || [],
+  };
 };
