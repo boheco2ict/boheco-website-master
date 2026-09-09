@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaCog, FaLock, FaChevronRight, FaTimes } from "react-icons/fa";
+import { FaCog, FaLock, FaChevronRight, FaTimes, FaUserEdit } from "react-icons/fa";
 import ResetPassword from "./ResetPassword";
 import { useAuth } from "../../context/AuthContext";
 import ManageAccountConsumer from "../../pages/consumer/manage_account";
@@ -87,6 +87,34 @@ const Settings = () => {
 
                   <p className="mt-1 text-xs leading-5 text-slate-500">
                     Change your current password to keep your account secure.
+                  </p>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition group-hover:bg-white group-hover:text-amber-700">
+                  <FaChevronRight className="text-xs" />
+                </div>
+              </button>
+            )}
+            {role === "CONSUMER" && (
+              <button
+                type="button"
+                onClick={() => setShowManageAccountConsumer(true)}
+                className="group w-full flex items-center gap-4 rounded-xl px-4 py-4 text-left transition hover:bg-amber-50"
+              >
+                {/* Icon */}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 transition group-hover:bg-amber-200">
+                  <FaUserEdit className="text-base" />
+                </div>
+
+                {/* Text */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Manage Account
+                  </h3>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Add or Remove BOHECO accounts linked to your profile for easier account management.
                   </p>
                 </div>
 
