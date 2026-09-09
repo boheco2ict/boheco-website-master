@@ -33,7 +33,7 @@ const PowerInteruption = () => {
   const unschedule = powerInterruptions.unschedule || [];
 
   return (
-    <div className="min-h-screen w-full bg-[#F7F6F2] px-4 py-10 md:px-8 lg:px-12 mt-[75px]">
+    <div className="min-h-screen w-full bg-image2 px-4 py-10 md:px-8 lg:px-12 mt-[75px]">
       <div className="w-full">
         {/* =====================================
             HEADER
@@ -97,7 +97,7 @@ const PowerInteruption = () => {
             ====================================== */}
             <div className="w-full rounded-2xl border border-stone-200 bg-white p-5 md:p-7">
               <PowerInterruptionSection
-                title="schedule Power Interruptions"
+                title="Schedule Power Interruptions"
                 description="Planned maintenance affecting service in your area."
                 items={schedule}
                 activeIndex={scheduleIndex}
@@ -244,10 +244,7 @@ const PowerInterruptionSection = ({
             <div className="relative flex h-[420px] items-center justify-center overflow-hidden bg-stone-100 md:h-[540px]">
               <img
                 src={activeItem.image_url}
-                alt={
-                  activeItem.description ||
-                  `${isschedule ? "schedule" : "Unschedule"} power interruption`
-                }
+                alt="Power Interruption Preview"
                 className="h-full w-full object-contain"
               />
 

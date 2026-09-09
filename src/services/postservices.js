@@ -803,8 +803,6 @@ export const createPowerInterruption = async (imageUrl, description, type) => {
   const cleanType = type?.trim();
   const cleanDescription = description?.trim();
 
-  console.log(cleanImageUrl, cleanType, cleanDescription);
-
   if (!cleanImageUrl) {
     throw new Error("Image URL is required to create a power interruption.");
   }

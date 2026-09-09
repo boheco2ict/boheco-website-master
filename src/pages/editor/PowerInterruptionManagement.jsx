@@ -13,13 +13,12 @@ import {
   FaCalendarTimes,
 } from "react-icons/fa";
 import { getPowerInterruption } from "../../services/getservices";
-// import { deletePowerInterruption } from "../../services/deleteservices";
+import { deletePowerInterruption } from "../../services/deleteservices";
 import { createPowerInterruption } from "../../services/postservices";
 import { updatePowerInterruption } from "../../services/updateservices";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "POWER/INTERRUPTION";
-
 const TYPE_OPTIONS = [
   { value: "schedule", label: "Schedule" },
   { value: "unschedule", label: "Unschedule" },
@@ -110,7 +109,7 @@ const PowerInterruptionManagement = () => {
     if (!file) return null;
 
     const extension = file.name.split(".").pop()?.toLowerCase();
-    const fileName = `PowerInterruption_${Date.now()}.${extension}`;
+    const fileName = `PI_${Date.now()}.${extension}`;
     const filePath = `${STORAGE_FOLDER}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
@@ -208,8 +207,7 @@ const PowerInterruptionManagement = () => {
         const updateInterruption = await updatePowerInterruption(editingInterruption.id, imageUrl, cleanDescription, type);
 
         if (selectedFile && editingInterruption.image_url) {
-          const deleteResult = await deleteStorageImage(editingInterruption.image_url);
-          console.log("Delete Old Image Result:", deleteResult);
+          await deleteStorageImage(editingInterruption.image_url);
         }
         if (updateInterruption) {
           alert("Power Interruption Updated Successfully.");
@@ -230,28 +228,25 @@ const PowerInterruptionManagement = () => {
   };
 
   const handleDelete = async (interruption) => {
-    const confirmed = window.confirm(
-      `Delete this power interruption?\n\n${
-        interruption.description || ""
-      }\n\nThis action cannot be undone.`
-    );
-
+    const confirmed = window.confirm("Delete this Power Interruption");
     if (!confirmed) return;
 
-    // try {
-    //   setDeleting(true);
+    try {
+      setDeleting(true);
 
-    //   await deletePowerInterruption(interruption.id);
-    //   await deleteStorageImage(interruption.image_url);
+      const deleteResult = await deletePowerInterruption(interruption.id);
+      const deleteImageResult = await deleteStorageImage(interruption.image_url);
 
+      console.log("Delete Interruption Result:", deleteResult);
+      console.log("Delete Image Result:", deleteImageResult);
 
-    //   await loadInterruptions();
+      await loadInterruptions();
 
-    // } catch (error) {
-    //   console.error("Error deleting power interruption:", error);
-    // } finally {
-    //   setDeleting(false);
-    // }
+    } catch (error) {
+      console.error("Error deleting power interruption:", error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Split interruptions into schedule / unschedule groups.
@@ -268,7 +263,7 @@ const PowerInterruptionManagement = () => {
         {interruption.image_url ? (
           <img
             src={interruption.image_url}
-            alt={interruption.description || "Power interruption"}
+            alt="Not Found"
             className="h-full w-full rounded-lg bg-white object-contain shadow-sm"
             draggable={false}
           />
@@ -280,20 +275,8 @@ const PowerInterruptionManagement = () => {
         )}
 
         <div className="absolute left-5 top-5 flex items-center gap-2">
-          {(interruption.type) && (
-            <div
-              className={`rounded-full px-3 py-1.5 text-xs font-bold capitalize text-white backdrop-blur-sm ${
-                (interruption.type) === "schedule"
-                  ? "bg-emerald-600/90"
-                  : "bg-slate-950/80"
-              }`}
-            >
-              {interruption.type}
-            </div>
-          )}
-
-          <div className="rounded-full bg-amber-400 px-3 py-1.5 text-xs font-bold text-slate-950">
-            Latest
+          <div className="rounded-full bg-amber-400 px-3 py-1.5 text-[10px] text-slate-950">
+            Latest Uploaded
           </div>
         </div>
       </div>
@@ -342,7 +325,7 @@ const PowerInterruptionManagement = () => {
         {interruption.image_url ? (
           <img
             src={interruption.image_url}
-            alt={interruption.description || "Power interruption"}
+            alt="Not Found"
             className="h-full w-full rounded-lg bg-white object-contain shadow-sm"
             draggable={false}
           />
@@ -355,7 +338,7 @@ const PowerInterruptionManagement = () => {
 
         {(interruption.type) && (
           <div
-            className={`absolute left-5 top-5 rounded-full px-3 py-1.5 text-xs font-bold capitalize text-white backdrop-blur-sm ${
+            className={`absolute left-5 top-5 rounded-full px-3 py-1.5 text-[10px] capitalize text-white backdrop-blur-sm ${
               (interruption.type) === "schedule"
                 ? "bg-emerald-600/90"
                 : "bg-slate-950/80"
@@ -372,7 +355,7 @@ const PowerInterruptionManagement = () => {
             Description
           </p>
           <p className="line-clamp-3 text-sm font-semibold leading-relaxed text-slate-700">
-            {interruption.description || "No description"}
+            {interruption.description || "No Description"}
           </p>
         </div>
 
@@ -497,7 +480,7 @@ const PowerInterruptionManagement = () => {
         ) : (
           <>
             {renderSection(
-              "schedule",
+              "Schedule",
               <FaCalendarCheck className="text-emerald-600" />,
               scheduleInterruptions,
               "No schedule power interruptions yet."
@@ -553,7 +536,7 @@ const PowerInterruptionManagement = () => {
                     <div className="relative overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
                       <img
                         src={previewUrl}
-                        alt="Power interruption preview"
+                        alt="Not Found"
                         className="mx-auto max-h-[400px] w-full object-contain"
                       />
                       <div className="absolute inset-x-0 bottom-0 bg-slate-950/75 px-4 py-3 text-center text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
