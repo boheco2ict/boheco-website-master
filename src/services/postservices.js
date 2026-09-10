@@ -830,3 +830,36 @@ export const createPowerInterruption = async (imageUrl, description, type) => {
 
   return data;
 };
+
+export const createNotice = async (cleanTitle, cleanFileUrl, uploadedImageUrl, ID) => {
+  if (!cleanTitle) {
+    throw new Error("Title is required.");
+  }
+  if (!cleanFileUrl) {
+    throw new Error("File URL is required.");
+  }
+  if (!uploadedImageUrl) {
+    throw new Error("Drive URL is required.");
+  }
+  if (!ID) {
+    throw new Error("ID is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("notice")
+    .insert({
+      title: cleanTitle,
+      file_url: cleanFileUrl,
+      image_url: uploadedImageUrl,
+      posted_by: ID
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating notice:", error);
+    throw error;
+  }
+
+  return data;
+};

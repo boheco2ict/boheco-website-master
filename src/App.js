@@ -37,6 +37,7 @@ import LeaveApprover from "./pages/admin/leave_approver";
 import ManageEmployee from "./pages/admin/employee_management";
 import PowerInterruption from "./pages/others/PowerInterruption";
 import PowerInterruptionManagement from "./pages/editor/PowerInterruptionManagement";
+import NoticeManagement from "./pages/editor/NoticeManagement";
 
 function App() {
   const { user, loading } = useAuth();
@@ -178,6 +179,16 @@ function App() {
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={["EDITOR"]}>
                     <PowerInterruptionManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="editor-notice"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <NoticeManagement />
                   </RoleRoute>
                 </ProtectedRoute>
               }

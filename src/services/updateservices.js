@@ -874,3 +874,42 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
     throw error;
   }
 }
+
+export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
+  if (!id) {
+    throw new Error("ID is required.");
+  }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
+  if (!cleanFileUrl) {
+    throw new Error("Drive URL is required.");
+  }
+  if (!cleanTitle) {
+    throw new Error("Title is required.");
+  }  
+  try {
+    const { data, error } = await supabase
+      .from("notice")
+      .update({
+        image_url: imageUrl,
+        title: cleanTitle,
+        file_url: cleanFileUrl,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error updating power notice:",
+      error
+    );
+    throw error;
+  }
+}

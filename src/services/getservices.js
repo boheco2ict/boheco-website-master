@@ -913,3 +913,37 @@ export const getPowerInterruption = async () => {
     unschedule: data.filter((item) => item.type === "unschedule") || [],
   };
 };
+
+export const getNotice = async () => {
+  const { data, error } = await supabase
+    .from("notice")
+    .select(`
+      *,
+      posted_by:employees (
+        firstname,
+        middlename,
+        lastname
+      )
+    `)
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    console.error("Error fetching notice:", error);
+    throw error;
+  }
+
+  const formattedData = (data || []).map((notice) => ({
+  ...notice,
+  posted_by: notice.posted_by
+    ? formatName_FN_MI_LN(
+        notice.posted_by.firstname,
+        notice.posted_by.middlename,
+        notice.posted_by.lastname
+      )
+    : "Unknown",
+  }));
+
+  return formattedData || [];
+};
