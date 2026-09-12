@@ -21,7 +21,7 @@ const PowerInteruption = () => {
         const data = await getPowerInterruption();
         setPowerInterruptions(data || { schedule: [], unschedule: [] });
       } catch (error) {
-        console.error("Error loading power interruptions:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }

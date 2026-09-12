@@ -53,7 +53,7 @@ const PowerInterruptionManagement = () => {
       const data = await getPowerInterruption();
       setPowerInterruptions(data || { schedule: [], unschedule: [] });
     } catch (error) {
-      console.error("Error loading power interruptions:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -278,36 +278,17 @@ const PowerInterruptionManagement = () => {
 
   const handleDelete = async (interruption) => {
     const confirmed = window.confirm("Delete this Power Interruption");
-
     if (!confirmed) return;
 
     try {
       setDeleting(true);
-
-      const deleteResult = await deletePowerInterruption(interruption.id);
-
-      if (!deleteResult) {
-        alert("Failed to delete the power interruption.");
-        return;
-      }
-
-      if (interruption.image_url) {
-        try {
-          await deleteStorageImage(
-            interruption.image_url,
-            BUCKET_NAME
-          );
-        } catch (error) {
-          console.error("Error deleting interruption image:", error);
-        }
-      }
-
+      await deletePowerInterruption(interruption.id);
+      await deleteStorageImage(interruption.image_url, BUCKET_NAME);
       await loadInterruptions();
-
       alert("Power Interruption Deleted Successfully.");
     } catch (error) {
-      console.error("Error deleting power interruption:", error);
-      alert("Failed to delete the power interruption.");
+      console.error(error);
+      alert(error.message);
     } finally {
       setDeleting(false);
     }

@@ -15,55 +15,24 @@ import { getGenerationCharges } from "../../services/getservices";
 import { deleteGenerationCharge } from "../../services/deleteservices";
 import { createGenerationCharge } from "../../services/postservices";
 import { updateGenerationCharge } from "../../services/updateservices";
-import {
-  uploadStorageImage,
-  deleteStorageImage,
-} from "../../services/storageservices";
+import { uploadStorageImage, deleteStorageImage } from "../../services/storageservices";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "RATES/GEN";
 
 const GenerationChargeManagement = () => {
-  const [generationCharges, setGenerationCharges] =
-    useState([]);
+  const [generationCharges, setGenerationCharges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingGenerationCharge, setEditingGenerationCharge] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [displayOrder, setDisplayOrder] = useState(1);
+  const fileInputRef = useRef(null);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [deleting, setDeleting] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
-  const [showModal, setShowModal] =
-    useState(false);
-
-  const [editingGenerationCharge, setEditingGenerationCharge] =
-    useState(null);
-
-  const [selectedFile, setSelectedFile] =
-    useState(null);
-
-  const [previewUrl, setPreviewUrl] =
-    useState("");
-
-  const [displayOrder, setDisplayOrder] =
-    useState(1);
-
-  const fileInputRef =
-    useRef(null);
-
-  // ==========================================
   // LOAD GENERATION CHARGES
-  // ==========================================
-
   useEffect(() => {
     loadGenerationCharges();
   }, []);
@@ -71,183 +40,96 @@ const GenerationChargeManagement = () => {
   const loadGenerationCharges = async () => {
     try {
       setLoading(true);
-      setError("");
-
-      const data =
-        await getGenerationCharges();
-
+      const data = await getGenerationCharges();
       setGenerationCharges(data || []);
     } catch (error) {
-      console.error(
-        "Error loading generation charges:",
-        error
-      );
-
-      setError(
-        "Unable to load generation charge pages."
-      );
+      console.error("Error loading generation charges:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================================
   // RESET FORM
-  // ==========================================
-
   const resetForm = () => {
     setEditingGenerationCharge(null);
     setSelectedFile(null);
     setPreviewUrl("");
-
-    setDisplayOrder(
-      generationCharges.length + 1
-    );
-
+    setDisplayOrder(generationCharges.length + 1);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  // ==========================================
   // ADD
-  // ==========================================
-
   const handleAdd = () => {
     setEditingGenerationCharge(null);
     setSelectedFile(null);
     setPreviewUrl("");
-
-    setDisplayOrder(
-      generationCharges.length + 1
-    );
-
-    setError("");
-    setSuccess("");
-
+    setDisplayOrder(generationCharges.length + 1);
     setShowModal(true);
   };
 
-  // ==========================================
   // EDIT
-  // ==========================================
-
   const handleEdit = (generationCharge) => {
-    setEditingGenerationCharge(
-      generationCharge
-    );
-
+    setEditingGenerationCharge(generationCharge);
     setSelectedFile(null);
-
-    setPreviewUrl(
-      generationCharge.image_url || ""
-    );
-
-    setDisplayOrder(
-      generationCharge.display_order
-    );
-
-    setError("");
-    setSuccess("");
-
+    setPreviewUrl(generationCharge.image_url || "");
+    setDisplayOrder(generationCharge.display_order);
     setShowModal(true);
   };
 
-  // ==========================================
   // CLOSE MODAL
-  // ==========================================
-
   const handleCloseModal = () => {
     if (saving) return;
-
     setShowModal(false);
     resetForm();
   };
 
-  // ==========================================
-  // SELECT IMAGE
-  // ==========================================
-
+ // SELECT IMAGE
   const handleFileChange = (event) => {
-    const file =
-      event.target.files?.[0];
-
+    const file = event.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith("image/")) {
-      setError(
-        "Please select a valid image file."
-      );
+      alert("Please select a valid image file.");
       return;
     }
-
     if (file.size > 10 * 1024 * 1024) {
-      setError(
-        "Image size must not exceed 10MB."
-      );
+      alert("Image size must not exceed 10MB.");
       return;
     }
-
-    setError("");
     setSelectedFile(file);
-
-    const objectUrl =
-      URL.createObjectURL(file);
-
+    const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
   };
 
-  // ==========================================
   // SAVE
-  // ==========================================
-
   const handleSave = async () => {
     let uploadedImageUrl = null;
-
     try {
       setSaving(true);
-      setError("");
-      setSuccess("");
-
       const order = Number(displayOrder);
 
-      // ========================================
       // DISPLAY ORDER VALIDATION
-      // ========================================
-
       if (!Number.isInteger(order) || order < 1) {
-        setError(
-          "Display order must be a positive whole number."
-        );
+        alert("Display order must be a positive whole number.");
         return;
       }
 
-      // ========================================
       // DUPLICATE ORDER VALIDATION
-      // ========================================
-
       const duplicateOrder = generationCharges.some(
         (generationCharge) =>
           Number(generationCharge.display_order) === order &&
           generationCharge.id !== editingGenerationCharge?.id
       );
-
       if (duplicateOrder) {
-        setError(
-          `Display order ${order} is already in use. Please choose another order.`
-        );
+        alert(`Display order ${order} is already in use. Please choose another order.`);
         return;
       }
 
-      // ========================================
       // ADD
-      // ========================================
-
       if (!editingGenerationCharge) {
         if (!selectedFile) {
-          setError(
-            "Please select a generation charge image."
-          );
+          alert("Please select a generation charge image.");
           return;
         }
 
@@ -260,87 +142,48 @@ const GenerationChargeManagement = () => {
             prefix: "GEN",
           });
         } catch (error) {
-          console.error(
-            "Error uploading generation charge image:",
-            error
-          );
-
-          setError(
-            error?.message ||
-              "Unable to upload the generation charge image."
-          );
+          console.error("Error uploading generation charge image:", error);
+          alert("Unable to upload the image.");
           return;
         }
 
         // Create database record
         try {
-          await createGenerationCharge(
-            uploadedImageUrl,
-            order
-          );
-
+          await createGenerationCharge(uploadedImageUrl, order);
           uploadedImageUrl = null;
+          alert("Generation Charge Added Successfully.");
         } catch (error) {
-          console.error(
-            "Error creating generation charge:",
-            error
-          );
-
+          console.error("Error creating generation charge:", error);
           // Cleanup uploaded image if DB creation fails
           if (uploadedImageUrl) {
             try {
-              await deleteStorageImage(
-                uploadedImageUrl,
-                BUCKET_NAME
-              );
+              await deleteStorageImage(uploadedImageUrl, BUCKET_NAME);
             } catch (deleteError) {
-              console.error(
-                "Error cleaning up uploaded generation charge image:",
-                deleteError
-              );
+              console.error("Error cleaning up uploaded generation charge image:", deleteError);
             }
-
             uploadedImageUrl = null;
           }
-
           throw error;
         }
-
-        setSuccess(
-          "Generation charge page added successfully."
-        );
       }
 
-      // ========================================
       // UPDATE
-      // ========================================
-
       else {
-        let imageUrl =
-          editingGenerationCharge.image_url;
+        let imageUrl = editingGenerationCharge.image_url;
 
         // Upload new image if selected
         if (selectedFile) {
           try {
-            uploadedImageUrl =
-              await uploadStorageImage({
-                file: selectedFile,
-                bucket: BUCKET_NAME,
-                folder: STORAGE_FOLDER,
-                prefix: "GEN",
-              });
-
+            uploadedImageUrl = await uploadStorageImage({
+              file: selectedFile,
+              bucket: BUCKET_NAME,
+              folder: STORAGE_FOLDER,
+              prefix: "GEN",
+            });
             imageUrl = uploadedImageUrl;
           } catch (error) {
-            console.error(
-              "Error uploading new generation charge image:",
-              error
-            );
-
-            setError(
-              error?.message ||
-                "Unable to upload the new generation charge image."
-            );
+            console.error("Error uploading new generation charge image:", error);
+            alert("Unable to upload the new image.");
             return;
           }
         }
@@ -353,56 +196,36 @@ const GenerationChargeManagement = () => {
             order
           );
         } catch (error) {
-          console.error(
-            "Error updating generation charge:",
-            error
-          );
+          console.error("Error updating generation charge:", error);
 
           // Cleanup newly uploaded image
           // if database update fails
           if (uploadedImageUrl) {
             try {
-              await deleteStorageImage(
-                uploadedImageUrl,
-                BUCKET_NAME
-              );
+              await deleteStorageImage(uploadedImageUrl, BUCKET_NAME);
             } catch (deleteError) {
-              console.error(
-                "Error cleaning up new generation charge image:",
-                deleteError
-              );
+              console.error("Error cleaning up new generation charge image:", deleteError);
             }
-
             uploadedImageUrl = null;
           }
-
           throw error;
         }
 
         // Database update succeeded.
         // Now delete the old image.
-        if (
-          selectedFile &&
-          editingGenerationCharge.image_url
-        ) {
+        if (selectedFile && editingGenerationCharge.image_url) {
           try {
             await deleteStorageImage(
               editingGenerationCharge.image_url,
               BUCKET_NAME
             );
           } catch (error) {
-            console.error(
-              "Error deleting old generation charge image:",
-              error
-            );
+            console.error("Error deleting old generation charge image:", error);
           }
         }
 
         uploadedImageUrl = null;
-
-        setSuccess(
-          "Generation charge page updated successfully."
-        );
+        alert("Generation Charge Updated Successfully.");
       }
 
       await loadGenerationCharges();
@@ -410,99 +233,41 @@ const GenerationChargeManagement = () => {
       setTimeout(() => {
         setShowModal(false);
         resetForm();
-        setSuccess("");
       }, 800);
     } catch (error) {
-      console.error(
-        "Error saving generation charge:",
-        error
-      );
+      console.error("Error saving generation charge:", error);
 
       // Final cleanup
       if (uploadedImageUrl) {
         try {
-          await deleteStorageImage(
-            uploadedImageUrl,
-            BUCKET_NAME
-          );
+          await deleteStorageImage(uploadedImageUrl, BUCKET_NAME);
         } catch (deleteError) {
-          console.error(
-            "Error cleaning up uploaded generation charge image:",
-            deleteError
-          );
+          console.error("Error cleaning up uploaded generation charge image:", deleteError);
         }
       }
 
-      setError(
-        error?.message ||
-          "Unable to save the generation charge page."
-      );
+      alert("Unable to save the generation charge.");
     } finally {
       setSaving(false);
     }
   };
 
-  // ==========================================
   // DELETE
-  // ==========================================
-
   const handleDelete = async (generationCharge) => {
     const confirmed = window.confirm(
       `Delete Generation Charge Page ${generationCharge.display_order}?\n\nThis action cannot be undone.`
     );
-
     if (!confirmed) return;
 
     try {
       setDeleting(true);
-      setError("");
-      setSuccess("");
-
-      // ========================================
-      // DELETE DATABASE RECORD
-      // ========================================
-
-      await deleteGenerationCharge(
-        generationCharge.id
-      );
-
-      // ========================================
-      // DELETE STORAGE IMAGE
-      // ========================================
-
-      if (generationCharge.image_url) {
-        try {
-          await deleteStorageImage(
-            generationCharge.image_url,
-            BUCKET_NAME
-          );
-        } catch (error) {
-          console.error(
-            "Error deleting generation charge image:",
-            error
-          );
-        }
-      }
-
-      setSuccess(
-        "Generation charge page deleted successfully."
-      );
-
+      await deleteGenerationCharge(generationCharge.id);
+      await deleteStorageImage(generationCharge.image_url, BUCKET_NAME);
       await loadGenerationCharges();
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 2500);
+      alert("Generation Charge Deleted Successfully.");
     } catch (error) {
-      console.error(
-        "Error deleting generation charge:",
-        error
-      );
-
-      setError(
-        error?.message ||
-          "Unable to delete the generation charge page."
-      );
+      console.error(error);
+      alert(error.message);
     } finally {
       setDeleting(false);
     }
@@ -532,18 +297,6 @@ const GenerationChargeManagement = () => {
           </button>
         </div>
       </div>
-
-      {/* ALERTS */}
-      {error && (
-        <div className="mx-5 mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:mx-6">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="mx-5 mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 sm:mx-6">
-          {success}
-        </div>
-      )}
 
       {/* CONTENT */}
       <div className="p-4 sm:p-6">

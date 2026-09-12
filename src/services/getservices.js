@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { formatName_FN_MI_LN } from "../utils/utils";
+import { TABLES, COLUMNS } from "../constants/database";
 const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {
@@ -99,34 +100,20 @@ export const getEmployeeByUserId = async (Id) => {
     return null;
   }
   const { data, error } = await supabase
-    .from("employees")
+    .from("accounts")
     .select(
       `
       id,
-      empnumber,
-      firstname,
-      middlename,
-      lastname,
-      department,
-      position,
-      empstatus,
-      address,
-      phone1,
-      phone2,
-      birthdate,
-      tin,
-      sss,
-      pagibig,
-      philhealth,
-      datehired,
-      basicrate,
-      riceallowance,
-      role,
       user_id,
+      role,
+      isActive,
+      created_at,
+      updated_at,
       employee_leave_balances (
         leave_type,
         leave_balance
-      )
+      ),
+      employee(*)
       `
     )
     .eq("user_id", Id)
@@ -142,34 +129,25 @@ export const getEmployeeByUserId = async (Id) => {
 
 export const getAllEmployees = async () => {
   const { data, error } = await supabase
-    .rpc("get_all_employees_with_email")
-    .throwOnError();
+    .rpc("get_all_employees_with_email");
 
   if (error) {
-    console.error("Fetch Employees Error:", error);
     throw error;
   }
 
-  if (!data) {
-    throw new Error("Employee data not found.");
-  }
-
-  return data;
-};
+  return data || [];
+};//Ok
 
 export const getMyAssignMemo = async (employee_id) => {
   if (!employee_id) {
-    console.error(
-      "Fetch Memo Error: No employee ID provided."
-    );
-    return null;
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
     .from("memo")
     .select(`
       *,
-      postedBy:employees!posted_by (
+      postedBy:employee!posted_by (
         id,
         firstname,
         middlename,
@@ -227,20 +205,14 @@ export const getMyAssignOfficeOrder = async (employee_id) => {
 export const getDepartmentMeaning = async () => {
   const { data, error } = await supabase
     .from("departments")
-    .select("code, name")
-    .throwOnError();
+    .select("code, name");
 
   if (error) {
-    console.error("❌ Fetch Department Meaning Error:", error);
     throw error;
   }
 
-  if (!data) {
-    throw new Error("Department meaning not found.");
-  }
-
   return data;
-};
+};//Ok
 
 export const getLeaveApproverByDepartment = async (department) => {
   if (!department) {
@@ -863,48 +835,48 @@ export const getLedgerAll = async (accounts) => {
 
 export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => {
 
-  if (!AccountNumber && !ServicePeriodEnd && !NetAmount) {
-    return null;
+  if (!AccountNumber) {
+    throw new Error("Account Number is Required.");
+  }
+  if (!ServicePeriodEnd) {
+    throw new Error("Service Period End is Required.");
+  }  
+  if (!NetAmount) {
+    throw new Error("Net Amount is Required.");
   }
 
-  try {
-    const response = await fetch(API,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          AccountNumber,
-          ServicePeriodEnd,
-          NetAmount,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
+  const response = await fetch(API,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        AccountNumber,
+        ServicePeriodEnd,
+        NetAmount,
+      }),
     }
+  );
 
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    console.error("Get Ledger Error:", error);
-    return null;
+  if (!response.ok) {
+    throw new Error("Account Not Found.");
   }
-};
+
+  const data = await response.json();
+
+  return data;
+};//Ok
 
 export const getPowerInterruption = async () => {
   const { data, error } = await supabase
-    .from("power_interruption")
+    .from(TABLES.POWER_INTERRUPTION)
     .select("*")
-    .order("created_at", {
+    .order(COLUMNS.CREATED_AT, {
       ascending: false,
     });
 
   if (error) {
-    console.error("Error fetching power interruptions:", error);
     throw error;
   }
 
@@ -912,25 +884,24 @@ export const getPowerInterruption = async () => {
     schedule: data.filter((item) => item.type === "schedule") || [],
     unschedule: data.filter((item) => item.type === "unschedule") || [],
   };
-};
+};//Ok
 
 export const getNotice = async () => {
   const { data, error } = await supabase
-    .from("notice")
+    .from(TABLES.NOTICE)
     .select(`
       *,
-      posted_by:employees (
-        firstname,
-        middlename,
-        lastname
+      ${COLUMNS.POSTED_BY}:${TABLES.EMPLOYEES} (
+        ${COLUMNS.FIRSTNAME},
+        ${COLUMNS.MIDDLENAME},
+        ${COLUMNS.LASTNAME}
       )
     `)
-    .order("created_at", {
+    .order(COLUMNS.CREATED_AT, {
       ascending: false,
     });
 
   if (error) {
-    console.error("Error fetching notice:", error);
     throw error;
   }
 
@@ -946,4 +917,4 @@ export const getNotice = async () => {
   }));
 
   return formattedData || [];
-};
+};//Ok

@@ -38,10 +38,12 @@ const NoticeManagement = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const totalPages = Math.ceil(notices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNotices = notices.slice(startIndex, endIndex);
 
   useEffect(() => {
     fetchNotices();
@@ -50,12 +52,10 @@ const NoticeManagement = () => {
   const fetchNotices = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await getNotice();
       setNotices(data || []);
-    } catch (err) {
-      console.error("Error fetching notices:", err);
-      setError("Failed to load notices.");
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -75,8 +75,6 @@ const NoticeManagement = () => {
   const openAddModal = () => {
     resetForm();
     setShowModal(true);
-    setMessage("");
-    setError("");
   };
 
   const openEditModal = (notice) => {
@@ -86,52 +84,42 @@ const NoticeManagement = () => {
     setImageFile(null);
     setImagePreview(notice.image_url);
     setShowModal(true);
-    setMessage("");
-    setError("");
   };
 
   const closeModal = () => {
     if (saving) return;
-
     setShowModal(false);
     resetForm();
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
-
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file.");
+      alert("Please select a valid image file.");
       return;
     }
-
     if (file.size > 10 * 1024 * 1024) {
-      setError("Image size must not exceed 10MB.");
+      alert("Image size must not exceed 10MB.");
       return;
     }
-
-    setError("");
     setImageFile(file);
-
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const cleanTitle = title.trim();
     const cleanFileUrl = fileUrl.trim();
 
     if (!cleanTitle) {
-      setError("Notice title is required.");
+      alert("Notice title is required.");
       return;
     }
 
     if (!cleanFileUrl) {
-      setError("File URL is required.");
+      alert("File URL is required.");
       return;
     }
 
@@ -139,8 +127,6 @@ const NoticeManagement = () => {
 
     try {
       setSaving(true);
-      setError("");
-      setMessage("");
 
       if (!editingNotice) {
         // ADD
@@ -154,12 +140,7 @@ const NoticeManagement = () => {
             });
           } catch (error) {
             console.error("Error uploading notice image:", error);
-            setError("Failed to upload the image. Please try again.");
-            return;
-          }
-
-          if (!uploadedImageUrl) {
-            setError("Failed to upload the image. Please try again.");
+            alert("Failed to upload the image. Please try again.");
             return;
           }
         }
@@ -187,7 +168,7 @@ const NoticeManagement = () => {
             }
           }
 
-          setError("Failed to add the notice. Please try again.");
+          alert("Failed to add the notice. Please try again.");
           return;
         }
 
@@ -208,12 +189,10 @@ const NoticeManagement = () => {
             });
           } catch (error) {
             console.error("Error uploading new notice image:", error);
-            setError("Failed to upload the image. Please try again.");
             return;
           }
 
           if (!uploadedImageUrl) {
-            setError("Failed to upload the image. Please try again.");
             return;
           }
 
@@ -293,56 +272,34 @@ const NoticeManagement = () => {
         }
       }
 
-      setError(err.message || "Failed to save notice.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (notice) => {
-    const confirmed = window.confirm("Are you sure you want to delete notice?");
+    const confirmed = window.confirm(`Are you sure you want to delete notice title?\n\n${notice.title}`);
     if (!confirmed) return;
 
     try {
       setSaving(true);
 
-      const deleteResult = await deleteNotice(notice?.id);
-
-      if (!deleteResult) {
-        alert("Failed to delete the notice.");
-        return;
-      }
-
-      if (notice?.image_url) {
-        try {
-          await deleteStorageImage(
-            notice.image_url,
-            BUCKET_NAME
-          );
-        } catch (error) {
-          console.error(
-            "Error deleting notice image:",
-            error
-          );
-        }
-      }
-
+      await deleteNotice(notice.id);
+  
       setNotices((prev) => {
         const updated = prev.filter((item) => item.id !== notice.id);
-
         const newTotalPages = Math.ceil(updated.length / itemsPerPage);
-
         if (currentPage > newTotalPages && newTotalPages > 0) {
           setCurrentPage(newTotalPages);
         }
-
         return updated;
       });
 
+      await deleteStorageImage(notice.image_url, BUCKET_NAME);
       alert("Notice Deleted Successfully.");
     } catch (error) {
-      console.error("Error deleting notice:", error);
-      setError(error.message || "Failed to delete notice.");
+      console.error(error);
+      alert(error.message);
     } finally {
       setSaving(false);
     }
@@ -362,10 +319,6 @@ const NoticeManagement = () => {
     }
   };
 
-  const totalPages = Math.ceil(notices.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentNotices = notices.slice(startIndex, endIndex);
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
@@ -426,19 +379,6 @@ const NoticeManagement = () => {
           Add Notice
         </button>
       </div>
-
-      {/* Messages */}
-      {message && (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-          {message}
-        </div>
-      )}
-
-      {error && !showModal && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* Notice List */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -627,11 +567,6 @@ const NoticeManagement = () => {
             {/* Modal Body */}
             <form onSubmit={handleSubmit}>
               <div className="space-y-5 p-6">
-                {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                    {error}
-                  </div>
-                )}
 
                 {/* Title */}
                 <div>

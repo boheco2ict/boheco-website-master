@@ -21,8 +21,8 @@ function Notice() {
       const data = await getNotice();
       setNotices(data || []);
     } catch (error) {
-      console.error("Error fetching notices:", error);
-      setError("Unable to load notices. Please try again later.");
+      console.error(error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }

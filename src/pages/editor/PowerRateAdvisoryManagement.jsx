@@ -283,7 +283,7 @@ const PowerRateAdvisoryManagement = () => {
 
           throw error;
         }
-
+        alert("Power Advisory Added Successfully.");
         setSuccess(
           "Power rate advisory added successfully."
         );
@@ -376,7 +376,7 @@ const PowerRateAdvisoryManagement = () => {
         }
 
         uploadedImageUrl = null;
-
+        alert("Power Advisory Updated Successfully.");
         setSuccess(
           "Power rate advisory updated successfully."
         );
@@ -428,57 +428,17 @@ const PowerRateAdvisoryManagement = () => {
     const confirmed = window.confirm(
       `Delete Power Rate Advisory Page ${advisory.display_order}?\n\nThis action cannot be undone.`
     );
-
     if (!confirmed) return;
 
     try {
       setDeleting(true);
-      setError("");
-      setSuccess("");
-
-      // ========================================
-      // DELETE DATABASE RECORD
-      // ========================================
-
       await deleteAdvisory(advisory.id);
-
-      // ========================================
-      // DELETE STORAGE IMAGE
-      // ========================================
-
-      if (advisory.image_url) {
-        try {
-          await deleteStorageImage(
-            advisory.image_url,
-            BUCKET_NAME
-          );
-        } catch (error) {
-          console.error(
-            "Error deleting advisory image:",
-            error
-          );
-        }
-      }
-
-      setSuccess(
-        "Power rate advisory deleted successfully."
-      );
-
+      await deleteStorageImage(advisory.image_url, BUCKET_NAME);
       await loadAdvisories();
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 2500);
+      alert("Power Advisory Deleted Successfully.");
     } catch (error) {
-      console.error(
-        "Error deleting advisory:",
-        error
-      );
-
-      setError(
-        error?.message ||
-          "Unable to delete the power rate advisory."
-      );
+      console.error(error);
+      alert(error.message);
     } finally {
       setDeleting(false);
     }

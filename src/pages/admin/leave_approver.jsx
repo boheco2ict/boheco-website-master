@@ -258,10 +258,10 @@ const LeaveApproverManagement = () => {
     try {
       await deleteLeaveApproverDepartment(item.id);
       await loadData();
-      alert("Department deleted successfully.");
+      alert("Leave Approver Department Deleted Successfully.");
     } catch (error) {
       console.error(error);
-      alert("Failed to delete department.");
+      alert(error.message);
     }
   };
 

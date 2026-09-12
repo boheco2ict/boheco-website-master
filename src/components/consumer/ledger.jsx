@@ -42,9 +42,9 @@ const ConsumerLedger = ({ isOpen, onClose, account }) => {
         } else {
           setBills([]);
         }
-      } catch (err) {
-        console.error("Fetch Ledger Error:", err);
-        setError(err?.message || "Failed to load ledger.");
+      } catch (error) {
+        console.error(error);
+        setError(error.message || "Failed to load ledger.");
         setBills([]);
       } finally {
         setLoading(false);

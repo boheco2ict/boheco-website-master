@@ -50,7 +50,7 @@ function MemoTab({employee}) {
         const response = await getMyAssignMemo(employee.id);
         setMyAssignMemo(response);
       } catch (error) {
-        console.error("Error fetching my assign memo: ", error);
+        console.error(error);
       } finally {
         setIsMemoLoading(false);
       }
@@ -65,10 +65,10 @@ function MemoTab({employee}) {
     const fetchallemployee = async () => {
       try {
         const employeeData = await getAllEmployees();
+        console.log("get All Employee", employeeData.length);
         setAllEmployee(employeeData);
       } catch (error) {
-         setAllEmployee("");
-        console.error("Error fetching employee: ", error);
+        console.error(error);
       }
     };
     fetchallemployee();
@@ -80,8 +80,7 @@ function MemoTab({employee}) {
         const data = await getDepartmentMeaning();
         setDepartmentMeaning(data);
       } catch (error) {
-        setDepartmentMeaning("");
-        console.error("Error fetching department meaning: ", error);
+        console.error(error);
       }
     };
     fetchDepartmentMeaning();
@@ -90,8 +89,9 @@ function MemoTab({employee}) {
   useEffect(() => {
     if (allEmployee?.length > 0 && batchTarget === "All") {
       const allIds = allEmployee.map(
-        (employee) => employee.id
+        (employee) => employee.account_id
       );
+      console.log("all ids", allIds.length);
       setBatchEmployeeIds(allIds);
     }
   }, [allEmployee, batchTarget]);
@@ -114,35 +114,41 @@ function MemoTab({employee}) {
 const handleSendMemo = async (event) => {
   event.preventDefault();
   if (memoName.trim().length === 0) {
-    alert("Please enter memo name.");
+    alert("Please Enter Memo Name.");
     return;
   }
   if (memoDescription.trim().length === 0) {
-    alert("Please enter memo description.");
+    alert("Please Enter Memo Description.");
     return;
   }
   if (memoUrl.trim().length === 0) {
-    alert("Please enter memo URL.");
+    alert("Please Enter Memo URL.");
     return;
   }
   if (recipientType === "individual") {
     if (individualTarget.trim().length === 0) {
-      alert("Please select individual recipient.");
+      alert("Please Select a Individual Recipient.");
       return;
     }
   }
   if (recipientType === "batch") {
     if (!batchEmployeeIds || batchEmployeeIds.length === 0) {
-      alert("Please select a batch recipient.");
+      alert("Please Select a Batch Recipient.");
       return;
     }
   }
 
   const confirmed = window.confirm(
-    "Are you sure you want to send this memo?"
+    "Are you sure you want to send this Memo?"
   );
   if (!confirmed) return;
   setSubmitLoading(true);
+
+  console.log("individualTarget",individualTarget);
+  console.log("batchEmployeeIds",batchEmployeeIds);
+  console.log("recipientType",recipientType);
+  return;
+
 
   try {
     const response = await createMemo(
@@ -402,7 +408,7 @@ const handleSendMemo = async (event) => {
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                   >
                     <option value="">Please Select Employee</option>
-
+                    {console.log(allEmployee)}
                     {allEmployee
                       ?.filter(
                         (employeeT) =>
@@ -410,7 +416,8 @@ const handleSendMemo = async (event) => {
                           employeeT.department === departmentFilter
                       )
                       .map((employeeT) => (
-                        <option key={employeeT.id} value={employeeT.id}>
+                        <option key={employeeT.account_id} value={employeeT.account_id}>
+                          
                           {employeeT.lastname}, {employeeT.firstname}{" "}{employeeT.middlename ? `${employeeT.middlename.charAt(0).toUpperCase()}.` : ""}
                         </option>
                       ))}
@@ -434,7 +441,7 @@ const handleSendMemo = async (event) => {
                       if (selectedDepartment === "all") {
                         // Get ALL employee IDs
                         employeeIds = allEmployee.map(
-                          (employee) => employee.id
+                          (employee) => employee.account_id
                         );
                       } else {
                         // Get IDs belonging to the selected department
@@ -443,7 +450,7 @@ const handleSendMemo = async (event) => {
                             (employee) =>
                               employee.department === selectedDepartment
                           )
-                          .map((employee) => employee.id);
+                          .map((employee) => employee.account_id);
                       }
                       setBatchEmployeeIds(employeeIds);
                     }}

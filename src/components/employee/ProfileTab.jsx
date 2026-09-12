@@ -81,15 +81,15 @@ function ProfileTab({ employee, fullName, onEditClick }) {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge
                     icon={FaBriefcase}
-                    text={employee?.position || "Position N/A"}
+                    text={employee?.employee?.position || "Position N/A"}
                   />
                   <Badge
                     icon={FaCalendarAlt}
-                    text={`Hired ${FormatDate(employee?.datehired)}`}
+                    text={`Hired ${FormatDate(employee?.employee?.datehired)}`}
                   />
                   <Badge
                     icon={FaUser}
-                    text={employee?.empstatus || "Status N/A"}
+                    text={employee?.employee?.empstatus || "Status N/A"}
                   />
                 </div>
               </div>
@@ -135,7 +135,7 @@ function ProfileTab({ employee, fullName, onEditClick }) {
             <InfoCard
               key={field.label}
               label={field.label}
-              value={FormatValue(employee, field)}
+              value={FormatValue(employee.employee, field)}
               wide={field.wide}
               highlight={field.highlight}
             />

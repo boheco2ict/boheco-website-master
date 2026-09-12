@@ -1,32 +1,52 @@
 import { supabase } from "./supabase";
 
 export const uploadStorageImage = async ({ file, bucket, folder, prefix = "IMAGE" }) => {
-  if (!file) return null;
+  if (!file) {
+    throw new Error("File Name is Required.");
+  }
+  if (!bucket) {
+    throw new Error("Bucket Name is Required.");
+  }
+
+  if (!folder) {
+    throw new Error("Folder Name is Required.");
+  }
+  if (!prefix) {
+    throw new Error("Prefix is Required.");
+  }
 
   const extension = file.name.split(".").pop()?.toLowerCase();
   const fileName = `${prefix}_${Date.now()}.${extension}`;
   const filePath = `${folder}/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error } = await supabase.storage
     .from(bucket)
     .upload(filePath, file, {
       cacheControl: "3600",
       upsert: false,
     });
 
-  if (uploadError) {
-    throw uploadError;
+  if (error) {
+    throw error;
   }
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-  // console.log("upload image: ", data.publicUrl);
   return data.publicUrl;
 };
 
 export const deleteStorageImage = async (imageUrl, bucket) => {
+  if (!imageUrl) {
+    throw new Error("Image URL is Required.");
+  }
+  if (!bucket) {
+    throw new Error("Storage Bucket Name is Required.");
+  }
+
   const path = getStoragePath(imageUrl, bucket);
 
-  if (!path) return null;
+  if (!path) {
+    throw new Error("Path is Required.");
+  }
 
   const { data, error } = await supabase.storage
     .from(bucket)
@@ -35,8 +55,10 @@ export const deleteStorageImage = async (imageUrl, bucket) => {
   if (error) {
     throw error;
   }
-  // console.log("delete image: ", data);
-  return data;
+  return {
+    success: true,
+    data
+  }
 };
 
 const getStoragePath = (imageUrl, bucket) => {
@@ -50,7 +72,7 @@ const getStoragePath = (imageUrl, bucket) => {
     if (index === -1) return null;
 
     const data = decodedUrl.substring(index + bucketPath.length);
-    // console.log("get image path: ", data);
+
     return data;
   } catch (error) {
     console.error("Error getting storage path:", error);
