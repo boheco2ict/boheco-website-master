@@ -58,48 +58,34 @@ export const createMemo = async (memoName, memoDescription, memoUrl, individualT
   // ==============================
   // INSERT
   // ==============================
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("memo")
-    .insert(memoRows);
+    .insert(memoRows)
+    .select();
 
   if (error) {
-    console.error("❌ Create Memo Error:", error);
     throw error;
   }
 
-  return true;
-};
+  return data;
+};//Ok
 
 export const createLeaveApplication = async (applicationPayload) => {
   if (!applicationPayload) {
-    throw new Error("Leave application payload is required.");
+    throw new Error("Leave Data is Required.");
   }
   const { data, error } = await supabase
     .from("leave_applications")
     .insert(applicationPayload)
     .select()
     .single();
+
   if (error) {
-    console.error("❌ Create Leave Application Error:", error);
-    if (error.code === "42501") {
-      console.error(
-        "🔒 RLS Policy Error: You do not have permission to create a leave application."
-      );
-      throw new Error(
-        "You do not have permission to create a leave application."
-      );
-    }
     throw error;
   }
-  if (!data) {
-    throw new Error("Leave application was not created.");
-  }
-  return {
-    success: true,
-    message: "Leave Application Filed Successfully.",
-    data: data
-  };
-};
+
+  return data;
+};//Ok
 
 export const createOfficeOrder = async (officeOrderName, officeOrderDescription, officeOrderUrl, individualTarget, batchEmployeeIds, recipientType, officeOrderCreatorID) => {
   const officeOrderNameTrim = officeOrderName.trim();

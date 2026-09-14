@@ -87,7 +87,6 @@ export const getAllAuthUsers = async () => {
   const { data, error } = await supabase.rpc("get_all_auth_users");
 
   if (error) {
-    console.error("Get Auth Users Error:", error);
     throw error;
   }
 
@@ -96,8 +95,7 @@ export const getAllAuthUsers = async () => {
 
 export const getEmployeeByUserId = async (Id) => {
   if (!Id) {
-    console.error("Fetch Employee Error: No ID provided.");
-    return null;
+    throw new Error("No UUID Found.");
   }
   const { data, error } = await supabase
     .from("accounts")
@@ -109,23 +107,25 @@ export const getEmployeeByUserId = async (Id) => {
       isActive,
       created_at,
       updated_at,
-      employee_leave_balances (
-        leave_type,
-        leave_balance
-      ),
-      employee(*)
+      employee(
+        *,
+        employee_leave_balances (
+          id,
+          leave_type,
+          leave_balance
+        )
+      )
       `
     )
     .eq("user_id", Id)
     .maybeSingle();
 
   if (error) {
-    console.error("Fetch Employee Error:", error);
-    return null;
+    throw error;
   }
 
   return data || null;
-};
+};//Ok
 
 export const getAllEmployees = async () => {
   const { data, error } = await supabase
@@ -138,8 +138,8 @@ export const getAllEmployees = async () => {
   return data || [];
 };//Ok
 
-export const getMyAssignMemo = async (employee_id) => {
-  if (!employee_id) {
+export const getMyAssignMemo = async (Id) => {
+  if (!Id) {
     throw new Error("No ID Provided.");
   }
 
@@ -154,53 +154,42 @@ export const getMyAssignMemo = async (employee_id) => {
         lastname
       )
     `)
-    .eq("employee_id", employee_id)
+    .eq("employee_id", Id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Fetch Assign Memo Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Assigned memo data not found.");
+    throw error;
   }
 
   return data;
-};
+};//Ok
 
-export const getMyAssignOfficeOrder = async (employee_id) => {
+export const getMyAssignOfficeOrder = async (Id) => {
 
-  if (!employee_id) {
-    console.error(
-      "Fetch Office Order Error: No employee ID provided."
-    );
-    return null;
+  if (!Id) {
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
     .from("office_order")
     .select(`
       *,
-      postedBy:employees!posted_by (
+      postedBy:employee!posted_by (
         id,
         firstname,
         middlename,
         lastname
       )
     `)
-    .eq("employee_id", employee_id)
+    .eq("employee_id", Id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Fetch Office Order Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Assigned office order data not found.");
+    throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getDepartmentMeaning = async () => {
   const { data, error } = await supabase
@@ -215,11 +204,9 @@ export const getDepartmentMeaning = async () => {
 };//Ok
 
 export const getLeaveApproverByDepartment = async (department) => {
+
   if (!department) {
-    console.error(
-      "Fetch Approver Error: No department provided."
-    );
-    return null;
+    throw new Error("No Department Provided.");
   }
 
   const { data, error } = await supabase
@@ -228,13 +215,8 @@ export const getLeaveApproverByDepartment = async (department) => {
     .eq("department", department)
     .single();
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Department Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Department data not found.");
+    throw error;
   }
 
   const employeeIdEmail = data.employee_id_email;
@@ -248,34 +230,23 @@ export const getLeaveApproverByDepartment = async (department) => {
 
   const approverNames = await getLeaveApproverByDepartment_Name(approverIDs);
 
-  // console.log("IDs:", approverIDs);
-  // console.log("Names:", approverNames);
-  // console.log("Emails:", approverEmails);
-
   return {
     approverIDs, approverNames, approverEmails,
   };
-};
+};//Ok
 
 const getLeaveApproverByDepartment_Name = async (IDs) => {
   if (!IDs || IDs.length === 0) {
-    console.error(
-      "Fetch Approver Names Error: No IDs provided."
-    );
-    return [];
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
-    .from("employees")
+    .from("employee")
     .select("firstname, middlename, lastname")
     .in("id", IDs);
 
   if (error) {
-    console.error("Fetch Names Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Name data not found.");
+    throw error;
   }
 
   const formattedNames = data.map((employee) => {
@@ -289,15 +260,13 @@ const getLeaveApproverByDepartment_Name = async (IDs) => {
   });
 
   return formattedNames;
-};
+};//Ok
 
 export const getMyHistoryApplicationByID = async (ID) => {
-    if (!ID) {
-    console.error(
-      "Fetch Error: No data provided."
-    );
-    return null;
+  if (!ID) {
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("leave_applications")
     .select("*")
@@ -305,22 +274,18 @@ export const getMyHistoryApplicationByID = async (ID) => {
     .in("status", ["approved", "rejected", "cancelled"])
     .order("created_at", { ascending: false });
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Error:", error);
+    throw error;
   }
 
-  if (!data) {
-    throw new Error("data not found.");
-  }
   return data;
-}
+};//Ok
 
 export const getMyPendingApplicationByID = async (ID) => {
- if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+  if (!ID) {
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("leave_applications")
     .select("*")
@@ -328,168 +293,127 @@ export const getMyPendingApplicationByID = async (ID) => {
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Error:", error);
+    throw error;
   }
 
-  if (!data) {
-    throw new Error("data not found.");
-  }
   return data;
-}
+};//Ok
 
 export const getAllPendingApplications = async () => {
-  try {
-    // -----------------------------------------
-    // 1. Get pending leave applications
-    // -----------------------------------------
-    const { data, error } = await supabase
-      .from("leave_applications")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
+  // 1. Get pending leave applications
+  const { data, error } = await supabase
+    .from("leave_applications")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(
-        "Fetch Pending Applications Error:",
-        error
-      );
+  if (error) {
+    throw error;
+  }
 
-      throw new Error(
-        error.message ||
-          "Failed to fetch pending leave applications."
-      );
-    }
+  // 2. No pending applications
+  if (!data || data.length === 0) {
+    return [];
+  }
 
-    // -----------------------------------------
-    // 2. No pending applications
-    // -----------------------------------------
-    if (!data || data.length === 0) {
-      return [];
-    }
+  // 3. Get unique employee IDs
+  const employeeIds = [
+    ...new Set(
+      data
+        .map((app) => app.employee_id)
+        .filter(Boolean)
+    ),
+  ];
 
-    // -----------------------------------------
-    // 3. Get unique employee IDs
-    // -----------------------------------------
-    const employeeIds = [
-      ...new Set(
-        data
-          .map((app) => app.employee_id)
-          .filter(Boolean)
-      ),
-    ];
+  if (employeeIds.length === 0) {
+    throw new Error("No valid employee IDs were found.");
+  }
 
-    if (employeeIds.length === 0) {
-      throw new Error(
-        "No valid employee IDs were found."
-      );
-    }
+  // 4. Get employee names
+  const getNames = await getEmployeeNameByID(employeeIds);
 
-    // -----------------------------------------
-    // 4. Get employee names
-    // -----------------------------------------
-    const getNames =
-      await getEmployeeNameByID(employeeIds);
+  if (!Array.isArray(getNames)) {
+    throw new Error("Failed to retrieve employee information.");
+  }
 
-    if (!Array.isArray(getNames)) {
-      throw new Error(
-        "Failed to retrieve employee information."
-      );
-    }
+  const employeeMap = Object.fromEntries(
+    getNames.map((emp) => [emp.id, emp])
+  );
 
-    const employeeMap = Object.fromEntries(
-      getNames.map((emp) => [emp.id, emp])
-    );
+  // 5. Get employee leave balances
+  const balances = await getLeaveBalancesByID(employeeIds);
 
-    // -----------------------------------------
-    // 5. Get employee leave balances
-    // -----------------------------------------
-    const balances =
-      await getLeaveBalancesByID(employeeIds);
-
-    if (!Array.isArray(balances)) {
-      throw new Error(
-        "Failed to retrieve employee leave balances."
-      );
-    }
-
-    const balanceMap = Object.fromEntries(
-      balances.map((balance) => [
-        `${balance.employee_id}-${String(
-          balance.leave_type
-        )
-          .trim()
-          .toUpperCase()}`,
-        balance,
-      ])
-    );
-
-    // -----------------------------------------
-    // 6. Merge application + employee + balance
-    // -----------------------------------------
-    const mergedData = data.map((app) => {
-      const balanceKey = `${app.employee_id}-${String(
-        app.leave_type
-      )
-        .trim()
-        .toUpperCase()}`;
-
-      return {
-        ...app,
-
-        employee:
-          employeeMap[app.employee_id] || null,
-
-        leaveBalance:
-          balanceMap[balanceKey] || null,
-      };
-    });
-    return mergedData;
-  } catch (error) {
-    console.error(
-      "Failed to fetch pending leave applications:",
-      error
-    );
-
+  if (!Array.isArray(balances)) {
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "An unexpected error occurred while fetching pending leave applications."
+      "Failed to retrieve employee leave balances."
     );
   }
-};
+
+  const balanceMap = Object.fromEntries(
+    balances.map((balance) => [
+      `${balance.employee_id}-${String(
+        balance.leave_type
+      )
+        .trim()
+        .toUpperCase()}`,
+      balance,
+    ])
+  );
+
+  // 6. Merge application + employee + balance
+  const mergedData = data.map((app) => {
+    const balanceKey = `${app.employee_id}-${String(
+      app.leave_type
+    )
+      .trim()
+      .toUpperCase()}`;
+
+    return {
+      ...app,
+
+      employee:
+        employeeMap[app.employee_id] || null,
+
+      leaveBalance:
+        balanceMap[balanceKey] || null,
+    };
+  });
+  return mergedData;
+};//Ok
 
 const getEmployeeNameByID = async (ID) => {
    if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+    throw new Error("No ID Provided.")
   }
   const { data, error } = await supabase
-    .from("employees")
+    .from("employee")
     .select("id, firstname, middlename, lastname")
     .in("id", ID);
+
     if (error) {
-      console.error("Fetch Names Error:", error);
+      throw error;
     }
+
     return data || [];
-};
+};//Ok
 
 const getLeaveBalancesByID = async (ID) => {
   if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("employee_leave_balances")
     .select("id, employee_id, leave_type, leave_balance")
     .in("employee_id", ID);
+
   if (error) {
-    console.error("Fetch Balances Error:", error);
     throw error;
   }
+
   return data || [];
-};
+};//Ok
 
 const getEmployeeNameByID_1 = async (ID) => {
   try {

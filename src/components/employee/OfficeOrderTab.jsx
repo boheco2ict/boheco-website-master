@@ -47,10 +47,10 @@ function OfficeOrderTab({employee}) {
     const fetch = async () => {
       try {
         setIsOfficeOrderLoading(true);
-        const response = await getMyAssignOfficeOrder(employee.id);
+        const response = await getMyAssignOfficeOrder(employee.employee.id);
         setMyAssignOfficeOrder(response);
       } catch (error) {
-        console.error("Error fetching my assign office order: ", error);
+        console.error(error);
       } finally {
         setIsOfficeOrderLoading(false);
       }
@@ -67,7 +67,7 @@ function OfficeOrderTab({employee}) {
         setAllEmployee(employeeData);
       } catch (error) {
          setAllEmployee("");
-        console.error("Error fetching employee: ", error);
+        console.error(error);
       }
     };
 
@@ -81,7 +81,7 @@ function OfficeOrderTab({employee}) {
         setDepartmentMeaning(data);
       } catch (error) {
         setDepartmentMeaning("");
-        console.error("Error fetching department meaning: ", error);
+        console.error(error);
       }
     };
 
@@ -90,6 +90,7 @@ function OfficeOrderTab({employee}) {
 
   useEffect(() => {
     if (allEmployee?.length > 0 && batchTarget === "All") {
+      console.log(allEmployee);
       const allIds = allEmployee.map(
         (employee) => employee.id
       );
@@ -146,24 +147,20 @@ const handleSendMemo = async (event) => {
   setSubmitLoading(true);
 
   try {
-    const response = await createOfficeOrder(
-      officeOrderName,
-      officeOrderDescription,
-      officeOrderUrl,
-      individualTarget,
-      batchEmployeeIds,
-      recipientType,
-      employee.id
-    );
-    setOfficeOrderMessage("Office Order Sent Successfully.");
-    setOfficeOrderMode("view");
-    console.log("create office order response", response);
-    resetMemoForm();
+    const response = await createOfficeOrder(officeOrderName, officeOrderDescription, officeOrderUrl, individualTarget, batchEmployeeIds, recipientType, employee.employee.id);
+    if (response) {
+      setOfficeOrderMode("view");
+      resetMemoForm();
+      alert("Office Order Sent Successfully.");
+    }else {
+      alert("Failed to Send Office Order.");
+    }
+
   } catch (error) {
-    console.error("Error sending office order:", error);
-    setOfficeOrderMessage(
-      error?.message || "Failed to send office order."
-    );
+    console.error(error);
+    if (error.name === "Error") {
+      alert(error.message);
+    }
   } finally {
     setSubmitLoading(false);
   }
@@ -178,12 +175,12 @@ const handleSendMemo = async (event) => {
     }
     if (officeOrderData.url) {
       if (officeOrderData.is_read === false) {
-        handleMarkAsRead(officeOrderData);
+        handleMarkAsRead(officeOrderData, 1);
       }
       window.open(officeOrderData.url, "_blank", "noopener,noreferrer");
     }
   }
-  const handleMarkAsRead = async (officeOrderData) => {
+  const handleMarkAsRead = async (officeOrderData, a) => {
     if (!officeOrderData) {
       alert("No office order data available.");
       return;
@@ -193,9 +190,8 @@ const handleSendMemo = async (event) => {
 
     try {
       setMarkingOfficeOrderId(officeOrderData.id);
-      const response = await markAsReadOfficeOrder(officeOrderData);
-      console.log("mark as read", response);
-      if (response.success) {
+      const response = await markAsReadOfficeOrder(officeOrderData.id);
+      if (response) {
         // Update the office order in the UI immediately
         setMyAssignOfficeOrder((prevMemos) =>
           prevMemos.map((officeorder) =>
@@ -209,6 +205,9 @@ const handleSendMemo = async (event) => {
           )
         );
         setCurrentPage(1);
+        if (a === 0) {
+          alert("Marked as Read.");
+        }
       }
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -639,7 +638,7 @@ const handleSendMemo = async (event) => {
                         <button
                           type="button"
                           disabled={markingOfficeOrderId === item.id}
-                          onClick={() => handleMarkAsRead(item)}
+                          onClick={() => handleMarkAsRead(item, 0)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <span>

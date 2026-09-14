@@ -23,10 +23,10 @@ import {
   formatDate_Month_Day_Year
 } from "../../utils/utils";
 
-function LeaveCreditsTab({ leaveCredits, employee }) {
-  const myID = employee.id;
-  const myDepartment = employee.department;
-  const myName = formatName_FN_MI_LN(employee.firstname, employee.middlename, employee.lastname);
+function LeaveCreditsTab({ leaveCredits, employee: employeeInfo }) {
+  const myID = employeeInfo.employee.id;
+  const myDepartment = employeeInfo.employee.department;
+  const myName = formatName_FN_MI_LN(employeeInfo.employee.firstname, employeeInfo.employee.middlename, employeeInfo.employee.lastname);
   const [isApplying, setIsApplying] = useState(false);
   const [applicationType, setApplicationType] = useState("");
   const [appStart, setAppStart] = useState("");
@@ -118,10 +118,7 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
         setApproverId([]);
         setApproverName([]);
         setApproverEmail([]); 
-        console.error(
-          "Error fetching leave approver:",
-          error
-        );
+        console.error(error);
       } finally {
         setRetrieveApproverLoading(false);
       }
@@ -187,14 +184,14 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
     const fetch = async () => {
       try {
         if (!myID) {
-          throw new Error("Employee ID is required.");
+          throw new Error("Employee ID is Required.");
         }
         // Fetch History Applications
         try {
           const responseHistory = await getMyHistoryApplicationByID(myID);
           setHistoryApplications(responseHistory || []);
         } catch (error) {
-          console.error("Error fetching history applications:", error);
+          console.error(error);
           setHistoryApplications([]);
         }
 
@@ -203,7 +200,7 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
           const responsePending = await getMyPendingApplicationByID(myID);
           setPendingApplications(responsePending || []);
         } catch (error) {
-          console.error("Error fetching pending applications:", error);
+          console.error(error);
           setPendingApplications([]);
         }
 
@@ -219,14 +216,11 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
           );
           setAssignedApplications(myAssignApplications || []);
         } catch (error) {
-          console.error("Error fetching assign applications:", error);
+          console.error(error);
           setAssignedApplications([]);
         }
       } catch (error) {
-        console.error(
-          "Error fetching applications:",
-          error
-        );
+        console.error(error);
       }
     };
     fetch();
@@ -259,36 +253,32 @@ function LeaveCreditsTab({ leaveCredits, employee }) {
 const handleSubmitApplication = useCallback(
   async (e) => {
     e.preventDefault();
-    const availableBalance = leaveCredits.find(
-      (l) =>
-        String(l.leave_type).trim().toLowerCase() ===
-        String(applicationType).trim().toLowerCase()
-    )?.leave_balance;
-    if (
-      availableBalance !== undefined &&
-      Number(daysRequested) > Number(availableBalance)
-    ) {
-      setAppError(
-        `Insufficient leave balance. You have ${availableBalance} days available for ${applicationType}.`
-      );
-      return;
-    }
-    setAppError("");
+
     if (!myID) {
-      setAppError(
-        "Unable to determine employee record. Please reload."
-      );
+      alert("Unable to determine employee record. Please reload.");
       return;
     }
-    const err = validateApplication();
-    if (err) {
-      setAppError(err);
+
+    const availableBalance = leaveCredits.find(
+      (l) => String(l.leave_type).trim().toLowerCase() === String(applicationType).trim().toLowerCase()
+    )?.leave_balance;
+
+    if (availableBalance !== undefined && Number(daysRequested) > Number(availableBalance)) {
+      alert(`Insufficient Leave Balance. You have ${availableBalance} days available for ${applicationType}.`);
       return;
     }
+
+    const validateInput = validateApplication();
+    if (validateInput) {
+      alert(validateInput);
+      return;
+    }
+
     const IDs_Status = approverId.map((id) => ({
       id: id,
       status: "pending"
     }));
+
     const payload = {
       employee_id: myID,
       leave_type: applicationType,
@@ -316,40 +306,25 @@ const handleSubmitApplication = useCallback(
         },
       });
 
-      if (emailError) {
-        console.error(
-          "Email notification failed:",
-          emailError
-        );
+      console.log("response", response);
+      console.log("emailData", emailData);
 
-        setAppSuccess(
-          "Approver email notification could not be sent."
-        );
+      if (response && emailData.success) {
+        alert("Leave Successfully Filed.");
+      } else if (response && emailError) {
+        alert("Leave Successfully Filed, but the email notification sent error.");
       } else {
-        setAppSuccess(
-          "Application submitted successfully. The approver has been notified by email."
-        );
+        alert("Failed to Submit Leave Application.");
       }
 
-      if (response.success && !emailError && emailData?.success === true) {
-        alert(response.message);
-      } else if (response.success && emailError) {
-        console.error("Email Error:", emailError);
-        alert(
-          "Leave application was created, but the email could not be sent."
-        );
-      } else {
-        alert("Failed to submit leave application.");
+      if (emailError) {
+        throw emailError;
       }
 
       setIsApplying(false);
       resetApplicationForm();
-
     } catch (error) {
-      console.error("Error:",error);
-      setAppError(
-        "An unexpected error occurred while submitting."
-      );
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -390,30 +365,30 @@ const handleSubmitApplication = useCallback(
 
   const handleCancelApplication = async (application_id) => {
     if (!application_id) {
-      console.error("No Application ID Provided.");
       alert("No Application ID Provided.");
       return;
     }
+
     const confirmed = window.confirm(
       "Are you sure you want to cancel this leave application?"
     );
     if (!confirmed) return;
+
     try {
       setIsProcessingCancel(application_id);
       const response = await cancelApplication(application_id);
-      setPendingApplications((prev) =>
-        prev.filter((p) => p.id !== application_id)
-      );
-      setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== application_id)
-      );
-      if (response.success) {
-        alert(response.message);
-      } else {
-        console.log(response.response);
+      
+      if (response) {
+        alert("Application Cancelled Successfully.");
+        setPendingApplications((prev) =>
+          prev.filter((p) => p.id !== application_id)
+        );
+        setAssignedApplications((prev) =>
+          prev.filter((p) => p.id !== application_id)
+        );
       }
     } catch (error) {
-      console.error("Failed to cancel application:", error);
+      console.error(error);
     } finally {
       setIsProcessingCancel(null);
     }
@@ -421,39 +396,39 @@ const handleSubmitApplication = useCallback(
 
   const handleReject = async (reason) => {
     if (!reason) {
-      console.error("No Reason Provided.");
       alert("No Reason Provided.");
       return;
     }
+
     if (!selectedApplication) {
-      console.error("No Application Provided.");
       alert("No Application Provided.");
       return;
     } 
+
     const confirmed = window.confirm(
       "Are you sure you want to reject this leave application?"
     );
     if (!confirmed) return;
+
     try {
       setIsProcessingReject(selectedApplication.id);
       const response = await rejectApplication(selectedApplication, reason, myID);
-      setAssignedApplications((prev) =>
-        prev.filter((p) => p.id !== response.response.id)
-      );
-      if (response.response.employee_id === myID) {
-        setPendingApplications((prev) =>
-          prev.filter((p) => p.id !== response.response.id)
+      console.log("reject response", response);
+      if (response) {
+        setAssignedApplications((prev) =>
+          prev.filter((p) => p.id !== response.id)
         );
-      }
-      setRejectModalOpen(false);
-      setSelectedApplication(null);
-      if (response.success) {
+        if (response.response.employee_id === myID) {
+          setPendingApplications((prev) =>
+            prev.filter((p) => p.id !== response.id)
+          );
+        }
+        setRejectModalOpen(false);
+        setSelectedApplication(null);
         alert(response.message);
-      } else {
-        console.log(response.response);
       }
     } catch (error) {
-      console.error("Failed to reject application:", error);
+      console.error(error);
     } finally {
       setIsProcessingReject(null);
     }

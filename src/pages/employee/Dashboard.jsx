@@ -66,8 +66,8 @@ function Dashboard() {
   }, [employee]);
 
   const leaveCredits = useMemo(
-    () => employee?.employee_leave_balances || [],
-    [employee?.employee_leave_balances]
+    () => employee?.employee?.employee_leave_balances || [],
+    [employee?.employee?.employee_leave_balances]
   );
 
   useEffect(() => {

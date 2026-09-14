@@ -47,7 +47,7 @@ function MemoTab({employee}) {
     const fetchMyAssignMemo = async () => {
       try {
         setIsMemoLoading(true);
-        const response = await getMyAssignMemo(employee.id);
+        const response = await getMyAssignMemo(employee.employee.id);
         setMyAssignMemo(response);
       } catch (error) {
         console.error(error);
@@ -65,7 +65,6 @@ function MemoTab({employee}) {
     const fetchallemployee = async () => {
       try {
         const employeeData = await getAllEmployees();
-        console.log("get All Employee", employeeData.length);
         setAllEmployee(employeeData);
       } catch (error) {
         console.error(error);
@@ -89,9 +88,8 @@ function MemoTab({employee}) {
   useEffect(() => {
     if (allEmployee?.length > 0 && batchTarget === "All") {
       const allIds = allEmployee.map(
-        (employee) => employee.account_id
+        (employee) => employee.id
       );
-      console.log("all ids", allIds.length);
       setBatchEmployeeIds(allIds);
     }
   }, [allEmployee, batchTarget]);
@@ -144,31 +142,20 @@ const handleSendMemo = async (event) => {
   if (!confirmed) return;
   setSubmitLoading(true);
 
-  console.log("individualTarget",individualTarget);
-  console.log("batchEmployeeIds",batchEmployeeIds);
-  console.log("recipientType",recipientType);
-  return;
-
-
   try {
-    const response = await createMemo(
-      memoName,
-      memoDescription,
-      memoUrl,
-      individualTarget,
-      batchEmployeeIds,
-      recipientType,
-      employee.id
-    );
-    setMemoMessage("Memo Sent Successfully.");
-    setMemoMode("view");
-    console.log("create memo response", response);
-    resetMemoForm();
+    const response = await createMemo(memoName, memoDescription, memoUrl, individualTarget, batchEmployeeIds, recipientType, employee.employee.id);
+    if (response) {
+      setMemoMode("view");
+      resetMemoForm();
+      alert("Memo Sent Successfully.");
+    }else {
+      alert("Failed to Send Memo.");
+    }
   } catch (error) {
-    console.error("Error sending memo:", error);
-    setMemoMessage(
-      error?.message || "Failed to send memo."
-    );
+    console.error(error);
+    if (error.name === "Error") {
+      alert(error.message);
+    }
   } finally {
     setSubmitLoading(false);
   }
@@ -183,12 +170,12 @@ const handleSendMemo = async (event) => {
     }
     if (memoData.url) {
       if (memoData.is_read === false) {
-        handleMarkAsRead(memoData);
+        handleMarkAsRead(memoData, 1);
       }
       window.open(memoData.url, "_blank", "noopener,noreferrer");
     }
   }
-  const handleMarkAsRead = async (memoData) => {
+  const handleMarkAsRead = async (memoData, a) => {
     if (!memoData) {
       alert("No memo data available.");
       return;
@@ -198,8 +185,8 @@ const handleSendMemo = async (event) => {
 
     try {
       setMarkingMemoId(memoData.id);
-      const response = await markAsReadMemo(memoData);
-      if (response.success) {
+      const response = await markAsReadMemo(memoData.id);
+      if (response) {
         // Update the memo in the UI immediately
         setMyAssignMemo((prevMemos) =>
           prevMemos.map((memo) =>
@@ -213,16 +200,17 @@ const handleSendMemo = async (event) => {
           )
         );
         setCurrentPage(1);
+        if (a === 0) {
+          alert("Marked as Read.");
+        }
       }
     } catch (error) {
-      console.error("Error marking as read:", error);
-      setMemoMessage(
-        error?.message || "Failed to mark as read."
-      );
+      console.error(error);
     } finally {
       setMarkingMemoId(null);
     }
   };
+  
   const getDepartmentName = (departmentCode) => {
     if (!departmentCode || !departmentMeaning?.length) {
       return departmentCode || "Unknown Department";
@@ -408,7 +396,6 @@ const handleSendMemo = async (event) => {
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
                   >
                     <option value="">Please Select Employee</option>
-                    {console.log(allEmployee)}
                     {allEmployee
                       ?.filter(
                         (employeeT) =>
@@ -416,8 +403,7 @@ const handleSendMemo = async (event) => {
                           employeeT.department === departmentFilter
                       )
                       .map((employeeT) => (
-                        <option key={employeeT.account_id} value={employeeT.account_id}>
-                          
+                        <option key={employeeT.id} value={employeeT.id}>
                           {employeeT.lastname}, {employeeT.firstname}{" "}{employeeT.middlename ? `${employeeT.middlename.charAt(0).toUpperCase()}.` : ""}
                         </option>
                       ))}
@@ -441,7 +427,7 @@ const handleSendMemo = async (event) => {
                       if (selectedDepartment === "all") {
                         // Get ALL employee IDs
                         employeeIds = allEmployee.map(
-                          (employee) => employee.account_id
+                          (employee) => employee.id
                         );
                       } else {
                         // Get IDs belonging to the selected department
@@ -450,7 +436,7 @@ const handleSendMemo = async (event) => {
                             (employee) =>
                               employee.department === selectedDepartment
                           )
-                          .map((employee) => employee.account_id);
+                          .map((employee) => employee.id);
                       }
                       setBatchEmployeeIds(employeeIds);
                     }}
@@ -644,7 +630,7 @@ const handleSendMemo = async (event) => {
                         <button
                           type="button"
                           disabled={markingMemoId === item.id}
-                          onClick={() => handleMarkAsRead(item)}
+                          onClick={() => handleMarkAsRead(item, 0)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <span>

@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       const employeeData = await getEmployeeByUserId(user.id);
       setEmployeeInfo(employeeData || null);
     } catch (error) {
-      console.error("Error loading employee:", error);
+      console.error(error);
       setEmployeeInfo(null);
     }
   };
