@@ -15,7 +15,7 @@ import RoleRoute from "./components/auth/RoleRoute";
 import Award from "./pages/others/Award";
 import Developers from "./pages/others/Developers";
 import PrivacyPopup from "./components/others/PrivacyPopup";
-import Dashboard from "./pages/employee/dashboard";
+import Dashboard from "./pages/employee/Dashboard";
 import ConsumerDashboard from "./pages/consumer/dashboard";
 import Policy from "./pages/employee/Policy";
 import EmployeeManual from "./pages/employee/EmployeeManual";
@@ -73,7 +73,7 @@ function App() {
 
       <Routes>
         <Route path="/">
-          
+
           {/* ============================= */}
           {/* PUBLIC ROUTES */}
           {/* ============================= */}
@@ -245,7 +245,7 @@ function App() {
           {/* CONSUMER ROUTES */}
           {/* ============================= */}
           <Route element={<ConsumerLayout />}>
-            
+
             <Route
               path="consumer-dashboard"
               element={
