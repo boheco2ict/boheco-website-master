@@ -7,15 +7,16 @@ import {
   FaUser,
 } from "react-icons/fa";
 import Policy from "./Policy";
-import { supabase } from "../../supabase";
+import { supabase } from "../../services/supabase";
 import { useAuth } from "../../context/AuthContext";
+import { getEmployeeByUserId } from "../../services/getservices";
 
 // UI Components
-import ProfileTab from "../../components/dashboard/ui/ProfileTab";
-import LeaveCreditsTab from "../../components/dashboard/ui/LeaveCreditsTab";
-import MemoTab from "../../components/dashboard/ui/MemoTab";
-import OfficeOrderTab from "../../components/dashboard/ui/OfficeOrderTab";
-import Profile from "../../components/dashboard/ui/Profile";
+import ProfileTab from "../../components/employee/ProfileTab";
+import LeaveCreditsTab from "../../components/employee/LeaveCreditsTab";
+import MemoTab from "../../components/employee/MemoTab";
+import OfficeOrderTab from "../../components/employee/OfficeOrderTab";
+import Profile from "../../components/employee/Profile";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -56,17 +57,17 @@ function Dashboard() {
   });
   const fullName = useMemo(() => {
     const parts = [
-      employee?.firstname,
-      employee?.middlename,
-      employee?.lastname,
+      employee?.employee?.firstname,
+      employee?.employee?.middlename,
+      employee?.employee?.lastname,
     ].filter(Boolean);
 
     return capitalizeFullName(parts.join(" "));
   }, [employee]);
 
   const leaveCredits = useMemo(
-    () => employee?.employee_leave_balances || [],
-    [employee?.employee_leave_balances]
+    () => employee?.employee?.employee_leave_balances || [],
+    [employee?.employee?.employee_leave_balances]
   );
 
   useEffect(() => {
@@ -86,12 +87,12 @@ function Dashboard() {
   const handleOpenEdit = useCallback(() => {
     setEditError("");
     setEditData({
-      firstname: employee?.firstname || "",
-      middlename: employee?.middlename || "",
-      lastname: employee?.lastname || "",
-      address: employee?.address || "",
-      phone1: employee?.phone1 || "",
-      phone2: employee?.phone2 || "",
+      firstname: employee?.employee?.firstname || "",
+      middlename: employee?.employee?.middlename || "",
+      lastname: employee?.employee?.lastname || "",
+      address: employee?.employee?.address || "",
+      phone1: employee?.employee?.phone1 || "",
+      phone2: employee?.employee?.phone2 || "",
     });
     setIsEditOpen(true);
   }, [employee]);
@@ -146,34 +147,13 @@ function Dashboard() {
       }
 
       const { data: updatedData, error: updateError } = await supabase
-        .from("employees")
+        .from("employee")
         .update(updatePayload)
-        .eq("user_id", user.id)
-        .select(
-          `
-          empnumber,
-          firstname,
-          middlename,
-          lastname,
-          department,
-          position,
-          empstatus,
-          address,
-          phone1,
-          phone2,
-          birthdate,
-          tin,
-          sss,
-          pagibig,
-          philhealth,
-          datehired,
-          basicrate,
-          riceallowance,
-          role,
-          user_id
-        `
-        );
-
+        .eq("id", employee.employee.id)
+        .select("*");
+      if (updatedData) {
+        alert("Profile Updated Successfully.");
+      }
       // record the raw update response for debugging
       setLastUpdateResult({
         updatedData: updatedData ?? null,
@@ -199,57 +179,19 @@ function Dashboard() {
       }
 
       // Always fetch the latest employee row to ensure the UI reflects DB state
-      const { data: refreshedEmployee, error: fetchError } = await supabase
-        .from("employees")
-        .select(
-          `
-            empnumber,
-            firstname,
-            middlename,
-            lastname,
-            department,
-            position,
-            empstatus,
-            address,
-            phone1,
-            phone2,
-            birthdate,
-            tin,
-            sss,
-            pagibig,
-            philhealth,
-            datehired,
-            basicrate,
-            riceallowance,
-            role,
-            user_id,
-            employee_leave_balances (
-              leave_type,
-              leave_balance
-            )
-          `
-        )
-        .eq("user_id", user.id)
-        .single();
-
-      // write debug info
-      setLastUpdateResult((prev) => ({
-        ...prev,
-        refreshedEmployee: refreshedEmployee ?? null,
-        fetchError: fetchError ?? null,
-      }));
-
-      if (fetchError || !refreshedEmployee) {
-        console.error(fetchError);
-        setEditError(
-          fetchError?.message ||
-            "Profile update succeeded but we could not refresh the saved data. Please reload the page."
-        );
-        setIsSaving(false);
-        return;
+      try {
+        const refreshedEmployee = await getEmployeeByUserId(user.id);
+        setEmployee({ ...employee, ...refreshedEmployee });
+        
+        // write debug info
+        setLastUpdateResult((prev) => ({
+          ...prev,
+          refreshedEmployee: refreshedEmployee ?? null
+        }));
+      } catch (error) {
+        console.error("Error loading employee:", error);
       }
 
-      setEmployee({ ...employee, ...refreshedEmployee });
       setEmployeeUserId(user.id);
       setIsSaving(false);
       setIsEditOpen(false);

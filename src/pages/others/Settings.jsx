@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FaCog, FaLock, FaChevronRight, FaTimes, FaUserEdit } from "react-icons/fa";
 import ResetPassword from "./ResetPassword";
 import { useAuth } from "../../context/AuthContext";
-import ManageAccountConsumer from "../../pages/consumer/manage_account";
+import ManageAccountConsumer from "../../components/consumer/manage_account";
 
 const Settings = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);

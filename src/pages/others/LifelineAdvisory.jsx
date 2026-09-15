@@ -1,4 +1,4 @@
-import Lifeline from "../../components/Lifeline";
+import Lifeline from "../../components/others/Lifeline";
 
 function LifelineAdvisory() {
   return (

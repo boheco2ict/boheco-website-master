@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import Section from "../../components/Section";
-import Glance from "../../components/Glance";
-import Profile from "../../components/Profile";
-import CardManagement from "../../components/CardManagement";
-import CardBoard from "../../components/CardBoard";
+import Section from "../../components/others/Section";
+import Glance from "../../components/others/Glance";
+import Profile from "../../components/others/Profile";
+import CardManagement from "../../components/reusable/CardManagement";
+import CardBoard from "../../components/reusable/CardBoard";
 
 const About = () => {
   /* PROFILE */

@@ -1,4 +1,4 @@
-import { supabase } from "../supabase";
+import { supabase } from "./supabase";
 
 export const approveApplication2 = async (application, approverID) => { //Not Used For Backup
   console.log(application);
@@ -266,255 +266,110 @@ export const approveApplication = async (application, approverID) => {
 };
 
 export const rejectApplication = async (application, reason, approverID) => {
-  // Validate application ID
   if (!application) {
-    throw new Error(
-      "Unable to reject application: No application ID was provided."
-    );
+    throw new Error("No Application ID was Provided.");
   }
-  // Validate approver ID
-  if (!application) {
-    throw new Error(
-      "Unable to reject application: No approver ID was provided."
-    );
-  }
-  // Validate rejection reason
+
   if (!reason || !reason.trim()) {
-    throw new Error(
-      "Please provide a reason for rejecting this leave application."
-    );
+    throw new Error("Please provide a reason for rejecting this leave application.");
   }
-  try {
-    const updatedApproverIdStatus =
-      application.approver_id_status.map((approver) =>
-        Number(approver.id) === Number(approverID)
-          ? {
-              ...approver,
-              status: "rejected",
-            }
-          : approver
-    );
-    const { data, error } = await supabase
-      .from("leave_applications")
-      .update({
-        approver_id_status: updatedApproverIdStatus,
-        status: "rejected",
-        rejection_reason: reason.trim(),
-        rejected_at: new Date().toISOString(),
-      })
-      .eq("id", application.id)
-      .select()
-      .single();
 
-    // Supabase error
-    if (error) {
-      console.error(
-        "Supabase reject application error:",
-        error
-      );
+  const updatedApproverIdStatus =
+    application.approver_id_status.map((approver) =>
+      Number(approver.id) === Number(approverID)
+        ? {
+            ...approver,
+            status: "rejected",
+          }
+        : approver
+  );
 
-      throw new Error(
-        error.message ||
-          "Failed to reject the leave application."
-      );
-    }
+  const { data, error } = await supabase
+    .from("leave_applications")
+    .update({
+      approver_id_status: updatedApproverIdStatus,
+      status: "rejected",
+      rejection_reason: reason.trim(),
+      rejected_at: new Date().toISOString(),
+    })
+    .eq("id", application.id)
+    .select()
+    .single();
 
-    // No record was updated
-    if (!data) {
-      console.error(
-        "No leave application was updated."
-      );
-
-      throw new Error(
-        "The leave application could not be found or was not updated."
-      );
-    }
-    return {
-      success: true,
-      message: "Application Rejected Successfully.",
-      response: data,
-    };
-
-  } catch (error) {
-    console.error(
-      "Failed to reject leave application:",
-      error
-    );
-    // Preserve our custom errors
-    throw new Error(
-      error?.message ||
-        "An unexpected error occurred while rejecting the leave application."
-    );
+  if (error) {
+    throw error;
   }
+
+  return data;
 };
 
-export const markAsReadMemo = async (memoData) => {
-  if (!memoData) {
-    throw new Error(
-      "Unable to mark as read: No data was provided."
-    );
+export const markAsReadMemo = async (Id) => {
+  if (!Id) {
+    throw new Error("No Memo Id Provided.");
   }
-  try {
-    const { data, error } = await supabase
-      .from("memo")
-      .update({
-        is_read: "TRUE",
-        read_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", memoData.id)
-      .select()
-      .single();
 
-    // Supabase error
-    if (error) {
-      console.error(
-        "Supabase mark as read error:",
-        error
-      );
+  const { data, error } = await supabase
+    .from("memo")
+    .update({
+      is_read: "TRUE",
+      read_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", Id)
+    .select()
+    .single();
 
-      throw new Error(
-        error.message ||
-          "Failed to mark as read."
-      );
-    }
-
-    // No record was updated
-    if (!data) {
-      console.error(
-        "No record was updated."
-      );
-
-      throw new Error(
-        "The record could not be found or was not updated."
-      );
-    }
-
-    return {
-      success: true,
-      message: "Memo Marked Successfully.",
-      response: data,
-    };
-
-  } catch (error) {
-    console.error(
-      "❌ Failed to update mark as read:",
-      error
-    );
-
-    // Preserve our custom errors
-    throw new Error(
-      error?.message ||
-        "An unexpected error occurred while marking as read."
-    );
+  if (error) {
+    throw error;
   }
-}
 
-export const markAsReadOfficeOrder = async (officeOrderData) => {
-  if (!officeOrderData) {
-    throw new Error(
-      "Unable to mark as read: No data was provided."
-    );
+  return data;
+}//Ok
+
+export const markAsReadOfficeOrder = async (Id) => {
+  if (!Id) {
+    throw new Error("No ID Provided.");
   }
-  try {
-    const { data, error } = await supabase
-      .from("office_order")
-      .update({
-        is_read: "TRUE",
-        read_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", officeOrderData.id)
-      .select()
-      .single();
 
-    // Supabase error
-    if (error) {
-      console.error(
-        "Supabase mark as read error:",
-        error
-      );
+const { data, error } = await supabase
+  .from("office_order")
+  .update({
+    is_read: "TRUE",
+    read_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
+  .eq("id", Id)
+  .select()
+  .single();
 
-      throw new Error(
-        error.message ||
-          "Failed to mark as read."
-      );
-    }
-
-    // No record was updated
-    if (!data) {
-      console.error(
-        "No record was updated."
-      );
-
-      throw new Error(
-        "The record could not be found or was not updated."
-      );
-    }
-
-    return {
-      success: true,
-      message: "Office Order Marked Successfully.",
-      response: data,
-    };
-
-  } catch (error) {
-    console.error(
-      "❌ Failed to update mark as read:",
-      error
-    );
-
-    // Preserve our custom errors
-    throw new Error(
-      error?.message ||
-        "An unexpected error occurred while marking as read."
-    );
+  if (error) {
+    throw error;
   }
-}
 
-export const cancelApplication = async (applicationId) => {
-  if (!applicationId) {
-    console.error(
-      "Cancel Application Error: No application ID provided."
-    );
-    throw new Error("Application ID is required.");
+  return data;
+}//Ok
+
+export const cancelApplication = async (Id) => {
+  if (!Id) {
+    throw new Error("Application ID is Required.");
   }
+
   const { data, error } = await supabase
     .from("leave_applications")
     .update({
       status: "cancelled",
       cancelled_at: new Date().toISOString(),
     })
-    .eq("id", applicationId)
+    .eq("id", Id)
     .select()
     .single();
 
   if (error) {
-    console.error(
-      "Cancel Application Error:",
-      error
-    );
-
-    if (error.code === "42501") {
-      throw new Error(
-        "You do not have permission to cancel this application."
-      );
-    }
-
     throw error;
   }
 
-  if (!data) {
-    throw new Error(
-      "Leave application was not found."
-    );
-  }
-  return {
-    success: true,
-    message: "Application Cancelled Successfully.",
-    response: data,
-  };
-};
+  return data;
+};//Ok
 
 export const updatePowerRateYear = async (id, year, pdfUrl, rates) => {
 
@@ -869,6 +724,45 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
   } catch (error) {
     console.error(
       "Error updating power interruption:",
+      error
+    );
+    throw error;
+  }
+}
+
+export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
+  if (!id) {
+    throw new Error("ID is required.");
+  }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
+  if (!cleanFileUrl) {
+    throw new Error("Drive URL is required.");
+  }
+  if (!cleanTitle) {
+    throw new Error("Title is required.");
+  }  
+  try {
+    const { data, error } = await supabase
+      .from("notice")
+      .update({
+        image_url: imageUrl,
+        title: cleanTitle,
+        file_url: cleanFileUrl,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "Error updating power notice:",
       error
     );
     throw error;

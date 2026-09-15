@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../../supabase";
+import { supabase } from "../../services/supabase";
 // import { getEmployeeByUserId, getConsumerByUserId } from "../../services/getservices";
 
 function Login() {

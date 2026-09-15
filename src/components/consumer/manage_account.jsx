@@ -120,20 +120,15 @@ const ManageAccount = ({ isOpen, onClose }) => {
     if (!confirmDelete) return;
     try {
       setLoading(true);
-      setError("");
-
-      const deleteResponse = await deleteConsumerBindAccount(id);
-
-      if (deleteResponse.success) {
-        const updatedAccounts = accountList.filter(
-          (account) => account.id !== id
-        );
-        setAccountList(updatedAccounts);
-      }
-      alert(deleteResponse.message);
-    } catch (err) {
-      console.error("Delete Account Error:", err);
-      setError("Something went wrong while deleting the account.");
+      await deleteConsumerBindAccount(id);
+      const updatedAccounts = accountList.filter(
+        (account) => account.id !== id
+      );
+      setAccountList(updatedAccounts);
+      alert("Account Record Removed.");
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
     } finally {
       setLoading(false);
     }

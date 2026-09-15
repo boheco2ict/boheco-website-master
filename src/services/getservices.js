@@ -1,5 +1,6 @@
-import { supabase } from "../supabase";
-import { formatName_FN_MI_LN } from "../utils";
+import { supabase } from "./supabase";
+import { formatName_FN_MI_LN } from "../utils/utils";
+import { TABLES, COLUMNS } from "../constants/database";
 const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {
@@ -86,7 +87,6 @@ export const getAllAuthUsers = async () => {
   const { data, error } = await supabase.rpc("get_all_auth_users");
 
   if (error) {
-    console.error("Get Auth Users Error:", error);
     throw error;
   }
 
@@ -95,37 +95,25 @@ export const getAllAuthUsers = async () => {
 
 export const getEmployeeByUserId = async (Id) => {
   if (!Id) {
-    console.error("Fetch Employee Error: No ID provided.");
-    return null;
+    throw new Error("No UUID Found.");
   }
   const { data, error } = await supabase
-    .from("employees")
+    .from("accounts")
     .select(
       `
       id,
-      empnumber,
-      firstname,
-      middlename,
-      lastname,
-      department,
-      position,
-      empstatus,
-      address,
-      phone1,
-      phone2,
-      birthdate,
-      tin,
-      sss,
-      pagibig,
-      philhealth,
-      datehired,
-      basicrate,
-      riceallowance,
-      role,
       user_id,
-      employee_leave_balances (
-        leave_type,
-        leave_balance
+      role,
+      isActive,
+      created_at,
+      updated_at,
+      employee(
+        *,
+        employee_leave_balances (
+          id,
+          leave_type,
+          leave_balance
+        )
       )
       `
     )
@@ -133,121 +121,92 @@ export const getEmployeeByUserId = async (Id) => {
     .maybeSingle();
 
   if (error) {
-    console.error("Fetch Employee Error:", error);
-    return null;
-  }
-
-  return data || null;
-};
-
-export const getAllEmployees = async () => {
-  const { data, error } = await supabase
-    .rpc("get_all_employees_with_email")
-    .throwOnError();
-
-  if (error) {
-    console.error("Fetch Employees Error:", error);
     throw error;
   }
 
-  if (!data) {
-    throw new Error("Employee data not found.");
+  return data || null;
+};//Ok
+
+export const getAllEmployees = async () => {
+  const { data, error } = await supabase
+    .rpc("get_all_employees_with_email");
+
+  if (error) {
+    throw error;
   }
 
-  return data;
-};
+  return data || [];
+};//Ok
 
-export const getMyAssignMemo = async (employee_id) => {
-  if (!employee_id) {
-    console.error(
-      "Fetch Memo Error: No employee ID provided."
-    );
-    return null;
+export const getMyAssignMemo = async (Id) => {
+  if (!Id) {
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
     .from("memo")
     .select(`
       *,
-      postedBy:employees!posted_by (
+      postedBy:employee!posted_by (
         id,
         firstname,
         middlename,
         lastname
       )
     `)
-    .eq("employee_id", employee_id)
+    .eq("employee_id", Id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Fetch Assign Memo Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Assigned memo data not found.");
+    throw error;
   }
 
   return data;
-};
+};//Ok
 
-export const getMyAssignOfficeOrder = async (employee_id) => {
+export const getMyAssignOfficeOrder = async (Id) => {
 
-  if (!employee_id) {
-    console.error(
-      "Fetch Office Order Error: No employee ID provided."
-    );
-    return null;
+  if (!Id) {
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
     .from("office_order")
     .select(`
       *,
-      postedBy:employees!posted_by (
+      postedBy:employee!posted_by (
         id,
         firstname,
         middlename,
         lastname
       )
     `)
-    .eq("employee_id", employee_id)
+    .eq("employee_id", Id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Fetch Office Order Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Assigned office order data not found.");
+    throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getDepartmentMeaning = async () => {
   const { data, error } = await supabase
     .from("departments")
-    .select("code, name")
-    .throwOnError();
+    .select("code, name");
 
   if (error) {
-    console.error("❌ Fetch Department Meaning Error:", error);
     throw error;
   }
 
-  if (!data) {
-    throw new Error("Department meaning not found.");
-  }
-
   return data;
-};
+};//Ok
 
 export const getLeaveApproverByDepartment = async (department) => {
+
   if (!department) {
-    console.error(
-      "Fetch Approver Error: No department provided."
-    );
-    return null;
+    throw new Error("No Department Provided.");
   }
 
   const { data, error } = await supabase
@@ -256,13 +215,8 @@ export const getLeaveApproverByDepartment = async (department) => {
     .eq("department", department)
     .single();
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Department Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Department data not found.");
+    throw error;
   }
 
   const employeeIdEmail = data.employee_id_email;
@@ -276,34 +230,23 @@ export const getLeaveApproverByDepartment = async (department) => {
 
   const approverNames = await getLeaveApproverByDepartment_Name(approverIDs);
 
-  // console.log("IDs:", approverIDs);
-  // console.log("Names:", approverNames);
-  // console.log("Emails:", approverEmails);
-
   return {
     approverIDs, approverNames, approverEmails,
   };
-};
+};//Ok
 
 const getLeaveApproverByDepartment_Name = async (IDs) => {
   if (!IDs || IDs.length === 0) {
-    console.error(
-      "Fetch Approver Names Error: No IDs provided."
-    );
-    return [];
+    throw new Error("No ID Provided.");
   }
 
   const { data, error } = await supabase
-    .from("employees")
+    .from("employee")
     .select("firstname, middlename, lastname")
     .in("id", IDs);
 
   if (error) {
-    console.error("Fetch Names Error:", error);
-  }
-
-  if (!data) {
-    throw new Error("Name data not found.");
+    throw error;
   }
 
   const formattedNames = data.map((employee) => {
@@ -317,15 +260,13 @@ const getLeaveApproverByDepartment_Name = async (IDs) => {
   });
 
   return formattedNames;
-};
+};//Ok
 
 export const getMyHistoryApplicationByID = async (ID) => {
-    if (!ID) {
-    console.error(
-      "Fetch Error: No data provided."
-    );
-    return null;
+  if (!ID) {
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("leave_applications")
     .select("*")
@@ -333,22 +274,18 @@ export const getMyHistoryApplicationByID = async (ID) => {
     .in("status", ["approved", "rejected", "cancelled"])
     .order("created_at", { ascending: false });
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Error:", error);
+    throw error;
   }
 
-  if (!data) {
-    throw new Error("data not found.");
-  }
   return data;
-}
+};//Ok
 
 export const getMyPendingApplicationByID = async (ID) => {
- if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+  if (!ID) {
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("leave_applications")
     .select("*")
@@ -356,168 +293,127 @@ export const getMyPendingApplicationByID = async (ID) => {
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  // Check the query error FIRST
   if (error) {
-    console.error("Fetch Error:", error);
+    throw error;
   }
 
-  if (!data) {
-    throw new Error("data not found.");
-  }
   return data;
-}
+};//Ok
 
 export const getAllPendingApplications = async () => {
-  try {
-    // -----------------------------------------
-    // 1. Get pending leave applications
-    // -----------------------------------------
-    const { data, error } = await supabase
-      .from("leave_applications")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
+  // 1. Get pending leave applications
+  const { data, error } = await supabase
+    .from("leave_applications")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(
-        "Fetch Pending Applications Error:",
-        error
-      );
+  if (error) {
+    throw error;
+  }
 
-      throw new Error(
-        error.message ||
-          "Failed to fetch pending leave applications."
-      );
-    }
+  // 2. No pending applications
+  if (!data || data.length === 0) {
+    return [];
+  }
 
-    // -----------------------------------------
-    // 2. No pending applications
-    // -----------------------------------------
-    if (!data || data.length === 0) {
-      return [];
-    }
+  // 3. Get unique employee IDs
+  const employeeIds = [
+    ...new Set(
+      data
+        .map((app) => app.employee_id)
+        .filter(Boolean)
+    ),
+  ];
 
-    // -----------------------------------------
-    // 3. Get unique employee IDs
-    // -----------------------------------------
-    const employeeIds = [
-      ...new Set(
-        data
-          .map((app) => app.employee_id)
-          .filter(Boolean)
-      ),
-    ];
+  if (employeeIds.length === 0) {
+    throw new Error("No valid employee IDs were found.");
+  }
 
-    if (employeeIds.length === 0) {
-      throw new Error(
-        "No valid employee IDs were found."
-      );
-    }
+  // 4. Get employee names
+  const getNames = await getEmployeeNameByID(employeeIds);
 
-    // -----------------------------------------
-    // 4. Get employee names
-    // -----------------------------------------
-    const getNames =
-      await getEmployeeNameByID(employeeIds);
+  if (!Array.isArray(getNames)) {
+    throw new Error("Failed to retrieve employee information.");
+  }
 
-    if (!Array.isArray(getNames)) {
-      throw new Error(
-        "Failed to retrieve employee information."
-      );
-    }
+  const employeeMap = Object.fromEntries(
+    getNames.map((emp) => [emp.id, emp])
+  );
 
-    const employeeMap = Object.fromEntries(
-      getNames.map((emp) => [emp.id, emp])
-    );
+  // 5. Get employee leave balances
+  const balances = await getLeaveBalancesByID(employeeIds);
 
-    // -----------------------------------------
-    // 5. Get employee leave balances
-    // -----------------------------------------
-    const balances =
-      await getLeaveBalancesByID(employeeIds);
-
-    if (!Array.isArray(balances)) {
-      throw new Error(
-        "Failed to retrieve employee leave balances."
-      );
-    }
-
-    const balanceMap = Object.fromEntries(
-      balances.map((balance) => [
-        `${balance.employee_id}-${String(
-          balance.leave_type
-        )
-          .trim()
-          .toUpperCase()}`,
-        balance,
-      ])
-    );
-
-    // -----------------------------------------
-    // 6. Merge application + employee + balance
-    // -----------------------------------------
-    const mergedData = data.map((app) => {
-      const balanceKey = `${app.employee_id}-${String(
-        app.leave_type
-      )
-        .trim()
-        .toUpperCase()}`;
-
-      return {
-        ...app,
-
-        employee:
-          employeeMap[app.employee_id] || null,
-
-        leaveBalance:
-          balanceMap[balanceKey] || null,
-      };
-    });
-    return mergedData;
-  } catch (error) {
-    console.error(
-      "Failed to fetch pending leave applications:",
-      error
-    );
-
+  if (!Array.isArray(balances)) {
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "An unexpected error occurred while fetching pending leave applications."
+      "Failed to retrieve employee leave balances."
     );
   }
-};
+
+  const balanceMap = Object.fromEntries(
+    balances.map((balance) => [
+      `${balance.employee_id}-${String(
+        balance.leave_type
+      )
+        .trim()
+        .toUpperCase()}`,
+      balance,
+    ])
+  );
+
+  // 6. Merge application + employee + balance
+  const mergedData = data.map((app) => {
+    const balanceKey = `${app.employee_id}-${String(
+      app.leave_type
+    )
+      .trim()
+      .toUpperCase()}`;
+
+    return {
+      ...app,
+
+      employee:
+        employeeMap[app.employee_id] || null,
+
+      leaveBalance:
+        balanceMap[balanceKey] || null,
+    };
+  });
+  return mergedData;
+};//Ok
 
 const getEmployeeNameByID = async (ID) => {
    if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+    throw new Error("No ID Provided.")
   }
   const { data, error } = await supabase
-    .from("employees")
+    .from("employee")
     .select("id, firstname, middlename, lastname")
     .in("id", ID);
+
     if (error) {
-      console.error("Fetch Names Error:", error);
+      throw error;
     }
+
     return data || [];
-};
+};//Ok
 
 const getLeaveBalancesByID = async (ID) => {
   if (!ID) {
-    console.error("Fetch Error: No employee ID provided.");
-    return [];
+    throw new Error("No ID Provided.");
   }
+
   const { data, error } = await supabase
     .from("employee_leave_balances")
     .select("id, employee_id, leave_type, leave_balance")
     .in("employee_id", ID);
+
   if (error) {
-    console.error("Fetch Balances Error:", error);
     throw error;
   }
+
   return data || [];
-};
+};//Ok
 
 const getEmployeeNameByID_1 = async (ID) => {
   try {
@@ -863,48 +759,48 @@ export const getLedgerAll = async (accounts) => {
 
 export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => {
 
-  if (!AccountNumber && !ServicePeriodEnd && !NetAmount) {
-    return null;
+  if (!AccountNumber) {
+    throw new Error("Account Number is Required.");
+  }
+  if (!ServicePeriodEnd) {
+    throw new Error("Service Period End is Required.");
+  }  
+  if (!NetAmount) {
+    throw new Error("Net Amount is Required.");
   }
 
-  try {
-    const response = await fetch(API,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          AccountNumber,
-          ServicePeriodEnd,
-          NetAmount,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
+  const response = await fetch(API,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        AccountNumber,
+        ServicePeriodEnd,
+        NetAmount,
+      }),
     }
+  );
 
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    console.error("Get Ledger Error:", error);
-    return null;
+  if (!response.ok) {
+    throw new Error("Account Not Found.");
   }
-};
+
+  const data = await response.json();
+
+  return data;
+};//Ok
 
 export const getPowerInterruption = async () => {
   const { data, error } = await supabase
-    .from("power_interruption")
+    .from(TABLES.POWER_INTERRUPTION)
     .select("*")
-    .order("created_at", {
+    .order(COLUMNS.CREATED_AT, {
       ascending: false,
     });
 
   if (error) {
-    console.error("Error fetching power interruptions:", error);
     throw error;
   }
 
@@ -912,4 +808,37 @@ export const getPowerInterruption = async () => {
     schedule: data.filter((item) => item.type === "schedule") || [],
     unschedule: data.filter((item) => item.type === "unschedule") || [],
   };
-};
+};//Ok
+
+export const getNotice = async () => {
+  const { data, error } = await supabase
+    .from(TABLES.NOTICE)
+    .select(`
+      *,
+      ${COLUMNS.POSTED_BY}:${TABLES.EMPLOYEES} (
+        ${COLUMNS.FIRSTNAME},
+        ${COLUMNS.MIDDLENAME},
+        ${COLUMNS.LASTNAME}
+      )
+    `)
+    .order(COLUMNS.CREATED_AT, {
+      ascending: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const formattedData = (data || []).map((notice) => ({
+  ...notice,
+  posted_by: notice.posted_by
+    ? formatName_FN_MI_LN(
+        notice.posted_by.firstname,
+        notice.posted_by.middlename,
+        notice.posted_by.lastname
+      )
+    : "Unknown",
+  }));
+
+  return formattedData || [];
+};//Ok

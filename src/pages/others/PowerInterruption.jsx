@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getPowerInterruption } from "../../services/getservices";
+import { formatDateComplete } from "../../utils/utils";
 
 const PowerInteruption = () => {
   const [powerInterruptions, setPowerInterruptions] = useState({
@@ -20,7 +21,7 @@ const PowerInteruption = () => {
         const data = await getPowerInterruption();
         setPowerInterruptions(data || { schedule: [], unschedule: [] });
       } catch (error) {
-        console.error("Error loading power interruptions:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -33,43 +34,22 @@ const PowerInteruption = () => {
   const unschedule = powerInterruptions.unschedule || [];
 
   return (
-    <div className="min-h-screen w-full bg-image2 px-4 py-10 md:px-8 lg:px-12 mt-[75px]">
+    <div className="min-h-screen w-full bg-image2 px-4 py-10 md:px-8 lg:px-12 mt-14">
       <div className="w-full">
         {/* =====================================
             HEADER
         ====================================== */}
         <div className="mb-10 border-b border-stone-200 pb-7">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-            {/* Left: Icon + Title */}
-            <div className="flex items-center gap-4">
-
-              {/* Icon */}
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-stone-900 shadow-sm">
-                <svg
-                  className="h-7 w-7 text-amber-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-
+          <div className="flex w-full flex-col items-center gap-5">
+            <div className="flex w-full items-center justify-center gap-4">
               {/* Title */}
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">
+              <div className="w-full text-center">
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <h1 className="mt-3 text-3xl font-extrabold text-slate-900 sm:text-4xl lg:text-5xl">
                     Power Interruption
                   </h1>
                 </div>
-
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-500 md:text-base">
+                <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
                   Stay informed about schedule and unschedule power
                   interruptions and service updates.
                 </p>
@@ -93,7 +73,7 @@ const PowerInteruption = () => {
         ) : (
           <div className="space-y-8">
             {/* =====================================
-                schedule
+                Schedule
             ====================================== */}
             <div className="w-full rounded-2xl border border-stone-200 bg-white p-5 md:p-7">
               <PowerInterruptionSection
@@ -107,7 +87,7 @@ const PowerInteruption = () => {
             </div>
 
             {/* =====================================
-                UNschedule
+                Unschedule
             ====================================== */}
             <div className="w-full rounded-2xl border border-stone-200 bg-white p-5 md:p-7">
               <PowerInterruptionSection
@@ -302,7 +282,7 @@ const PowerInterruptionSection = ({
               {/* IMAGE INFORMATION */}
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <p className="text-xs font-medium text-white/70">
-                  Posted {formatDate(activeItem.created_at)}
+                  Posted {formatDateComplete(activeItem.created_at)}
                 </p>
 
                 <h3 className="mt-1 line-clamp-2 text-lg font-semibold text-white md:text-xl">
@@ -393,7 +373,7 @@ const PowerInterruptionSection = ({
                       </p>
 
                       <p className="mt-1 text-xs text-stone-400">
-                        {formatDate(item.created_at)}
+                        {formatDateComplete(item.created_at)}
                       </p>
                     </div>
                   </button>
@@ -405,22 +385,6 @@ const PowerInterruptionSection = ({
       )}
     </section>
   );
-};
-
-/* =====================================================
-   DATE FORMAT
-===================================================== */
-
-const formatDate = (date) => {
-  if (!date) return "Date unavailable";
-
-  return new Date(date).toLocaleString("en-PH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 };
 
 /* =====================================================

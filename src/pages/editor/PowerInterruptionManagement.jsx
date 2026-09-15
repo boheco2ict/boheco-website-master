@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../../supabase";
 import {
   FaBolt,
   FaEdit,
@@ -16,6 +15,10 @@ import { getPowerInterruption } from "../../services/getservices";
 import { deletePowerInterruption } from "../../services/deleteservices";
 import { createPowerInterruption } from "../../services/postservices";
 import { updatePowerInterruption } from "../../services/updateservices";
+import {
+  uploadStorageImage,
+  deleteStorageImage,
+} from "../../services/storageservices";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "POWER/INTERRUPTION";
@@ -50,7 +53,7 @@ const PowerInterruptionManagement = () => {
       const data = await getPowerInterruption();
       setPowerInterruptions(data || { schedule: [], unschedule: [] });
     } catch (error) {
-      console.error("Error loading power interruptions:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -105,113 +108,142 @@ const PowerInterruptionManagement = () => {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  const uploadImage = async (file) => {
-    if (!file) return null;
-
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    const fileName = `PI_${Date.now()}.${extension}`;
-    const filePath = `${STORAGE_FOLDER}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  const getStoragePath = (imageUrl) => {
-    if (!imageUrl) return null;
-
-    try {
-      const bucketPath = `/storage/v1/object/public/${BUCKET_NAME}/`;
-      const decodedUrl = decodeURIComponent(imageUrl);
-      const index = decodedUrl.indexOf(bucketPath);
-
-      if (index === -1) return null;
-
-      return decodedUrl.substring(index + bucketPath.length);
-    } catch (error) {
-      console.error("Error getting storage path:", error);
-      return null;
-    }
-  };
-
-  const deleteStorageImage = async (imageUrl) => {
-    const path = getStoragePath(imageUrl);
-    if (!path) return;
-
-    const { error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([path]);
-
-    if (error) {
-      console.warn("Unable to delete storage image:", error);
-    }
-  };
-
   const handleSave = async () => {
-    let uploadedImageUrl_create = null;
-    let uploadedImageUrl_update = null;
+    let uploadedImageUrl = null;
     const cleanDescription = description.trim();
 
     try {
       setSaving(true);
-     
+
       if (!cleanDescription) {
         alert("Please enter a description.");
         return;
       }
 
       if (!editingInterruption) {
+        // ADD
         if (!selectedFile) {
           alert("Please select an interruption image.");
           return;
         }
 
-        uploadedImageUrl_create = await uploadImage(selectedFile);
-        if (!uploadedImageUrl_create) {
+        // Upload image
+        try {
+          uploadedImageUrl = await uploadStorageImage({
+            file: selectedFile,
+            bucket: BUCKET_NAME,
+            folder: STORAGE_FOLDER,
+            prefix: "PI",
+          });
+        } catch (error) {
+          console.error("Error uploading interruption image:", error);
           alert("Failed to upload the image. Please try again.");
           return;
         }
 
-        const createInterruption = await createPowerInterruption(uploadedImageUrl_create, cleanDescription, type);
-        if (createInterruption) {
-          alert("Power Interruption Added Successfully.");
-          uploadedImageUrl_create = null;
-        } else {
-          if (uploadedImageUrl_create) {
-            await deleteStorageImage(uploadedImageUrl_create);
+        if (!uploadedImageUrl) {
+          alert("Failed to upload the image. Please try again.");
+          return;
+        }
+
+        const createInterruption = await createPowerInterruption(
+          uploadedImageUrl,
+          cleanDescription,
+          type
+        );
+
+        if (!createInterruption) {
+          // Delete uploaded image if database creation fails
+          try {
+            await deleteStorageImage(
+              uploadedImageUrl,
+              BUCKET_NAME
+            );
+            uploadedImageUrl = null;
+          } catch (error) {
+            console.error(
+              "Error deleting uploaded image after failed creation:",
+              error
+            );
           }
+
           alert("Failed to add the power interruption. Please try again.");
           return;
         }
+
+        uploadedImageUrl = null;
+
+        alert("Power Interruption Added Successfully.");
       } else {
-        let imageUrl = editingInterruption.image_url;
+        // UPDATE
+        let imageUrl = editingInterruption.image_url || null;
 
         if (selectedFile) {
-          uploadedImageUrl_update = await uploadImage(selectedFile);
-          imageUrl = uploadedImageUrl_update;
+          // Upload new image
+          try {
+            uploadedImageUrl = await uploadStorageImage({
+              file: selectedFile,
+              bucket: BUCKET_NAME,
+              folder: STORAGE_FOLDER,
+              prefix: "PI",
+            });
+          } catch (error) {
+            console.error("Error uploading new interruption image:", error);
+            alert("Failed to upload the image. Please try again.");
+            return;
+          }
+
+          if (!uploadedImageUrl) {
+            alert("Failed to upload the image. Please try again.");
+            return;
+          }
+
+          imageUrl = uploadedImageUrl;
         }
 
-        const updateInterruption = await updatePowerInterruption(editingInterruption.id, imageUrl, cleanDescription, type);
+        const updateInterruption = await updatePowerInterruption(
+          editingInterruption.id,
+          imageUrl,
+          cleanDescription,
+          type
+        );
 
+        if (!updateInterruption) {
+          // Delete newly uploaded image if database update fails
+          if (uploadedImageUrl) {
+            try {
+              await deleteStorageImage(
+                uploadedImageUrl,
+                BUCKET_NAME
+              );
+              uploadedImageUrl = null;
+            } catch (error) {
+              console.error(
+                "Error deleting uploaded image after failed update:",
+                error
+              );
+            }
+          }
+
+          alert("Failed to update the power interruption. Please try again.");
+          return;
+        }
+
+        // Delete old image only after successful database update
         if (selectedFile && editingInterruption.image_url) {
-          await deleteStorageImage(editingInterruption.image_url);
+          try {
+            await deleteStorageImage(
+              editingInterruption.image_url,
+              BUCKET_NAME
+            );
+          } catch (error) {
+            console.error("Error deleting old interruption image:", error);
+          }
         }
-        if (updateInterruption) {
-          alert("Power Interruption Updated Successfully.");
-        }
+
+        uploadedImageUrl = null;
+
+        alert("Power Interruption Updated Successfully.");
       }
 
       await loadInterruptions();
@@ -222,6 +254,23 @@ const PowerInterruptionManagement = () => {
       }, 800);
     } catch (error) {
       console.error("Error saving power interruption:", error);
+
+      // Final cleanup for an unexpected error
+      if (uploadedImageUrl) {
+        try {
+          await deleteStorageImage(
+            uploadedImageUrl,
+            BUCKET_NAME
+          );
+        } catch (cleanupError) {
+          console.error(
+            "Error cleaning up uploaded image:",
+            cleanupError
+          );
+        }
+      }
+
+      alert("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -233,17 +282,13 @@ const PowerInterruptionManagement = () => {
 
     try {
       setDeleting(true);
-
-      const deleteResult = await deletePowerInterruption(interruption.id);
-      const deleteImageResult = await deleteStorageImage(interruption.image_url);
-
-      console.log("Delete Interruption Result:", deleteResult);
-      console.log("Delete Image Result:", deleteImageResult);
-
+      await deletePowerInterruption(interruption.id);
+      await deleteStorageImage(interruption.image_url, BUCKET_NAME);
       await loadInterruptions();
-
+      alert("Power Interruption Deleted Successfully.");
     } catch (error) {
-      console.error("Error deleting power interruption:", error);
+      console.error(error);
+      alert(error.message);
     } finally {
       setDeleting(false);
     }

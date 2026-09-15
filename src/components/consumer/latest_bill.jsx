@@ -9,7 +9,7 @@ import {
 import {
   formatBillingMonth_Year,
   formatDate_Month_Day_Year,
-} from "../../utils";
+} from "../../utils/utils";
 
 const LatestBill = ({ account }) => {
   return (

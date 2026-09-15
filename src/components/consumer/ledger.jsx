@@ -10,8 +10,8 @@ import { getLedger } from "../../services/getservices";
 import {
   formatBillingMonth_Year,
   formatDate_Month_Day_Year,
-} from "../../utils";
-import Pagination from "../../components/Pagination";
+} from "../../utils/utils";
+import Pagination from "../reusable/Pagination";
 
 const ConsumerLedger = ({ isOpen, onClose, account }) => {
   const [bills, setBills] = useState([]);
@@ -42,9 +42,9 @@ const ConsumerLedger = ({ isOpen, onClose, account }) => {
         } else {
           setBills([]);
         }
-      } catch (err) {
-        console.error("Fetch Ledger Error:", err);
-        setError(err?.message || "Failed to load ledger.");
+      } catch (error) {
+        console.error(error);
+        setError(error.message || "Failed to load ledger.");
         setBills([]);
       } finally {
         setLoading(false);

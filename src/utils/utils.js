@@ -70,3 +70,15 @@ export const formatBillingMonth_Year = (date) => {
     timeZone: "UTC",
   });
 };
+
+export const formatDateComplete = (date) => {
+  if (!date) return "Date unavailable";
+
+  return new Date(date).toLocaleString("en-PH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};

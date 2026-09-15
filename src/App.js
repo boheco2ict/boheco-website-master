@@ -10,11 +10,11 @@ import Footer from "./components/layout/Footer";
 import DdpPspp from "./pages/others/DdpPspp";
 import BillInquiry from "./pages/others/BillInquiry";
 import Login from "./pages/auth/Login";
-import ProtectedRoute from "./components/ProtectedRoute";
-import RoleRoute from "./components/RoleRoute";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import RoleRoute from "./components/auth/RoleRoute";
 import Award from "./pages/others/Award";
 import Developers from "./pages/others/Developers";
-import PrivacyPopup from "./components/PrivacyPopup";
+import PrivacyPopup from "./components/others/PrivacyPopup";
 import Dashboard from "./pages/employee/Dashboard";
 import ConsumerDashboard from "./pages/consumer/dashboard";
 import Policy from "./pages/employee/Policy";
@@ -22,11 +22,11 @@ import EmployeeManual from "./pages/employee/EmployeeManual";
 import ForgotPassword from "./pages/others/ForgotPassword";
 import Settings from "./pages/others/Settings";
 import Unauthorized from "./pages/others/Unauthorized";
-import InstallPrompt from "./components/InstallPrompt";
-import ReviewApplication from "./components/dashboard/ui/ReviewApplication";
+import InstallPrompt from "./components/others/InstallPrompt";
+import ReviewApplication from "./components/employee/ReviewApplication";
 import { useAuth } from "./context/AuthContext";
 import AuthCallback from "./pages/auth/auth_callback";
-import Header from "./components/Header";
+import Header from "./components/layout/Header";
 import EmployeeLayout from "./components/layout/EmployeeLayout";
 import ConsumerLayout from "./components/layout/ConsumerLayout";
 import NotFound from "./pages/others/NotFound";
@@ -37,6 +37,7 @@ import LeaveApprover from "./pages/admin/leave_approver";
 import ManageEmployee from "./pages/admin/employee_management";
 import PowerInterruption from "./pages/others/PowerInterruption";
 import PowerInterruptionManagement from "./pages/editor/PowerInterruptionManagement";
+import NoticeManagement from "./pages/editor/NoticeManagement";
 
 function App() {
   const { user, loading } = useAuth();
@@ -72,7 +73,7 @@ function App() {
 
       <Routes>
         <Route path="/">
-          
+
           {/* ============================= */}
           {/* PUBLIC ROUTES */}
           {/* ============================= */}
@@ -182,6 +183,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="editor-notice"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={["EDITOR"]}>
+                    <NoticeManagement />
+                  </RoleRoute>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ALL ROLES */}
             <Route
@@ -234,7 +245,7 @@ function App() {
           {/* CONSUMER ROUTES */}
           {/* ============================= */}
           <Route element={<ConsumerLayout />}>
-            
+
             <Route
               path="consumer-dashboard"
               element={

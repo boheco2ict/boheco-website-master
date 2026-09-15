@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "../supabase";
+import { supabase } from "../services/supabase";
 import {
   getEmployeeByUserId,
   getConsumerByUserId,
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       const employeeData = await getEmployeeByUserId(user.id);
       setEmployeeInfo(employeeData || null);
     } catch (error) {
-      console.error("Error loading employee:", error);
+      console.error(error);
       setEmployeeInfo(null);
     }
   };
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const consumerData = await getConsumerByUserId(user.id);
-
+      console.log(consumerData);
       setConsumerInfo(consumerData || null);
     } catch (error) {
       console.error("Error loading consumer:", error);

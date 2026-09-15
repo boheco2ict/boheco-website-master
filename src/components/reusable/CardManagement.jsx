@@ -1,4 +1,4 @@
-import MCards from "./MCards";
+import MCards from "../others/MCards";
 
 const path = [
   "MANAGEMENT/GM-d.jpg",

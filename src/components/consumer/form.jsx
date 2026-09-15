@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { createConsumer } from "../../services/postservices";
-import AlertModal from "../../components/AlertModal";
 
 const ConsumerForm = ({ ID, onSuccess }) => {
   const currentYear = new Date().getFullYear();
-  const [showAlert, setShowAlert] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     user_id: ID || "",
@@ -22,11 +20,6 @@ const ConsumerForm = ({ ID, onSuccess }) => {
     amount: "",
   };
 
-  const [showAlertData, setShowAlertData] = useState({
-    isSuccess: true,
-    message: "",
-  });
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -41,22 +34,16 @@ const ConsumerForm = ({ ID, onSuccess }) => {
     try {
       setSaving(true);
       const response = await createConsumer(form);
-
       if (response.success) {
-        setShowAlertData({
-          isSuccess: true,
-          message: response.message,
-        });
-        setShowAlert(true);
-      } else {
-        setShowAlertData({
-          isSuccess: false,
-          message: response.message,
-        });
-        setShowAlert(true);
+        onSuccess();
+        alert(response.message);
       }
     } catch (error) {
       console.error(error);
+      if (error?.name === "Error") {
+        setForm(initialForm);
+        alert(error?.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -84,21 +71,6 @@ const ConsumerForm = ({ ID, onSuccess }) => {
 
   return (
     <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4 py-10">
-
-      <AlertModal
-        open={showAlert}
-        isSuccess={showAlertData.isSuccess}
-        message={showAlertData.message}
-        onClose={(isSuccess) => {
-          setShowAlert(false);
-          if (isSuccess) {
-            onSuccess();
-          }else {
-            setForm(initialForm);
-          }
-        }}
-      />
-
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden"
