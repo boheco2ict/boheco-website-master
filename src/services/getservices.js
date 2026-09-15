@@ -680,12 +680,11 @@ export const getLeaveApprovers = async () => {
 
 export const getConsumerByUserId = async (Id) => {
   if (!Id) {
-    console.error("Fetch Consumer Error: No ID provided.");
-    return null;
+    throw new Error("No UUID Provided.");
   }
 
   const { data, error } = await supabase
-    .from("consumers")
+    .from("accounts")
     .select(`
       *,
       consumers_boheco_account (*)
@@ -694,12 +693,11 @@ export const getConsumerByUserId = async (Id) => {
     .maybeSingle();
 
   if (error) {
-    console.error("Fetch Consumer Error:", error);
-    return null;
+    throw error;
   }
 
-  return data || null;
-};
+  return data;
+};//Ok
 
 export const getLedgerAll = async (accounts) => {
   if (!Array.isArray(accounts) || accounts.length === 0) {

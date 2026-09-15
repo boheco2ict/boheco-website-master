@@ -504,98 +504,29 @@ export const createEmployee = async (data) => {
   }
 };
 
-export const createConsumer = async (data) => {
-  if (!data?.user_id) {
+export const createConsumer = async (id) => {
+  if (!id) {
     throw new Error("User ID is Required.");
   }
-  if (!data?.month && !data?.year) {
-    throw new Error("Date is Required.");
-  }
-  if (!data?.account_number) {
-    throw new Error("Account Number is Required.");
-  }
-  if (!data?.user_id) {
-    throw new Error("User ID is Required.");
-  }
-  if (!data?.amount) {
-    throw new Error("Amount is Required.");
-  }
-  const date = `${data.month}/01/${data.year}`;
 
-  //check if account number is already registered
-  const { data: existingAccount, error: existingError } = await supabase
-    .from("consumers_boheco_account")
-    .select("id, consumer_id, account_number")
-    .eq("account_number", data.account_number)
-    .limit(1)
-    .maybeSingle();
-  if (existingError) {
-    throw existingError;
-  }
-  if (existingAccount) {
-    throw new Error("This account number is already registered.");
-  }
-
-  //check if ledger exist
-  const getLedgerResponse = await getLedger(data.account_number, date, data.amount);
-  if (!getLedgerResponse) {
-    throw new Error("No Record Found, Please Try Again.");
-  }
-  const resData = getLedgerResponse?.data?.[0];
-  const accountName = resData?.ConsumerName || null;
-  if (!resData) {
-    throw new Error("No Record Found, Please Try Again.");
-  }
-
-  //create consumer account
-  const { data: consumer, error: consumerError } = await supabase
-    .from("consumers")
+  const { data, error } = await supabase
+    .from("accounts")
     .insert({
-      user_id: data.user_id
-    })
-    .select("id")
-    .single();
-  if (consumerError) {
-    throw consumerError;
-  }
-  if (!consumer?.id) {
-    throw new Error("Create Account Failed.");
-  }
-
-  //insert consumer boheco account
-  const { data: account, error: accountError } = await supabase
-    .from("consumers_boheco_account")
-    .insert({
-      consumer_id: consumer.id,
-      account_number: data.account_number,
-      service_period_end: date,
-      net_amount: data.amount,
-      account_name: accountName
+      user_id: id,
     })
     .select()
     .single();
 
-  if (accountError) {
-    throw accountError;
+  if (error) {
+    throw error;
   }
 
-  return {
-    success: true,
-    message: "Verified Successfully.",
-    data: {
-      consumer: consumer,
-      consumer_account: account,
-    }
-  };
+  return data;
 };//Ok
 
 export const createConsumerAccountBinding = async (consumerId, accountNumber, month, year, netAmount) => {
   if (!consumerId || !accountNumber || !month || !year || !netAmount) {
-    return {
-      success: false,
-      message: "Missing Required Parameters.",
-      data: null,
-    };
+    throw new Error("Missing Required Parameters.");
   }
   const servicePeriodEnd = `${month}/01/${year}`;
 
@@ -613,25 +544,12 @@ try {
         .maybeSingle();
 
     if (existingError) {
-      // console.error(
-      //   "Check Existing Account Error:",
-      //   existingError
-      // );
-
-      return {
-        success: false,
-        message: "Unable to verify account number.",
-        data: null,
-      };
+      throw existingError;
     }
 
     // Account number already exists
     if (existingAccount) {
-      return {
-        success: false,
-        message: "This account number is already registered.",
-        data: null,
-      };
+      throw new Error("This account number is already registered.");
     }
 
     // =========================================
