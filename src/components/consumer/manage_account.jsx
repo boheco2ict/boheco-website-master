@@ -15,6 +15,7 @@ import {
 
 const ManageAccount = ({ isOpen, onClose }) => {
   const { consumerInfo, loading: authLoading } = useAuth();
+  console.log(consumerInfo);
   const [accountList, setAccountList] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [accountNumber, setAccountNumber] = useState("");

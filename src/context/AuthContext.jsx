@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const consumerData = await getConsumerByUserId(user.id);
-      console.log(consumerData);
       setConsumerInfo(consumerData || null);
     } catch (error) {
       console.error("Error loading consumer:", error);

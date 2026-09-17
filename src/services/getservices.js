@@ -222,7 +222,7 @@ export const getLeaveApproverByDepartment = async (department) => {
   const employeeIdEmail = data.employee_id_email;
 
   const approverIDs = employeeIdEmail.map(
-    (employee) => Number(employee.id)
+    (employee) => Number(employee.account_id)
   );
   const approverEmails = employeeIdEmail.map(
     (employee) => employee.email
@@ -243,7 +243,7 @@ const getLeaveApproverByDepartment_Name = async (IDs) => {
   const { data, error } = await supabase
     .from("employee")
     .select("firstname, middlename, lastname")
-    .in("id", IDs);
+    .in("account_id", IDs);
 
   if (error) {
     throw error;
@@ -664,7 +664,7 @@ export const getLeaveApprovers = async () => {
 
 
         // Build full name
-        
+
         const fullName = formatName_FN_MI_LN(employee.firstname, employee.middlename, employee.lastname);
 
         return {
@@ -680,12 +680,11 @@ export const getLeaveApprovers = async () => {
 
 export const getConsumerByUserId = async (Id) => {
   if (!Id) {
-    console.error("Fetch Consumer Error: No ID provided.");
-    return null;
+    throw new Error("No UUID Provided.");
   }
 
   const { data, error } = await supabase
-    .from("consumers")
+    .from("accounts")
     .select(`
       *,
       consumers_boheco_account (*)
@@ -694,12 +693,11 @@ export const getConsumerByUserId = async (Id) => {
     .maybeSingle();
 
   if (error) {
-    console.error("Fetch Consumer Error:", error);
-    return null;
+    throw error;
   }
 
-  return data || null;
-};
+  return data;
+};//Ok
 
 export const getLedgerAll = async (accounts) => {
   if (!Array.isArray(accounts) || accounts.length === 0) {
@@ -764,7 +762,7 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
   }
   if (!ServicePeriodEnd) {
     throw new Error("Service Period End is Required.");
-  }  
+  }
   if (!NetAmount) {
     throw new Error("Net Amount is Required.");
   }

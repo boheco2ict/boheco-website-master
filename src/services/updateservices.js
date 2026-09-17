@@ -1,269 +1,233 @@
 import { supabase } from "./supabase";
 
-export const approveApplication2 = async (application, approverID) => { //Not Used For Backup
-  console.log(application);
-  // -----------------------------------------
-  // Validate application
-  // -----------------------------------------
-  if (!application) {
-    throw new Error(
-      "Unable to approve application: No application was provided."
-    );
-  }
-  if (!approverID) {
-    throw new Error(
-      "Unable to approve application: No approver ID was provided."
-    );
-  }
+// export const approveApplication = async (application, approverID) => { //Not Used For Backup
+//   if (!application) {
+//     throw new Error("No application was provided.");
+//   }
 
-  try {
-    const approvers = application.approver_id_status;
+//   if (!approverID) {
+//     throw new Error("No approver ID was provided.");
+//   }
 
-    if (!Array.isArray(approvers) || approvers.length === 0) {
-      throw new Error("No approvers were found.");
-    }
+//   console.log("application", application);
+//   console.log("approverID", approverID);
 
-    // -----------------------------------------
-    // 1. Update current approver to approved
-    // -----------------------------------------
-    const updatedApprovers = approvers.map((approver) =>
-      String(approver.id) === String(approverID)
-        ? { ...approver, status: "approved" }
-        : approver
-    );
+//   const approvers = application.approver_id_status;
 
-    // -----------------------------------------
-    // 2. Check if anyone rejected
-    // -----------------------------------------
-    const hasRejected = updatedApprovers.some(
-      (approver) =>
-        approver.status?.trim().toLowerCase() === "rejected"
-    );
+//   if (!Array.isArray(approvers) || approvers.length === 0) {
+//     throw new Error("No approvers were found.");
+//   }
 
-    // -----------------------------------------
-    // 3. Check if everyone approved
-    // -----------------------------------------
-    const allApproved = updatedApprovers.every(
-      (approver) =>
-        approver.status?.trim().toLowerCase() === "approved"
-    );
+//   // -----------------------------------------
+//   // 1. Update current approver to approved
+//   // -----------------------------------------
+//   const updatedApprovers = approvers.map((approver) =>
+//     String(approver.id) === String(approverID)
+//       ? { ...approver, status: "approved" }
+//       : approver
+//   );
 
-    // -----------------------------------------
-    // 4. Determine application status
-    // -----------------------------------------
-    let applicationStatus = "pending";
-    if (hasRejected) {
-      applicationStatus = "rejected";
-    } else if (allApproved) {
-      applicationStatus = "approved";
-    }
+//   // -----------------------------------------
+//   // 2. Check if anyone rejected
+//   // -----------------------------------------
+//   const hasRejected = updatedApprovers.some(
+//     (approver) =>
+//       approver.status?.trim().toLowerCase() === "rejected"
+//   );
 
-    // -----------------------------------------
-    // 5. Get employee leave balance
-    // -----------------------------------------
-    const leaveBalance = application.leaveBalance?.leave_balance;
+//   // -----------------------------------------
+//   // 3. Check if everyone approved
+//   // -----------------------------------------
+//   const allApproved = updatedApprovers.every(
+//     (approver) =>
+//       approver.status?.trim().toLowerCase() === "approved"
+//   );
 
-    // -----------------------------------------
-    // 6. Calculate new balance
-    // -----------------------------------------
-    const currentBalance = Number(leaveBalance || 0);
-    const requestedDays = Number(application.days_requested || 0);
-    
-    if (requestedDays <= 0) {
-      throw new Error(
-        "The requested leave days must be greater than zero."
-      );
-    }
-    if (requestedDays > currentBalance) {
-      throw new Error(
-        `Insufficient leave balance. Available: ${currentBalance} days. Requested: ${requestedDays} days.`
-      );
-    }
-    const newBalance = currentBalance - requestedDays;
+//   // -----------------------------------------
+//   // 4. Determine application status
+//   // -----------------------------------------
+//   let applicationStatus = "pending";
+//   if (hasRejected) {
+//     applicationStatus = "rejected";
+//   } else if (allApproved) {
+//     applicationStatus = "approved";
+//   }
 
+//   // -----------------------------------------
+//   // 5. Get employee leave balance
+//   // -----------------------------------------
+//   const leaveBalance = application.leaveBalance?.leave_balance;
 
-    if (applicationStatus === "pending") {
-      // -----------------------------------------
-      // Update approver status to approved
-      // -----------------------------------------
-      try {
-        const { data: updateApproversStatus, error } = await supabase
-          .from("leave_applications")
-          .update({
-            approver_id_status: updatedApprovers,
-          })
-          .eq("id", application.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error updating approver status:", error);
-
-          throw new Error(
-            `Unable to update approver status: ${error.message}`
-          );
-        }
-
-        if (!updateApproversStatus) {
-          throw new Error(
-            "Unable to update approver status: No application was found."
-          );
-        }
-
-        return {
-          success: true,
-          message: "Application Approved Successfully.",
-          response: updateApproversStatus,
-        };
-      } catch (error) {
-        console.error("Failed to update approver status:", error);
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred while updating the approver status."
-        );
-      }
-    }
-
-    if (applicationStatus === "approved") {
-      // -----------------------------------------
-      // Update employee leave balance
-      // -----------------------------------------
-      if (!application.leaveBalance?.id) {
-        throw new Error(
-          "Unable to update leave balance: No leave balance ID was provided."
-        );
-      }
-      const { data: updatedBalance, error: updateBalanceError } =
-        await supabase
-          .from("employee_leave_balances")
-          .update({
-            leave_balance: newBalance,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", application.leaveBalance.id)
-          .select("*")
-          .single();
-
-      if (updateBalanceError) {
-        console.error(
-          "Failed to update employee leave balance:",
-          updateBalanceError
-        );
-
-        throw new Error(
-          `Failed to update employee leave balance: ${
-            updateBalanceError.message ||
-            "Unknown database error."
-          }`
-        );
-      }
-
-      if (!updatedBalance) {
-        throw new Error(
-          "Leave balance update failed: No updated balance was returned."
-        );
-      }
-      // -----------------------------------------
-      // Update approver status to approved and status to approved
-      // -----------------------------------------
-      if (!application?.id) {
-        throw new Error(
-          "Unable to update approver status: No ID was provided."
-        );
-      }
-      const { data: updateApproversStatus, error } = await supabase
-        .from("leave_applications")
-        .update({
-          approver_id_status: updatedApprovers,
-          status: "approved",
-          approved_at: new Date().toISOString()
-        })
-        .eq("id", application.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating approver status:", error);
-
-        throw new Error(
-          `Unable to update approver status: ${error.message}`
-        );
-      }
-
-      if (!updateApproversStatus) {
-        throw new Error(
-          "Unable to update approver status: No application was found."
-        );
-      }
-      // -----------------------------------------
-      // 6. Return updated records
-      // -----------------------------------------
-      return {
-        success: true,
-        message: "Application Approved Successfully.",
-        response: {
-          updatedBalance: updatedBalance,
-          updateApproversStatus: updateApproversStatus
-        }
-      };
-    }
+//   // -----------------------------------------
+//   // 6. Calculate new balance
+//   // -----------------------------------------
+//   const currentBalance = Number(leaveBalance || 0);
+//   const requestedDays = Number(application.days_requested || 0);
   
-  } catch (error) {
-    console.error(
-      "Approval failed:",
-      error
-    );
+//   if (requestedDays <= 0) {
+//     throw new Error(
+//       "The requested leave days must be greater than zero."
+//     );
+//   }
+//   if (requestedDays > currentBalance) {
+//     throw new Error(
+//       `Insufficient leave balance. Available: ${currentBalance} days. Requested: ${requestedDays} days.`
+//     );
+//   }
+//   const newBalance = currentBalance - requestedDays;
 
-    throw new Error(
-      error?.message ||
-        "An unexpected error occurred while approving the leave application."
-    );
-  }
-};
+
+//   if (applicationStatus === "pending") {
+//     // -----------------------------------------
+//     // Update approver status to approved
+//     // -----------------------------------------
+//     try {
+//       const { data: updateApproversStatus, error } = await supabase
+//         .from("leave_applications")
+//         .update({
+//           approver_id_status: updatedApprovers,
+//         })
+//         .eq("id", application.id)
+//         .select()
+//         .single();
+
+//       if (error) {
+//         console.error("Error updating approver status:", error);
+
+//         throw new Error(
+//           `Unable to update approver status: ${error.message}`
+//         );
+//       }
+
+//       if (!updateApproversStatus) {
+//         throw new Error(
+//           "Unable to update approver status: No application was found."
+//         );
+//       }
+
+//       return {
+//         success: true,
+//         message: "Application Approved Successfully.",
+//         response: updateApproversStatus,
+//       };
+//     } catch (error) {
+//       console.error("Failed to update approver status:", error);
+//       throw new Error(
+//         error instanceof Error
+//           ? error.message
+//           : "An unexpected error occurred while updating the approver status."
+//       );
+//     }
+//   }
+
+//   if (applicationStatus === "approved") {
+//     // -----------------------------------------
+//     // Update employee leave balance
+//     // -----------------------------------------
+//     if (!application.leaveBalance?.id) {
+//       throw new Error(
+//         "Unable to update leave balance: No leave balance ID was provided."
+//       );
+//     }
+//     const { data: updatedBalance, error: updateBalanceError } =
+//       await supabase
+//         .from("employee_leave_balances")
+//         .update({
+//           leave_balance: newBalance,
+//           updated_at: new Date().toISOString(),
+//         })
+//         .eq("id", application.leaveBalance.id)
+//         .select("*")
+//         .single();
+
+//     if (updateBalanceError) {
+//       console.error(
+//         "Failed to update employee leave balance:",
+//         updateBalanceError
+//       );
+
+//       throw new Error(
+//         `Failed to update employee leave balance: ${
+//           updateBalanceError.message ||
+//           "Unknown database error."
+//         }`
+//       );
+//     }
+
+//     if (!updatedBalance) {
+//       throw new Error(
+//         "Leave balance update failed: No updated balance was returned."
+//       );
+//     }
+//     // -----------------------------------------
+//     // Update approver status to approved and status to approved
+//     // -----------------------------------------
+//     if (!application?.id) {
+//       throw new Error(
+//         "Unable to update approver status: No ID was provided."
+//       );
+//     }
+//     const { data: updateApproversStatus, error } = await supabase
+//       .from("leave_applications")
+//       .update({
+//         approver_id_status: updatedApprovers,
+//         status: "approved",
+//         approved_at: new Date().toISOString()
+//       })
+//       .eq("id", application.id)
+//       .select()
+//       .single();
+
+//     if (error) {
+//       console.error("Error updating approver status:", error);
+
+//       throw new Error(
+//         `Unable to update approver status: ${error.message}`
+//       );
+//     }
+
+//     if (!updateApproversStatus) {
+//       throw new Error(
+//         "Unable to update approver status: No application was found."
+//       );
+//     }
+//     // -----------------------------------------
+//     // 6. Return updated records
+//     // -----------------------------------------
+//     return {
+//       success: true,
+//       message: "Application Approved Successfully.",
+//       response: {
+//         updatedBalance: updatedBalance,
+//         updateApproversStatus: updateApproversStatus
+//       }
+//     };
+//   }
+// };
 
 export const approveApplication = async (application, approverID) => {
   if (!application) {
-    throw new Error(
-      "Unable to approve application: No application was provided."
-    );
+    throw new Error("No application was provided.");
   }
 
   if (!approverID) {
-    throw new Error(
-      "Unable to approve application: No approver ID was provided."
-    );
+    throw new Error("No approver ID was provided.");
   }
 
-  try {
-    const { data, error } = await supabase.rpc(
-      "approve_leave_application",
-      {
-        p_application_id: application.id,
-        p_approver_id: String(approverID),
-      }
-    );
-
-    if (error) {
-      console.error("Approval failed:", error);
-
-      throw new Error(error.message);
+  const { data, error } = await supabase.rpc(
+    "approve_leave_application",
+    {
+      p_application_id: application.id,
+      p_approver_id: String(approverID),
     }
+  );
 
-    return {
-      success: true,
-      message: "Application Approved Successfully.",
-      response: data,
-    };
-  } catch (error) {
-    console.error("Approval failed:", error);
-
-    throw new Error(
-      error?.message ||
-        "An unexpected error occurred while approving the leave application."
-    );
+  if (error) {
+    throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const rejectApplication = async (application, reason, approverID) => {
   if (!application) {
@@ -301,7 +265,7 @@ export const rejectApplication = async (application, reason, approverID) => {
   }
 
   return data;
-};
+};//Ok
 
 export const markAsReadMemo = async (Id) => {
   if (!Id) {
@@ -324,7 +288,7 @@ export const markAsReadMemo = async (Id) => {
   }
 
   return data;
-}//Ok
+};//Ok
 
 export const markAsReadOfficeOrder = async (Id) => {
   if (!Id) {
@@ -347,7 +311,7 @@ const { data, error } = await supabase
   }
 
   return data;
-}//Ok
+};//Ok
 
 export const cancelApplication = async (Id) => {
   if (!Id) {
@@ -728,7 +692,7 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
     );
     throw error;
   }
-}
+};
 
 export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
   if (!id) {
@@ -767,4 +731,4 @@ export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
     );
     throw error;
   }
-}
+};
