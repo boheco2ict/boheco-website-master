@@ -51,6 +51,7 @@ function ApplyLeaveModal({
 
   const validateApplication = useCallback(() => {
     setAppError("");
+    setAppSuccess("");
     if (!applicationType) return "Please choose a leave type.";
     if (!appStart) return "Please choose a start date.";
     if (!appEnd) return "Please choose an end date.";
