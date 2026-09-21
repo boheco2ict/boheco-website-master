@@ -56,7 +56,7 @@ function LeaveHistorySection({ applications }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-slate-500">
-                    {a.id} - {a.leave_type}
+                    {a.leave_type}
                   </p>
                   <p className="font-semibold">
                     {formatDate_Month_Day_Year(a.start_date)} →{" "}

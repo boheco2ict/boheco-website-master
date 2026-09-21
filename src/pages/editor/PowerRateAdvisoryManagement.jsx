@@ -9,7 +9,9 @@ import {
   FaTimes,
   FaSave,
   FaGripVertical,
+  FaSpinner,
 } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
 import { getPowerAdvisories } from "../../services/getservices";
 import { deleteAdvisory } from "../../services/deleteservices";
 import { createPowerAdvisory } from "../../services/postservices";
@@ -24,7 +26,7 @@ const STORAGE_FOLDER = "RATES/POWER";
 
 const PowerRateAdvisoryManagement = () => {
   const [advisories, setAdvisories] = useState([]);
-
+  const { employeeInfo, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -252,6 +254,7 @@ const PowerRateAdvisoryManagement = () => {
         // Create database record
         try {
           await createPowerAdvisory(
+            employeeInfo,
             uploadedImageUrl,
             order
           );
@@ -443,6 +446,19 @@ const PowerRateAdvisoryManagement = () => {
       setDeleting(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <FaSpinner className="animate-spin text-3xl text-orange-500" />
+          <p className="text-sm font-medium text-slate-500">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full pl-5 pr-5 pt-[21px] pb-5 min-h-screen" style={{ background: "var(--section-bg)" }}>

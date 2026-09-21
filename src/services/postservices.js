@@ -343,10 +343,15 @@ export const createPowerRateYear = async (year, pdfUrl) => {
   }
 };
 
-export const createPowerAdvisory = async (imageUrl, order) => {
+export const createPowerAdvisory = async (postedbyid, imageUrl, order) => {
+  console.log(postedbyid);
   try {
     if (!imageUrl) {
-      throw new Error("Image URL is required.");
+      throw new Error("Image URL is Required.");
+    }
+
+    if (!postedbyid) {
+      throw new Error("Posted by ID is Required.");
     }
 
     if (
@@ -530,7 +535,6 @@ export const createConsumerAccountBinding = async (consumerId, accountNumber, mo
   }
   const servicePeriodEnd = `${month}/01/${year}`;
 
-try {
    // =========================================
     // CHECK IF ACCOUNT NUMBER ALREADY EXISTS
     // INSIDE consumers_boheco_account
@@ -538,7 +542,7 @@ try {
     const { data: existingAccount, error: existingError } =
       await supabase
         .from("consumers_boheco_account")
-        .select("id, consumer_id, account_number")
+        .select("*")
         .eq("account_number", accountNumber)
         .limit(1)
         .maybeSingle();
@@ -558,21 +562,13 @@ try {
     const getLedgerResponse = await getLedger(accountNumber, servicePeriodEnd, netAmount);
 
     if (!getLedgerResponse) {
-      return {
-        success: false,
-        message: "No Record Found, Please Try Again.",
-        data: null,
-      };
+      throw new Error("No Record Found, Please Try Again.");
     }
 
     const resData = getLedgerResponse?.data?.[0];
 
-    if (!resData) {
-      return {
-        success: false,
-        message: "No Record Found, Please Try Again.",
-        data: null,
-      };
+    if (!getLedgerResponse) {
+      throw new Error("No Record Found, Please Try Again.");
     }
 
     // =========================================
@@ -583,7 +579,7 @@ try {
     const { data: addAccountData, error: accountError } = await supabase
       .from("consumers_boheco_account")
       .insert({
-        consumer_id: consumerId,
+        account_id: consumerId,
         account_number: accountNumber,
         service_period_end: servicePeriodEnd,
         net_amount: netAmount,
@@ -593,29 +589,10 @@ try {
       .single();
 
     if (accountError) {
-      // console.error("Add Account Error:", accountError);
-
-      return {
-        success: false,
-        message: "Add Account Failed.",
-        data: null,
-      };
+      throw accountError;
     }
 
-    return {
-      success: true,
-      message: "Add Account Successfully.",
-      data: addAccountData,
-    };
-  } catch (error) {
-    // console.error("Add Account Exception:", error);
-
-    return {
-      success: false,
-      message: "Add Account Failed.",
-      data: null,
-    };
-  }
+    return addAccountData;
 };
 
 export const createPowerInterruption = async (imageUrl, description, type) => {

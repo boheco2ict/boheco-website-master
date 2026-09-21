@@ -218,7 +218,6 @@ export const getLeaveApproverByDepartment = async (department) => {
   if (error) {
     throw error;
   }
-
   const employeeIdEmail = data.employee_id_email;
 
   const approverIDs = employeeIdEmail.map(
@@ -565,33 +564,22 @@ export const getGenerationCharges = async () => {
 };
 
 export const getLeaveApprovers = async () => {
-  // ==========================================
   // 1. Get leave approval configurations
-  // ==========================================
   const { data, error } = await supabase
     .from("can_approve_leave")
     .select("*")
     .order("department", { ascending: true });
 
   if (error) {
-    console.error("Error fetching leave approvers:", error);
     throw error;
   }
 
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-
-  // ==========================================
   // 2. Collect employee IDs
-  // ==========================================
   const employeeIds = data.flatMap((department) =>
     department.employee_id_email?.map(
       (approver) => String(approver.id)
     ) || []
   );
-
 
   // Remove duplicate IDs
   const uniqueEmployeeIds = [
@@ -603,35 +591,17 @@ export const getLeaveApprovers = async () => {
     return data;
   }
 
-
-  // ==========================================
   // 3. Get employee information
-  // ==========================================
-  const {
-    data: employees,
-    error: employeeError,
-  } = await supabase
-    .from("employees")
-    .select(
-      "id, firstname, middlename, lastname"
-    )
-    .in(
-      "id",
-      uniqueEmployeeIds.map(Number)
-    );
+  const {data: employees, error: employeeError} = await supabase
+    .from("employee")
+    .select("id, firstname, middlename, lastname")
+    .in("id", uniqueEmployeeIds.map(Number));
 
   if (employeeError) {
-    console.error(
-      "Error fetching employee information:",
-      employeeError
-    );
-
     throw employeeError;
   }
 
-  // ==========================================
   // 4. Create employee lookup map
-  // ==========================================
   const employeeMap = new Map(
     employees.map((employee) => [
       String(employee.id),
@@ -639,9 +609,7 @@ export const getLeaveApprovers = async () => {
     ])
   );
 
-  // ==========================================
   // 5. Add full name to approvers
-  // ==========================================
   const formattedData = data.map((department) => ({
 
     ...department,
@@ -676,7 +644,7 @@ export const getLeaveApprovers = async () => {
 
   }));
   return formattedData;
-};
+};//Ok
 
 export const getConsumerByUserId = async (Id) => {
   if (!Id) {
@@ -782,7 +750,7 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
   );
 
   if (!response.ok) {
-    throw new Error("Account Not Found.");
+    throw new Error("No Record Found, Please Try Again.");
   }
 
   const data = await response.json();

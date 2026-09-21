@@ -13,9 +13,9 @@ import { getEmployeeByUserId } from "../../services/getservices";
 
 // UI Components
 import ProfileTab from "../../components/employee/ProfileTab";
-import LeaveCreditsTab from "../../components/employee/LeaveCreditsTab";
-import MemoTab from "../../components/employee/MemoTab";
-import OfficeOrderTab from "../../components/employee/OfficeOrderTab";
+import LeaveCreditsTab from "../../components/employee/leave/LeaveCreditsTab";
+import MemoTab from "../../components/employee/memotab/MemoTab";
+import OfficeOrderTab from "../../components/employee/officeorder/OfficeOrderTab";
 import Profile from "../../components/employee/Profile";
 
 const tabs = [

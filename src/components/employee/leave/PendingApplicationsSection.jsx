@@ -27,7 +27,7 @@ function PendingApplicationsSection({
               <div>
                 <div className="mt-2 flex text-sm">
                   <span className="text-sm text-slate-500">
-                    {a.id} - {a.leave_type} -
+                    {a.leave_type} -
                   </span>{" "}
                   - (
                   {a.approver_id_status?.map((approver, index) => (

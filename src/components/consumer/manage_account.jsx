@@ -15,7 +15,6 @@ import {
 
 const ManageAccount = ({ isOpen, onClose }) => {
   const { consumerInfo, loading: authLoading } = useAuth();
-  console.log(consumerInfo);
   const [accountList, setAccountList] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [accountNumber, setAccountNumber] = useState("");
@@ -95,20 +94,21 @@ const ManageAccount = ({ isOpen, onClose }) => {
 
       const addResponse = await createConsumerAccountBinding(consumerInfo.id, accountNumber, month, year, amount);
 
-      if (addResponse.success) {
+      if (addResponse) {
         resetForm();
         setShowAddForm(false);
-        if (addResponse?.data) {
-          const updatedAccounts = [...accountList, addResponse.data];
-          setAccountList(updatedAccounts);
-        }
+        const updatedAccounts = [...accountList, addResponse];
+        setAccountList(updatedAccounts);
+        alert("Account Added Successfully.");
       } else {
         resetForm();
       }
-      alert(addResponse.message);
-    } catch (err) {
-      console.error("Add Account Error:", err);
-      setError("Something went wrong while adding the account.");
+      
+    } catch (error) {
+      console.error(error);
+      if (error.name === "Error") {
+        alert(error.message);
+      }
     } finally {
       setLoading(false);
     }
