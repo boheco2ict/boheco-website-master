@@ -336,141 +336,95 @@ export const cancelApplication = async (Id) => {
 };//Ok
 
 export const updatePowerRateYear = async (id, year, pdfUrl, rates) => {
+  const { data, error } = await supabase
+    .from("power_rates")
+    .update({
+      year: year,
+      pdf_url: pdfUrl || null,
+      rates: rates,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
-  try {
-    const { data, error } = await supabase
-      .from("power_rates")
-      .update({
-        year: year,
-        pdf_url: pdfUrl || null,
-        rates: rates,
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(
-        "Error updating power rate year:",
-        error
-      );
-
-      return {
-        success: false,
-        message: "Unable to update power rate year.",
-        data: null,
-        error,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Power rates updated successfully.",
-      data,
-    };
-  } catch (error) {
-    console.error(
-      "Unexpected error updating power rate year:",
-      error
-    );
-
-    return {
-      success: false,
-      message:
-        "An unexpected error occurred while updating the power rates.",
-      data: null,
-      error,
-    };
+  if (error) {
+    throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const updatePowerAdvisory = async (id, imageUrl, order) => {
-  try {
-    if (!id) {
-      throw new Error("Advisory ID is required.");
-    }
+  if (!id) {
+    throw new Error("Advisory ID is required.");
+  }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
-    }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
-    }
-
-    const { data, error } = await supabase
-      .from("power_rate_advisories")
-      .update({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error(
-      "Error updating power rate advisory:",
-      error
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
     );
+  }
 
+  const { data, error } = await supabase
+    .from("power_rate_advisories")
+    .update({
+      image_url: imageUrl,
+      display_order: Number(order),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
     throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const updateGenerationCharge = async (id, imageUrl, order) => {
-  try {
-    if (!id) {
-      throw new Error("ID is required.");
-    }
+  if (!id) {
+    throw new Error("ID is required.");
+  }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
-    }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
-    }
-
-    const { data, error } = await supabase
-      .from("generation_charge")
-      .update({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error(
-      "Error updating generation charge:",
-      error
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
     );
+  }
 
+  const { data, error } = await supabase
+    .from("generation_charge")
+    .update({
+      image_url: imageUrl,
+      display_order: Number(order),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
     throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const updateLeaveApproverDepartment = async (id, department, approvers) => {
   if (!id) {
@@ -592,6 +546,7 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
         image_url: imageUrl,
         type: type,
         description: description,
+        updated_at: new Date().toISOString()
       })
       .eq("id", id)
       .select()
@@ -609,7 +564,7 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
     );
     throw error;
   }
-};
+};//Ok
 
 export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
   if (!id) {
@@ -631,6 +586,7 @@ export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
         image_url: imageUrl,
         title: cleanTitle,
         file_url: cleanFileUrl,
+        updated_at: new Date().toISOString()
       })
       .eq("id", id)
       .select()
@@ -648,4 +604,4 @@ export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
     );
     throw error;
   }
-};
+};//Ok

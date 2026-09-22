@@ -8,9 +8,9 @@ import {
   FaUpload,
   FaTimes,
   FaSave,
-  FaGripVertical,
   FaSpinner,
 } from "react-icons/fa";
+import { UserRound, Clock3 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { getPowerAdvisories } from "../../services/getservices";
 import { deleteAdvisory } from "../../services/deleteservices";
@@ -20,6 +20,7 @@ import {
   uploadStorageImage,
   deleteStorageImage,
 } from "../../services/storageservices";
+import { formatDateComplete, formatName_FN_MI_LN } from "../../utils/utils";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "RATES/POWER";
@@ -254,7 +255,7 @@ const PowerRateAdvisoryManagement = () => {
         // Create database record
         try {
           await createPowerAdvisory(
-            employeeInfo,
+            employeeInfo?.employee?.id,
             uploadedImageUrl,
             order
           );
@@ -543,13 +544,22 @@ const PowerRateAdvisoryManagement = () => {
 
                   {/* CARD BODY */}
                   <div className="p-4">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                        <FaGripVertical className="text-sm" />
+                    <div className="mb-4 flex flex-col gap-1 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <UserRound className="h-3 w-3 shrink-0" />
+                        <span>
+                          {formatName_FN_MI_LN(
+                            advisory?.posted_by_employee_id?.firstname,
+                            advisory?.posted_by_employee_id?.middlename,
+                            advisory?.posted_by_employee_id?.lastname
+                          )}
+                        </span>
                       </div>
-                      <p className="text-xs font-bold tracking-wider text-slate-500">
-                        Rate Advisory #{advisory.display_order}
-                      </p>
+
+                      <div className="flex items-center gap-1.5">
+                        <Clock3 className="h-3 w-3 shrink-0" />
+                        <span>{formatDateComplete(advisory?.created_at)}</span>
+                      </div>
                     </div>
 
                     {/* ACTIONS */}

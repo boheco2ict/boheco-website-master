@@ -57,7 +57,7 @@ const RatesTable = ({ year, rateClass, thead, tbody, url }) => {
       </div>
       <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3 sm:px-6">
         <p className="text-[11px] font-medium text-slate-400">All rates are expressed in PHP per kWh.</p>
-        <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:inline-flex">{year}</span>
+        {/* <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:inline-flex">{year}</span> */}
       </div>
     </div>
   );

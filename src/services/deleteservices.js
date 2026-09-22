@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-import { TABLES, COLUMNS } from "../constants/database";
 
 export const deleteAdvisory = async (id) => {
   if (!id) {
@@ -7,9 +6,9 @@ export const deleteAdvisory = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.POWER_RATE_ADVISORIES)
+    .from("power_rate_advisories")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -29,9 +28,9 @@ export const deleteGenerationCharge = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.GENERATION_CHARGE)
+    .from("generation_charge")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -51,9 +50,9 @@ export const deleteLeaveApproverDepartment = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.CAN_APPROVE_LEAVE)
+    .from("can_approve_leave")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -77,9 +76,9 @@ export const deleteConsumerBindAccount = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.CONSUMERS_BOHECO_ACCOUNT)
+    .from("consumers_boheco_account")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -99,9 +98,9 @@ export const deletePowerInterruption = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.POWER_INTERRUPTION)
+    .from("power_interruption")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -121,9 +120,31 @@ export const deleteNotice = async (id) => {
   }
 
   const { data, error } = await supabase
-    .from(TABLES.NOTICE)
+    .from("notice")
     .delete()
-    .eq(COLUMNS.ID, id)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    success: true,
+    data
+  };
+};//Ok
+
+export const deleteRateYear = async (id) => {
+  if (!id) {
+    throw new Error("ID is Required.");
+  }
+
+  const { data, error } = await supabase
+    .from("power_rates")
+    .delete()
+    .eq("id", id)
     .select()
     .single();
 

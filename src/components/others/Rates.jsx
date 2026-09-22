@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import RatesTable from "./RatesTable";
 import { FaBolt } from "react-icons/fa";
-import { supabase } from "../../services/supabase";
 
 // RATE CLASS VISIBILITY
 const showResidential = true;
@@ -80,17 +79,9 @@ const createBody = (rates, rateClass) => {
   ];
 };
 
-const Rates = () => {
+const Rates = ({ rateYears, loadingRates, ratesError}) => {
   const [activeYear, setActiveYear] = useState(null);
-  const [rateYears, setRateYears] = useState([]);
   const [activeRateClass, setActiveRateClass] = useState(rateClasses[0]?.id || null);
-  const [loadingRates, setLoadingRates] = useState(true);
-  const [ratesError, setRatesError] = useState("");
-
-  // LOAD POWER RATES
-  useEffect(() => {
-    loadRates();
-  }, []);
 
   // SET DEFAULT YEAR
   useEffect(() => {
@@ -98,34 +89,6 @@ const Rates = () => {
       setActiveYear(rateYears[0].year);
     }
   }, [rateYears]);
-
-  // LOAD POWER RATES
-  const loadRates = async () => {
-    try {
-      setLoadingRates(true);
-      setRatesError("");
-
-      const { data, error } = await supabase
-        .from("power_rates")
-        .select("id, year, pdf_url, rates")
-        .order("year", {
-          ascending: false,
-        });
-
-      if (error) {
-        console.error("Error loading power rates:", error);
-        setRatesError("Unable to load power rates.");
-        return;
-      }
-
-      setRateYears(data || []);
-    } catch (error) {
-      console.error("Unexpected error loading power rates:", error);
-      setRatesError("An unexpected error occurred while loading power rates.");
-    } finally {
-      setLoadingRates(false);
-    }
-  };
 
   // SELECTED YEAR
   const selectedRate = rateYears.find((rate) => rate.year === activeYear);
@@ -142,7 +105,9 @@ const Rates = () => {
   const handleRateClassChange = (rateClass) => {
     setActiveRateClass(rateClass);
   };
-  
+  if (loadingRates) {
+    return <div></div>;
+  }
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">

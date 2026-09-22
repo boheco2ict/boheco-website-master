@@ -1,6 +1,5 @@
 import { supabase } from "./supabase";
 import { formatName_FN_MI_LN } from "../utils/utils";
-import { TABLES, COLUMNS } from "../constants/database";
 const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {
@@ -91,7 +90,7 @@ export const getAllAuthUsers = async () => {
   }
 
   return data || [];
-};
+};//Ok
 
 export const getEmployeeByUserId = async (Id) => {
   if (!Id) {
@@ -524,44 +523,59 @@ export const getPowerRateYears = async () => {
     .order("year", { ascending: false });
 
   if (error) {
-    console.error("Error fetching power rate years:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getPowerAdvisories = async () => {
   const { data, error } = await supabase
     .from("power_rate_advisories")
-    .select("*")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
     .order("display_order", {
       ascending: true,
     });
 
   if (error) {
-    console.error("Error fetching power advisories:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getGenerationCharges = async () => {
   const { data, error } = await supabase
     .from("generation_charge")
-    .select("*")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
     .order("display_order", {
       ascending: true,
     });
 
   if (error) {
-    console.error("Error fetching generation charge:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getLeaveApprovers = async () => {
   // 1. Get leave approval configurations
@@ -718,7 +732,6 @@ export const getLedgerAll = async (accounts) => {
 
     return results.filter(Boolean);
   } catch (error) {
-    console.error("Get Ledger Error:", error);
     return null;
   }
 };
@@ -760,9 +773,18 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
 
 export const getPowerInterruption = async () => {
   const { data, error } = await supabase
-    .from(TABLES.POWER_INTERRUPTION)
-    .select("*")
-    .order(COLUMNS.CREATED_AT, {
+    .from("power_interruption")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
+    .order("created_at", {
       ascending: false,
     });
 
@@ -778,16 +800,16 @@ export const getPowerInterruption = async () => {
 
 export const getNotice = async () => {
   const { data, error } = await supabase
-    .from(TABLES.NOTICE)
+    .from("notice")
     .select(`
       *,
-      ${COLUMNS.POSTED_BY}:${TABLES.EMPLOYEES} (
-        ${COLUMNS.FIRSTNAME},
-        ${COLUMNS.MIDDLENAME},
-        ${COLUMNS.LASTNAME}
+      posted_by:employee (
+        firstname,
+        middlename,
+        lastname
       )
     `)
-    .order(COLUMNS.CREATED_AT, {
+    .order("created_at", {
       ascending: false,
     });
 

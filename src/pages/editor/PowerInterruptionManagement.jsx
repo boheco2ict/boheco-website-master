@@ -9,8 +9,12 @@ import {
   FaTimes,
   FaSave,
   FaCalendarCheck,
+  FaSpinner,
   FaCalendarTimes,
 } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
+import { formatDateComplete, formatName_FN_MI_LN } from "../../utils/utils";
+import { UserRound, Clock3, MessageSquareText } from "lucide-react";
 import { getPowerInterruption } from "../../services/getservices";
 import { deletePowerInterruption } from "../../services/deleteservices";
 import { createPowerInterruption } from "../../services/postservices";
@@ -28,6 +32,7 @@ const TYPE_OPTIONS = [
 ];
 
 const PowerInterruptionManagement = () => {
+  const { employeeInfo, loading: authLoading } = useAuth();
   const [powerInterruptions, setPowerInterruptions] = useState({
     schedule: [],
     unschedule: [],
@@ -147,6 +152,7 @@ const PowerInterruptionManagement = () => {
         }
 
         const createInterruption = await createPowerInterruption(
+          employeeInfo?.employee?.id,
           uploadedImageUrl,
           cleanDescription,
           type
@@ -327,13 +333,31 @@ const PowerInterruptionManagement = () => {
       </div>
 
       <div className="p-5">
-        <div className="mb-4 text-center">
-          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">
-            Description
-          </p>
-          <p className="text-sm font-semibold leading-relaxed text-slate-700 md:text-base">
-            {interruption.description || "No description"}
-          </p>
+        <div className="mb-0 text-left">
+          <div className="flex items-start gap-2">
+            <MessageSquareText className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
+            <p className="text-[12px] font-semibold leading-relaxed text-slate-700">
+              {interruption.description || "No Description"}
+            </p>
+          </div>
+
+          <div className="mb-4 mt-2 flex flex-col gap-1 text-[10px] text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <UserRound className="h-3 w-3 shrink-0" />
+              <span>
+                {formatName_FN_MI_LN(
+                  interruption?.posted_by_employee_id?.firstname,
+                  interruption?.posted_by_employee_id?.middlename,
+                  interruption?.posted_by_employee_id?.lastname
+                )}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Clock3 className="h-3 w-3 shrink-0" />
+              <span>{formatDateComplete(interruption?.created_at)}</span>
+            </div>
+          </div>
         </div>
 
         <div className="mx-auto flex max-w-sm gap-2">
@@ -395,13 +419,31 @@ const PowerInterruptionManagement = () => {
       </div>
 
       <div className="p-4">
-        <div className="mb-4">
-          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">
-            Description
-          </p>
-          <p className="line-clamp-3 text-sm font-semibold leading-relaxed text-slate-700">
-            {interruption.description || "No Description"}
-          </p>
+        <div className="mb-1 text-left">
+          <div className="flex items-start gap-2">
+            <MessageSquareText className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
+            <p className="text-[10px] font-semibold leading-relaxed text-slate-700">
+              {interruption.description || "No description"}
+            </p>
+          </div>
+
+          <div className="mb-4 mt-2 flex flex-col gap-1 text-[10px] text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <UserRound className="h-3 w-3 shrink-0" />
+              <span>
+                {formatName_FN_MI_LN(
+                  interruption?.posted_by_employee_id?.firstname,
+                  interruption?.posted_by_employee_id?.middlename,
+                  interruption?.posted_by_employee_id?.lastname
+                )}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Clock3 className="h-3 w-3 shrink-0" />
+              <span>{formatDateComplete(interruption?.created_at)}</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -463,6 +505,18 @@ const PowerInterruptionManagement = () => {
     );
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <FaSpinner className="animate-spin text-3xl text-orange-500" />
+          <p className="text-sm font-medium text-slate-500">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className="min-h-screen w-full pl-5 pr-5 pt-[21px] pb-5"

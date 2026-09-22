@@ -8,19 +8,23 @@ import {
   FaUpload,
   FaTimes,
   FaSave,
+  FaSpinner,
   FaGripVertical,
 } from "react-icons/fa";
-
+import { useAuth } from "../../context/AuthContext";
 import { getGenerationCharges } from "../../services/getservices";
 import { deleteGenerationCharge } from "../../services/deleteservices";
 import { createGenerationCharge } from "../../services/postservices";
 import { updateGenerationCharge } from "../../services/updateservices";
 import { uploadStorageImage, deleteStorageImage } from "../../services/storageservices";
+import { formatDateComplete, formatName_FN_MI_LN } from "../../utils/utils";
+import { UserRound, Clock3 } from "lucide-react";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "RATES/GEN";
 
 const GenerationChargeManagement = () => {
+  const { employeeInfo, loading: authLoading } = useAuth();
   const [generationCharges, setGenerationCharges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -149,7 +153,7 @@ const GenerationChargeManagement = () => {
 
         // Create database record
         try {
-          await createGenerationCharge(uploadedImageUrl, order);
+          await createGenerationCharge(employeeInfo?.employee?.id, uploadedImageUrl, order);
           uploadedImageUrl = null;
           alert("Generation Charge Added Successfully.");
         } catch (error) {
@@ -273,6 +277,19 @@ const GenerationChargeManagement = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <FaSpinner className="animate-spin text-3xl text-orange-500" />
+          <p className="text-sm font-medium text-slate-500">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full pl-5 pr-5 pt-[21px] pb-5 min-h-screen" style={{ background: "var(--section-bg)" }}>
       {/* HEADER */}
@@ -345,13 +362,22 @@ const GenerationChargeManagement = () => {
 
                   {/* CARD BODY */}
                   <div className="p-4">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                        <FaGripVertical className="text-sm" />
+                    <div className="mb-4 flex flex-col gap-1 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <UserRound className="h-3 w-3 shrink-0" />
+                        <span>
+                          {formatName_FN_MI_LN(
+                            generationCharge?.posted_by_employee_id?.firstname,
+                            generationCharge?.posted_by_employee_id?.middlename,
+                            generationCharge?.posted_by_employee_id?.lastname
+                          )}
+                        </span>
                       </div>
-                      <p className="text-xs font-bold tracking-wider text-slate-500">
-                        Generation Charge #{generationCharge.display_order}
-                      </p>
+
+                      <div className="flex items-center gap-1.5">
+                        <Clock3 className="h-3 w-3 shrink-0" />
+                        <span>{formatDateComplete(generationCharge?.created_at)}</span>
+                      </div>
                     </div>
 
                     {/* ACTIONS */}

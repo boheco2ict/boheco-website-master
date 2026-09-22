@@ -39,7 +39,7 @@ function Award() {
 
   return (
     <div className="bg-image2 min-h-screen">
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <section className="mx-auto max-w-7xl px-4 py-8 mt-12 sm:px-6 lg:px-8 lg:py-12">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-700">
             Awards and Recognition
