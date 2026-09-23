@@ -133,7 +133,6 @@ export const getAllEmployees = async () => {
   if (error) {
     throw error;
   }
-
   return data || [];
 };//Ok
 
@@ -194,6 +193,25 @@ export const getDepartmentMeaning = async () => {
   const { data, error } = await supabase
     .from("departments")
     .select("code, name");
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};//Ok
+
+export const getAllAccounts = async () => {
+  const { data, error } = await supabase
+    .from("accounts")
+    .select(
+      `
+        *,
+        employee("*")
+      `
+    )
+    .neq("role", "CONSUMER")
+    .order("id", { ascending: true });
 
   if (error) {
     throw error;

@@ -336,65 +336,42 @@ export const createLeaveApproverDepartment = async (
   return data;
 };
 
-export const createEmployee = async (data) => {
-  try {
-    const { data: newEmployee, error } = await supabase
-      .from("employees")
-      .insert([data])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Create Employee Error:", error);
-
-      // Duplicate record
-      if (error.code === "23505") {
-        if (error.message.includes("user_id")) {
-          return {
-            success: false,
-            message: "This user is already assigned to an employee.",
-            response: error,
-          };
-        }
-
-        if (error.message.includes("empnumber")) {
-          return {
-            success: false,
-            message: "Employee number already exists.",
-            response: error,
-          };
-        }
-
-        return {
-          success: false,
-          message: "Duplicate employee information.",
-          response: error,
-        };
-      }
-
-      return {
-        success: false,
-        message: "Add Employee Failed.",
-        response: error,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Add Employee Successfully.",
-      response: newEmployee,
-    };
-
-  } catch (error) {
-    console.error("Create Employee Exception:", error);
-
-    return {
-      success: false,
-      message: "Add Employee Failed.",
-      response: error,
-    };
+export const createEmployee = async (id) => {
+  if (!id) {
+    throw new Error("User ID is Required.");
   }
-};
+  const { data, error } = await supabase
+    .from("accounts")
+    .insert({
+      user_id: id,
+      role: "USER"
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};//Ok
+
+export const createEmployeeInfo = async (id) => {
+  if (!id) {
+    throw new Error("User ID is Required.");
+  }
+  const { data, error } = await supabase
+    .from("employee")
+    .insert({
+      account_id: id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};//Ok
 
 export const createConsumer = async (id) => {
   if (!id) {
@@ -405,6 +382,7 @@ export const createConsumer = async (id) => {
     .from("accounts")
     .insert({
       user_id: id,
+      role: "CONSUMER"
     })
     .select()
     .single();

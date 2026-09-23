@@ -17,6 +17,7 @@ import LeaveCreditsTab from "../../components/employee/leave/LeaveCreditsTab";
 import MemoTab from "../../components/employee/memotab/MemoTab";
 import OfficeOrderTab from "../../components/employee/officeorder/OfficeOrderTab";
 import Profile from "../../components/employee/Profile";
+import { use } from "react";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -69,7 +70,6 @@ function Dashboard() {
     () => employee?.employee?.employee_leave_balances || [],
     [employee?.employee?.employee_leave_balances]
   );
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
