@@ -465,66 +465,43 @@ export const updateLeaveApproverDepartment = async (id, department, approvers) =
     return data;
 };//Ok
 
-export const updateEmployee = async (id, dataInfo) => {
-  try {
+export const updateEmployee = async (updatedData, id) => {
+    if (!updatedData || !id) {
+      throw new Error("Account ID and/or Updated Data is Required.");
+    }
+
     const { data, error } = await supabase
-      .from("employees")
-      .update(dataInfo)
+      .from("employee")
+      .update(updatedData)
       .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      console.error("Update Error:", error);
-
-      // Duplicate value
-      if (error.code === "23505") {
-        if (error.message.includes("user_id")) {
-          return {
-            success: false,
-            message: "This user is already assigned to an employee.",
-            response: error,
-          };
-        }
-
-        if (error.message.includes("empnumber")) {
-          return {
-            success: false,
-            message: "Employee number already exists.",
-            response: error,
-          };
-        }
-
-        return {
-          success: false,
-          message: "Duplicate employee information.",
-          response: error,
-        };
-      }
-
-      return {
-        success: false,
-        message: "Update Failed.",
-        response: error,
-      };
+      throw error;
     }
 
-    return {
-      success: true,
-      message: "Employee Updated Successfully.",
-      response: data,
-    };
+    return data;
+};//Ok
 
-  } catch (error) {
-    console.error("Update Exception:", error);
-
-    return {
-      success: false,
-      message: "Update Failed.",
-      response: error,
-    };
+export const updateAccount = async (updatedData, id) => {
+  if (!updatedData || !id) {
+    throw new Error("Employee ID and/or Updated Data is Required.");
   }
-};
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .update(updatedData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};//Ok
 
 export const updatePowerInterruption = async (id, imageUrl, description, type) => {
   if (!id) {

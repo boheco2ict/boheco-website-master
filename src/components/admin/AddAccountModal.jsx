@@ -3,7 +3,7 @@ import { FaTimes } from "react-icons/fa";
 import { supabase } from "../../services/supabase";
 import { createEmployee, createEmployeeInfo } from "../../services/postservices";
 
-const AddAccountModal = ({ open, onClose }) => {
+const AddAccountModal = ({ open, onClose, onSuccess}) => {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -78,7 +78,7 @@ const AddAccountModal = ({ open, onClose }) => {
       if (data && resData && resData1) {
         alert("Account Created Successfully.");
         resetForm();
-        onClose();
+        onSuccess();
       }
     } catch (error) {
       console.error(error);

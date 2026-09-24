@@ -848,3 +848,15 @@ export const getNotice = async () => {
 
   return formattedData || [];
 };//Ok
+
+export const getEmploymentStatus = async () => {
+  const { data, error } = await supabase
+    .from("employment_status")
+    .select("*");
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+};//Ok
