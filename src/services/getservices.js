@@ -238,7 +238,7 @@ export const getLeaveApproverByDepartment = async (department) => {
   const employeeIdEmail = data.employee_id_email;
 
   const approverIDs = employeeIdEmail.map(
-    (employee) => Number(employee.id)
+    (employee) => Number(employee.account_id)
   );
   const approverEmails = employeeIdEmail.map(
     (employee) => employee.email
@@ -259,7 +259,7 @@ const getLeaveApproverByDepartment_Name = async (IDs) => {
   const { data, error } = await supabase
     .from("employee")
     .select("firstname, middlename, lastname")
-    .in("id", IDs);
+    .in("account_id", IDs);
 
   if (error) {
     throw error;
@@ -664,7 +664,7 @@ export const getLeaveApprovers = async () => {
 
 
         // Build full name
-        
+
         const fullName = formatName_FN_MI_LN(employee.firstname, employee.middlename, employee.lastname);
 
         return {
@@ -761,7 +761,7 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
   }
   if (!ServicePeriodEnd) {
     throw new Error("Service Period End is Required.");
-  }  
+  }
   if (!NetAmount) {
     throw new Error("Net Amount is Required.");
   }
