@@ -336,123 +336,143 @@ export const cancelApplication = async (Id) => {
 };//Ok
 
 export const updatePowerRateYear = async (id, year, pdfUrl, rates) => {
+  const { data, error } = await supabase
+    .from("power_rates")
+    .update({
+      year: year,
+      pdf_url: pdfUrl || null,
+      rates: rates,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
-  try {
-    const { data, error } = await supabase
-      .from("power_rates")
-      .update({
-        year: year,
-        pdf_url: pdfUrl || null,
-        rates: rates,
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(
-        "Error updating power rate year:",
-        error
-      );
-
-      return {
-        success: false,
-        message: "Unable to update power rate year.",
-        data: null,
-        error,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Power rates updated successfully.",
-      data,
-    };
-  } catch (error) {
-    console.error(
-      "Unexpected error updating power rate year:",
-      error
-    );
-
-    return {
-      success: false,
-      message:
-        "An unexpected error occurred while updating the power rates.",
-      data: null,
-      error,
-    };
+  if (error) {
+    throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const updatePowerAdvisory = async (id, imageUrl, order) => {
-  try {
-    if (!id) {
-      throw new Error("Advisory ID is required.");
-    }
+  if (!id) {
+    throw new Error("Advisory ID is required.");
+  }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
-    }
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
-    }
-
-    const { data, error } = await supabase
-      .from("power_rate_advisories")
-      .update({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error(
-      "Error updating power rate advisory:",
-      error
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
     );
+  }
 
+  const { data, error } = await supabase
+    .from("power_rate_advisories")
+    .update({
+      image_url: imageUrl,
+      display_order: Number(order),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
     throw error;
   }
-};
+
+  return data;
+};//Ok
 
 export const updateGenerationCharge = async (id, imageUrl, order) => {
-  try {
-    if (!id) {
-      throw new Error("ID is required.");
+  if (!id) {
+    throw new Error("ID is required.");
+  }
+
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
+
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("generation_charge")
+    .update({
+      image_url: imageUrl,
+      display_order: Number(order),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};//Ok
+
+export const updateLeaveApproverDepartment = async (id, department, approvers) => {
+  if (!id) {
+    throw new Error("No ID Provided.");
+  }  
+  if (!department || !department.trim()) {
+    throw new Error("No Department Provided.");
+  }
+  if (!Array.isArray(approvers)) {
+    throw new Error("No Approvers Provided.");
+  }
+
+  // Validate each approver
+  for (const approver of approvers) {
+    if (!approver.id) {
+      throw new Error("An approver is missing an employee ID.");
     }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
+    if (!approver.email) {
+      throw new Error("An approver is missing an email address.");
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("can_approve_leave")
+    .update({
+      department: department.trim(),
+      employee_id_email: approvers,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+    if (error) {
+      throw error;
     }
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
+    return data;
+};//Ok
+
+export const updateEmployee = async (updatedData, id) => {
+    if (!updatedData || !id) {
+      throw new Error("Account ID and/or Updated Data is Required.");
     }
 
     const { data, error } = await supabase
-      .from("generation_charge")
-      .update({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
+      .from("employee")
+      .update(updatedData)
       .eq("id", id)
       .select()
       .single();
@@ -462,198 +482,26 @@ export const updateGenerationCharge = async (id, imageUrl, order) => {
     }
 
     return data;
-  } catch (error) {
-    console.error(
-      "Error updating generation charge:",
-      error
-    );
+};//Ok
 
+export const updateAccount = async (updatedData, id) => {
+  if (!updatedData || !id) {
+    throw new Error("Employee ID and/or Updated Data is Required.");
+  }
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .update(updatedData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
     throw error;
   }
-};
 
-export const updateLeaveApproverDepartment = async (
-  id,
-  department,
-  approvers
-) => {
-  try {
-    // Validate ID
-    if (!id) {
-      return {
-        success: false,
-        message: "Department ID is required.",
-        response: null,
-      };
-    }
-
-    // Validate department
-    if (!department || !department.trim()) {
-      return {
-        success: false,
-        message: "Department is required.",
-        response: null,
-      };
-    }
-
-    // Validate approvers
-    if (!Array.isArray(approvers)) {
-      return {
-        success: false,
-        message: "Approvers must be an array.",
-        response: null,
-      };
-    }
-
-    // Validate each approver
-    for (const approver of approvers) {
-      if (!approver.id) {
-        return {
-          success: false,
-          message: "An approver is missing an employee ID.",
-          response: null,
-        };
-      }
-
-      if (!approver.email) {
-        return {
-          success: false,
-          message: "An approver is missing an email address.",
-          response: null,
-        };
-      }
-    }
-
-    // Update database
-    const { data, error } = await supabase
-      .from("can_approve_leave")
-      .update({
-        department: department.trim(),
-        employee_id_email: approvers,
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    // Supabase/database error
-    if (error) {
-      console.error(
-        "Error updating leave approvers:",
-        error
-      );
-
-      // Duplicate department
-      if (error.code === "23505") {
-        return {
-          success: false,
-          message:
-            "This department already has a leave approver configuration.",
-          response: null,
-        };
-      }
-
-      return {
-        success: false,
-        message:
-          error.message ||
-          "Failed to update leave approvers.",
-        response: null,
-      };
-    }
-
-    // No record found
-    if (!data) {
-      return {
-        success: false,
-        message:
-          "Leave approver configuration was not found.",
-        response: null,
-      };
-    }
-
-    // Successful update
-    return {
-      success: true,
-      message: "Leave approvers updated successfully.",
-      response: data,
-    };
-
-  } catch (error) {
-    console.error(
-      "Unexpected error updating leave approvers:",
-      error
-    );
-
-    return {
-      success: false,
-      message:
-        error?.message ||
-        "An unexpected error occurred while updating leave approvers.",
-      response: null,
-    };
-  }
-};
-
-export const updateEmployee = async (id, dataInfo) => {
-  try {
-    const { data, error } = await supabase
-      .from("employees")
-      .update(dataInfo)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Update Error:", error);
-
-      // Duplicate value
-      if (error.code === "23505") {
-        if (error.message.includes("user_id")) {
-          return {
-            success: false,
-            message: "This user is already assigned to an employee.",
-            response: error,
-          };
-        }
-
-        if (error.message.includes("empnumber")) {
-          return {
-            success: false,
-            message: "Employee number already exists.",
-            response: error,
-          };
-        }
-
-        return {
-          success: false,
-          message: "Duplicate employee information.",
-          response: error,
-        };
-      }
-
-      return {
-        success: false,
-        message: "Update Failed.",
-        response: error,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Employee Updated Successfully.",
-      response: data,
-    };
-
-  } catch (error) {
-    console.error("Update Exception:", error);
-
-    return {
-      success: false,
-      message: "Update Failed.",
-      response: error,
-    };
-  }
-};
+  return data;
+};//Ok
 
 export const updatePowerInterruption = async (id, imageUrl, description, type) => {
   if (!id) {
@@ -675,6 +523,7 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
         image_url: imageUrl,
         type: type,
         description: description,
+        updated_at: new Date().toISOString()
       })
       .eq("id", id)
       .select()
@@ -692,7 +541,7 @@ export const updatePowerInterruption = async (id, imageUrl, description, type) =
     );
     throw error;
   }
-};
+};//Ok
 
 export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
   if (!id) {
@@ -714,6 +563,7 @@ export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
         image_url: imageUrl,
         title: cleanTitle,
         file_url: cleanFileUrl,
+        updated_at: new Date().toISOString()
       })
       .eq("id", id)
       .select()
@@ -731,4 +581,4 @@ export const updateNotice = async (cleanTitle, cleanFileUrl, imageUrl, id) => {
     );
     throw error;
   }
-};
+};//Ok

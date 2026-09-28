@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  FaEdit,
   FaPlus,
   FaSave,
   FaTimes,
   FaFilePdf,
   FaBolt
 } from "react-icons/fa";
+import { Trash2, Settings2 } from "lucide-react";
 
 import { getPowerRateYears } from "../../services/getservices";
 import { updatePowerRateYear } from "../../services/updateservices";
 import { createPowerRateYear } from "../../services/postservices";
+import { deleteRateYear } from "../../services/deleteservices";
 
 const MONTHS = [
   { number: 1, name: "January", short: "JAN" },
@@ -57,10 +58,6 @@ function PowerRateManagement() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
   // Add year modal
   const [showAddYear, setShowAddYear] = useState(false);
 
@@ -72,10 +69,7 @@ function PowerRateManagement() {
     pdf_url: "",
   });
 
-  // --------------------------------------------------
   // Load Years
-  // --------------------------------------------------
-
   useEffect(() => {
     loadYears();
   }, []);
@@ -83,23 +77,15 @@ function PowerRateManagement() {
   const loadYears = async () => {
     try {
       setLoading(true);
-      setError("");
-
       const data = await getPowerRateYears();
-
       const loadedYears = data || [];
-
       const sortedYears = [...loadedYears].sort(
         (a, b) => Number(b.year) - Number(a.year)
       );
-
       setYears(sortedYears);
-
       if (sortedYears.length > 0) {
         const firstYear = sortedYears[0];
-
         setSelectedYear(firstYear);
-
         setRates({
           lowvoltage: firstYear.rates?.lowvoltage || {},
           highvoltage: firstYear.rates?.highvoltage || {},
@@ -109,40 +95,25 @@ function PowerRateManagement() {
         setSelectedYear(null);
         setRates(EMPTY_RATES);
       }
-    } catch (err) {
-      console.error("Error loading power rate years:", err);
-
-      setError(
-        "Unable to load power rate years. Please try again."
-      );
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // --------------------------------------------------
   // Select Year
-  // --------------------------------------------------
-
   const handleSelectYear = (year) => {
     setSelectedYear(year);
-
     setRates({
       lowvoltage: year.rates?.lowvoltage || {},
       highvoltage: year.rates?.highvoltage || {},
       residential: year.rates?.residential || {},
     });
-
     setActiveRateClass("residential");
-
-    setMessage("");
-    setError("");
   };
 
-  // --------------------------------------------------
   // Change Rate
-  // --------------------------------------------------
-
   const handleRateChange = (month, value) => {
     setRates((previous) => ({
       ...previous,
@@ -152,9 +123,6 @@ function PowerRateManagement() {
         [month]: value,
       },
     }));
-
-    setMessage("");
-    setError("");
   };
 
   // --------------------------------------------------
@@ -163,19 +131,13 @@ function PowerRateManagement() {
 
   const handleSaveRates = async () => {
     if (!selectedYear) {
-      setError("No power rate year is selected.");
+      alert("No Power Rate Year is Selected.");
       return;
     }
 
     try {
       setSaving(true);
-      setError("");
-      setMessage("");
-
-      // ---------------------------------------------
       // Validate rates
-      // ---------------------------------------------
-
       for (const rateClass of [
         "residential",
         "lowvoltage",
@@ -183,7 +145,6 @@ function PowerRateManagement() {
       ]) {
         for (const month of MONTHS) {
           const value = rates?.[rateClass]?.[month.number];
-
           // Allow blank / null values
           if (
             value === "" ||
@@ -192,31 +153,18 @@ function PowerRateManagement() {
           ) {
             continue;
           }
-
           const numericRate = Number(value);
-
           if (Number.isNaN(numericRate)) {
-            setError(
-              `${rateClass} ${month.name} must be a valid number.`
-            );
-
+            alert(`${rateClass} ${month.name} must be a valid number.`);
             return;
           }
-
           if (numericRate < 0) {
-            setError(
-              `${rateClass} ${month.name} cannot be negative.`
-            );
-
+            alert(`${rateClass} ${month.name} cannot be negative.`);
             return;
           }
         }
       }
-
-      // ---------------------------------------------
-      // Format rates before sending to Supabase
-      // ---------------------------------------------
-
+      // Format rates before sending
       const formattedRates = {
         residential: {},
         lowvoltage: {},
@@ -240,11 +188,7 @@ function PowerRateManagement() {
               : Number(value);
         }
       }
-
-      // ---------------------------------------------
       // Update database
-      // ---------------------------------------------
-
       const result = await updatePowerRateYear(
         selectedYear.id,
         selectedYear.year,
@@ -252,19 +196,13 @@ function PowerRateManagement() {
         formattedRates
       );
 
-      if (!result?.success) {
-        setError(
-          result?.message ||
-            "Unable to update the power rates."
-        );
-
-        return;
+      if (result) {
+        alert("Update Successfully.");
+      } else {
+        alert("Unable to Update, Please try Again.");
       }
 
-      // ---------------------------------------------
       // Update local state
-      // ---------------------------------------------
-
       const updatedYear = {
         ...selectedYear,
         rates: formattedRates,
@@ -284,22 +222,9 @@ function PowerRateManagement() {
               Number(b.year) - Number(a.year)
           )
       );
-
       setRates(formattedRates);
-
-      setMessage(
-        result.message ||
-          "Power Rates Updated Successfully."
-      );
-    } catch (err) {
-      console.error(
-        "Error saving power rates:",
-        err
-      );
-
-      setError(
-        "Unable to save the power rates. Please try again."
-      );
+    } catch (error) {
+      console.error(error);
     } finally {
       setSaving(false);
     }
@@ -311,52 +236,31 @@ function PowerRateManagement() {
 
   const handleAddYear = async (e) => {
     e.preventDefault();
-
-    setError("");
-    setMessage("");
-
     const year = Number(yearForm.year);
-
     if (!yearForm.year || Number.isNaN(year)) {
-      setError("Please enter a valid year.");
+      alert("Please enter a valid year.");
       return;
     }
-
     if (year < 2000 || year > 2100) {
-      setError(
-        "Please enter a year between 2000 and 2100."
-      );
+      alert("Please enter a year between 2000 and 2100.");
       return;
     }
-
-    if (
-      years.some(
-        (item) => Number(item.year) === year
-      )
-    ) {
-      setError("That year already exists.");
+    if (years.some((item) => Number(item.year) === year)) {
+      alert("That year already exists.");
       return;
     }
 
     try {
       setSaving(true);
-
-      const result = await createPowerRateYear(
-        year,
-        yearForm.pdf_url.trim() || null
-      );
-
-      if (!result?.success) {
-        setError(
-          result?.message ||
-            "Unable to create the year."
-        );
-
+      const result = await createPowerRateYear(year, yearForm.pdf_url.trim() || null);
+      console.log(result);
+      if (result) {
+        alert("Added Successfully.");
+      }else {
+        alert("Unable to Add, Please try Again.");
         return;
       }
-
-      const newYear = result.data;
-
+      const newYear = result;
       const updatedYears = [
         newYear,
         ...years,
@@ -364,11 +268,8 @@ function PowerRateManagement() {
         (a, b) =>
           Number(b.year) - Number(a.year)
       );
-
       setYears(updatedYears);
-
       setSelectedYear(newYear);
-
       setRates({
         lowvoltage:
           newYear.rates?.lowvoltage || {},
@@ -377,80 +278,48 @@ function PowerRateManagement() {
         residential:
           newYear.rates?.residential || {},
       });
-
       setActiveRateClass("residential");
-
-      setMessage(
-        result.message ||
-          `${year} created successfully.`
-      );
-
       setYearForm({
         year: "",
         pdf_url: "",
       });
-
       setShowAddYear(false);
-    } catch (err) {
-      console.error(
-        "Error creating power rate year:",
-        err
-      );
-
-      setError(
-        "Unable to create the year. Please try again."
-      );
+    } catch (error) {
+      console.error(error);
+      if (error.name === "Error") {
+        alert(error.message);
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  // --------------------------------------------------
   // Open Edit Year
-  // --------------------------------------------------
-
   const openEditYear = () => {
     if (!selectedYear) {
       return;
     }
-
     setYearForm({
       year: selectedYear.year,
       pdf_url: selectedYear.pdf_url || "",
     });
-
     setShowEditYear(true);
-
-    setError("");
-    setMessage("");
   };
 
-  // --------------------------------------------------
   // Update Year Information
-  // --------------------------------------------------
-
   const handleUpdateYear = async (e) => {
     e.preventDefault();
-
     if (!selectedYear) {
-      setError("No year selected.");
+      alert("No Year Selected.");
       return;
     }
-
-    setError("");
-    setMessage("");
-
     const year = Number(yearForm.year);
-
     if (!yearForm.year || Number.isNaN(year)) {
-      setError("Please enter a valid year.");
+      alert("Please Enter a Valid Year.");
       return;
     }
-
     if (year < 2000 || year > 2100) {
-      setError(
-        "Please enter a year between 2000 and 2100."
-      );
+      alert("Please enter a year between 2000 and 2100.");
       return;
     }
 
@@ -461,13 +330,12 @@ function PowerRateManagement() {
     );
 
     if (duplicate) {
-      setError("That year already exists.");
+      alert("That year already exists.");
       return;
     }
 
     try {
       setSaving(true);
-
       const result = await updatePowerRateYear(
         selectedYear.id,
         year,
@@ -475,17 +343,13 @@ function PowerRateManagement() {
         selectedYear.rates || rates
       );
 
-      if (!result?.success) {
-        setError(
-          result?.message ||
-            "Unable to update the year."
-        );
-
+      if (result) {
+        alert("Updated Successfully.");
+      }else {
+        alert("Unable to Update, Please try Again.");
         return;
       }
-
-      const updatedYear = result.data;
-
+      const updatedYear = result;
       const updatedYears = years
         .map((item) =>
           item.id === updatedYear.id
@@ -496,11 +360,8 @@ function PowerRateManagement() {
           (a, b) =>
             Number(b.year) - Number(a.year)
         );
-
       setYears(updatedYears);
-
       setSelectedYear(updatedYear);
-
       setRates({
         lowvoltage:
           updatedYear.rates?.lowvoltage || {},
@@ -509,27 +370,63 @@ function PowerRateManagement() {
         residential:
           updatedYear.rates?.residential || {},
       });
-
       setShowEditYear(false);
-
-      setMessage(
-        result.message ||
-          `${year} information updated successfully.`
-      );
-    } catch (err) {
-      console.error(
-        "Error updating power rate year:",
-        err
-      );
-
-      setError(
-        "Unable to update the year. Please try again."
-      );
+    } catch (error) {
+      console.error(error);
     } finally {
       setSaving(false);
     }
   };
+  const deleteSelectedYear = async (id) => {
+    if (!id) {
+      alert("No ID Provided.");
+      return;
+    }
 
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this year? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setSaving(true);
+
+      const res = await deleteRateYear(id);
+
+      if (res.success) {
+        const updatedYears = years.filter((year) => year.id !== id);
+
+        setYears(updatedYears);
+
+        if (updatedYears.length > 0) {
+          const nextYear = updatedYears[0];
+
+          setSelectedYear(nextYear);
+          setRates({
+            lowvoltage: nextYear.rates?.lowvoltage || {},
+            highvoltage: nextYear.rates?.highvoltage || {},
+            residential: nextYear.rates?.residential || {},
+          });
+          setActiveRateClass("residential");
+        } else {
+          setSelectedYear(null);
+          setRates(EMPTY_RATES);
+        }
+
+        setShowEditYear(false);
+
+        alert("Deleted Successfully.");
+      } else {
+        alert("Unable to Delete, Please try Again.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Unable to Delete, Please try Again.");
+    } finally {
+      setSaving(false);
+    }
+  };
   // --------------------------------------------------
   // Loading
   // --------------------------------------------------
@@ -571,26 +468,12 @@ function PowerRateManagement() {
               year: "",
               pdf_url: "",
             });
-            setError("");
-            setMessage("");
             setShowAddYear(true);
           }} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-300 active:scale-[0.98]">
             <FaPlus />
             Add Year
           </button>
         </div>
-
-        {/* MESSAGES */}
-        {message && (
-          <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {message}
-          </div>
-        )}
-        {error && (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {error}
-          </div>
-        )}
 
         {/* MAIN CARD */}
         <section className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
@@ -641,12 +524,17 @@ function PowerRateManagement() {
                       </a>
                     )}
                     <button type="button" onClick={openEditYear} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
-                      <FaEdit />
-                      Edit Year
+                      <Settings2 className="h-4 w-4" />
+                      Edit/Delete Year
                     </button>
 
                     {/* SINGLE SAVE BUTTON */}
-                    <button type="button" onClick={handleSaveRates} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50">
+                    <button
+                      type="button"
+                      onClick={handleSaveRates}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
                       <FaSave />
                       {saving ? "Saving..." : "Save Changes"}
                     </button>
@@ -662,8 +550,6 @@ function PowerRateManagement() {
                     return (
                       <button key={rateClass.id} type="button" onClick={() => {
                         setActiveRateClass(rateClass.id);
-                        setMessage("");
-                        setError("");
                       }} className={`relative whitespace-nowrap px-6 py-4 text-sm font-bold transition ${active ? "text-amber-700" : "text-slate-500 hover:text-slate-800"}`}>
                         {rateClass.label}
                         {active && (
@@ -850,6 +736,14 @@ function PowerRateManagement() {
               <div className="mt-7 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowEditYear(false)} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
                   Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSelectedYear(selectedYear?.id)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-red-700 hover:shadow-md active:scale-[0.98]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
                 </button>
                 <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50">
                   <FaSave />

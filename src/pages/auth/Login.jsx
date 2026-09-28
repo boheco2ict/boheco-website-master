@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabase";
-// import { getEmployeeByUserId, getConsumerByUserId } from "../../services/getservices";
 
 function Login() {
   // =========================================================
@@ -48,7 +47,7 @@ function Login() {
     const validRegEx = /^[^\\&']*$/;
 
     if (!email.match(validRegEx)) {
-      setMsg("Unauthorized email format");
+      setMsg("Unauthorized Email Format.");
       setLoading(false);
       return;
     }
@@ -70,15 +69,13 @@ function Login() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setMsg("Login failed.");
+      setMsg("Login Failed.");
     } finally {
       setLoading(false);
     }
   };
-
-  // =========================================================
-  // CONSUMER LOGIN - NEW
-  // =========================================================
+  
+  // CONSUMER LOGIN
   const handleGoogleLogin = async () => {
     try {
       setConsumerMsg("");

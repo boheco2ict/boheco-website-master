@@ -1,15 +1,15 @@
 import { useCallback, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
-import { supabase } from "../../services/supabase";
-import { createLeaveApplication } from "../../services/postservices";
-import { formatName_FN_MI_LN } from "../../utils/utils";
-import { useLeaveApprovers } from "../../hooks/useLeaveApprovers";
-import { useLeaveApplications } from "../../hooks/useLeaveApplications";
-import LeaveBalancesGrid from "./leave/LeaveBalancesGrid";
-import ApplyLeaveModal from "./leave/ApplyLeaveModal";
-import AssignedApplicationsSection from "./leave/AssignedApplicationsSection";
-import PendingApplicationsSection from "./leave/PendingApplicationsSection";
-import LeaveHistorySection from "./leave/LeaveHistorySection";
+import { supabase } from "../../../services/supabase";
+import { createLeaveApplication } from "../../../services/postservices";
+import { formatName_FN_MI_LN } from "../../../utils/utils";
+import { useLeaveApprovers } from "../../../hooks/useLeaveApprovers";
+import { useLeaveApplications } from "../../../hooks/useLeaveApplications";
+import LeaveBalancesGrid from "./LeaveBalancesGrid";
+import ApplyLeaveModal from "./ApplyLeaveModal";
+import AssignedApplicationsSection from "./AssignedApplicationsSection";
+import PendingApplicationsSection from "./PendingApplicationsSection";
+import LeaveHistorySection from "./LeaveHistorySection";
 
 function LeaveCreditsTab({ leaveCredits, employee: employeeInfo }) {
   const myID = employeeInfo.employee.id;

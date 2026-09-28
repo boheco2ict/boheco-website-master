@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaChevronLeft, FaChevronRight, FaSearch } from "react-icons/fa";
 import { getNotice } from "../../services/getservices";
 import { formatDateComplete } from "../../utils/utils";
+import { UserRound, Clock3 } from "lucide-react";
 
 function Notice() {
   const [notices, setNotices] = useState([]);
@@ -139,18 +140,22 @@ function Notice() {
                   />
 
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent p-4 text-white sm:p-5">
-                    {/* <p className="text-xs uppercase tracking-[0.2em] text-amber-300">
-                      Auto slide on
-                    </p> */}
-
-                    <h2 className="mt-1 line-clamp-2 text-lg font-bold sm:text-2xl">
+                    <h2 className="mt-1 line-clamp-2 text-[15px] font-bold">
                       {activeNotice.title}
                     </h2>
+
                     {activeNotice.posted_by && (
-                      <p className="mt-1 text-[10px] text-slate-200">
-                        Posted by {activeNotice.posted_by} <br></br>
-                        Posted at {formatDateComplete(activeNotice.created_at)}
-                      </p>
+                      <div className="mt-1.5 flex flex-col gap-1 text-[9px] text-slate-200">
+                        <div className="flex items-center gap-1.5">
+                          <UserRound className="h-3 w-3 shrink-0" />
+                          <span>{activeNotice.posted_by}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Clock3 className="h-3 w-3 shrink-0" />
+                          <span>{formatDateComplete(activeNotice.created_at)}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -231,14 +236,22 @@ function Notice() {
                           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                       }`}
                     >
-                      <p className="line-clamp-2 text-sm font-semibold text-slate-900">
+                      <p className="line-clamp-2 text-[12px] font-semibold text-slate-900">
                         {item.title}
                       </p>
+
                       {item.posted_by && (
-                        <p className="mt-1 text-[8px] text-slate-500">
-                          Posted by {item.posted_by} <br></br>
-                          Posted at {formatDateComplete(activeNotice.created_at)}
-                        </p>
+                        <div className="mt-1.5 flex flex-col gap-0.5 text-[8px] text-slate-500">
+                          <div className="flex items-center gap-1">
+                            <UserRound className="h-2.5 w-2.5 shrink-0" />
+                            <span>{item.posted_by}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Clock3 className="h-2.5 w-2.5 shrink-0" />
+                            <span>{formatDateComplete(item.created_at)}</span>
+                          </div>
+                        </div>
                       )}
                     </button>
                   </li>

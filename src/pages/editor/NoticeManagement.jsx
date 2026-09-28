@@ -9,7 +9,6 @@ import {
   FaExternalLinkAlt,
   FaTimes,
 } from "react-icons/fa";
-import { formatDateComplete } from "../../utils/utils";
 import { useAuth } from "../../context/AuthContext";
 import {
   uploadStorageImage,
@@ -19,6 +18,8 @@ import { getNotice } from "../../services/getservices";
 import { createNotice } from "../../services/postservices";
 import { deleteNotice } from "../../services/deleteservices";
 import { updateNotice } from "../../services/updateservices";
+import { UserRound, Clock3 } from "lucide-react";
+import { formatDateComplete } from "../../utils/utils";
 
 const BUCKET_NAME = "WEBSITE ASSETS";
 const STORAGE_FOLDER = "NOTICE";
@@ -432,12 +433,17 @@ const NoticeManagement = () => {
                     {notice.title}
                   </h3>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                    <p className="text-[10px] text-slate-500">
-                      Posted by {notice.posted_by} <br></br>
-                      Posted at {formatDateComplete(notice.created_at)}
-                    </p>
-                  </div>  
+                  <div className="mt-2 flex flex-col gap-1 text-[10px] text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <UserRound className="h-3 w-3 shrink-0" />
+                      <span>{notice.posted_by}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Clock3 className="h-3 w-3 shrink-0" />
+                      <span>{formatDateComplete(notice.created_at)}</span>
+                    </div>
+                  </div>
 
                   {notice.file_url && (
                     <a

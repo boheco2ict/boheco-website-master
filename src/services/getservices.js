@@ -1,6 +1,5 @@
 import { supabase } from "./supabase";
 import { formatName_FN_MI_LN } from "../utils/utils";
-import { TABLES, COLUMNS } from "../constants/database";
 const API = "https://bill-inquiry-api.onrender.com/api/v1/consumer";
 
 export const getLeaveApplicationById = async (applicationId) => {
@@ -91,7 +90,7 @@ export const getAllAuthUsers = async () => {
   }
 
   return data || [];
-};
+};//Ok
 
 export const getEmployeeByUserId = async (Id) => {
   if (!Id) {
@@ -134,7 +133,6 @@ export const getAllEmployees = async () => {
   if (error) {
     throw error;
   }
-
   return data || [];
 };//Ok
 
@@ -203,6 +201,25 @@ export const getDepartmentMeaning = async () => {
   return data;
 };//Ok
 
+export const getAllAccounts = async () => {
+  const { data, error } = await supabase
+    .from("accounts")
+    .select(
+      `
+        *,
+        employee("*")
+      `
+    )
+    .neq("role", "CONSUMER")
+    .order("id", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};//Ok
+
 export const getLeaveApproverByDepartment = async (department) => {
 
   if (!department) {
@@ -218,7 +235,6 @@ export const getLeaveApproverByDepartment = async (department) => {
   if (error) {
     throw error;
   }
-
   const employeeIdEmail = data.employee_id_email;
 
   const approverIDs = employeeIdEmail.map(
@@ -525,73 +541,77 @@ export const getPowerRateYears = async () => {
     .order("year", { ascending: false });
 
   if (error) {
-    console.error("Error fetching power rate years:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getPowerAdvisories = async () => {
   const { data, error } = await supabase
     .from("power_rate_advisories")
-    .select("*")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
     .order("display_order", {
       ascending: true,
     });
 
   if (error) {
-    console.error("Error fetching power advisories:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getGenerationCharges = async () => {
   const { data, error } = await supabase
     .from("generation_charge")
-    .select("*")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
     .order("display_order", {
       ascending: true,
     });
 
   if (error) {
-    console.error("Error fetching generation charge:", error);
     throw error;
   }
 
   return data;
-};
+};//Ok
 
 export const getLeaveApprovers = async () => {
-  // ==========================================
   // 1. Get leave approval configurations
-  // ==========================================
   const { data, error } = await supabase
     .from("can_approve_leave")
     .select("*")
     .order("department", { ascending: true });
 
   if (error) {
-    console.error("Error fetching leave approvers:", error);
     throw error;
   }
 
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-
-  // ==========================================
   // 2. Collect employee IDs
-  // ==========================================
   const employeeIds = data.flatMap((department) =>
     department.employee_id_email?.map(
       (approver) => String(approver.id)
     ) || []
   );
-
 
   // Remove duplicate IDs
   const uniqueEmployeeIds = [
@@ -603,35 +623,17 @@ export const getLeaveApprovers = async () => {
     return data;
   }
 
-
-  // ==========================================
   // 3. Get employee information
-  // ==========================================
-  const {
-    data: employees,
-    error: employeeError,
-  } = await supabase
-    .from("employees")
-    .select(
-      "id, firstname, middlename, lastname"
-    )
-    .in(
-      "id",
-      uniqueEmployeeIds.map(Number)
-    );
+  const {data: employees, error: employeeError} = await supabase
+    .from("employee")
+    .select("id, firstname, middlename, lastname")
+    .in("id", uniqueEmployeeIds.map(Number));
 
   if (employeeError) {
-    console.error(
-      "Error fetching employee information:",
-      employeeError
-    );
-
     throw employeeError;
   }
 
-  // ==========================================
   // 4. Create employee lookup map
-  // ==========================================
   const employeeMap = new Map(
     employees.map((employee) => [
       String(employee.id),
@@ -639,9 +641,7 @@ export const getLeaveApprovers = async () => {
     ])
   );
 
-  // ==========================================
   // 5. Add full name to approvers
-  // ==========================================
   const formattedData = data.map((department) => ({
 
     ...department,
@@ -676,7 +676,7 @@ export const getLeaveApprovers = async () => {
 
   }));
   return formattedData;
-};
+};//Ok
 
 export const getConsumerByUserId = async (Id) => {
   if (!Id) {
@@ -750,7 +750,6 @@ export const getLedgerAll = async (accounts) => {
 
     return results.filter(Boolean);
   } catch (error) {
-    console.error("Get Ledger Error:", error);
     return null;
   }
 };
@@ -782,7 +781,7 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
   );
 
   if (!response.ok) {
-    throw new Error("Account Not Found.");
+    throw new Error("No Record Found, Please Try Again.");
   }
 
   const data = await response.json();
@@ -792,9 +791,18 @@ export const getLedger = async (AccountNumber, ServicePeriodEnd, NetAmount ) => 
 
 export const getPowerInterruption = async () => {
   const { data, error } = await supabase
-    .from(TABLES.POWER_INTERRUPTION)
-    .select("*")
-    .order(COLUMNS.CREATED_AT, {
+    .from("power_interruption")
+    .select(
+      `
+        *,
+        posted_by_employee_id:employee (
+          firstname,
+          middlename,
+          lastname
+        )
+      `
+    )
+    .order("created_at", {
       ascending: false,
     });
 
@@ -810,16 +818,16 @@ export const getPowerInterruption = async () => {
 
 export const getNotice = async () => {
   const { data, error } = await supabase
-    .from(TABLES.NOTICE)
+    .from("notice")
     .select(`
       *,
-      ${COLUMNS.POSTED_BY}:${TABLES.EMPLOYEES} (
-        ${COLUMNS.FIRSTNAME},
-        ${COLUMNS.MIDDLENAME},
-        ${COLUMNS.LASTNAME}
+      posted_by:employee (
+        firstname,
+        middlename,
+        lastname
       )
     `)
-    .order(COLUMNS.CREATED_AT, {
+    .order("created_at", {
       ascending: false,
     });
 
@@ -839,4 +847,16 @@ export const getNotice = async () => {
   }));
 
   return formattedData || [];
+};//Ok
+
+export const getEmploymentStatus = async () => {
+  const { data, error } = await supabase
+    .from("employment_status")
+    .select("*");
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
 };//Ok

@@ -14,9 +14,7 @@ function AssignedApplicationsSection({
   onApprove,
   onReject,
 }) {
-  const { page, totalPages, paginated, goToPrevious, goToNext } =
-    usePagedList(applications);
-
+  const { page, totalPages, paginated, goToPrevious, goToNext } = usePagedList(applications);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
 
@@ -51,7 +49,7 @@ function AssignedApplicationsSection({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">
-                  {a.id} - {a.leave_type} | {a.employee_id} -{" "}
+                  {a.leave_type} | {" "}
                   {formatName_FN_MI_LN(
                     a.employee.firstname,
                     a.employee.middlename,

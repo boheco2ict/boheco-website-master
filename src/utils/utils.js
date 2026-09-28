@@ -49,17 +49,21 @@ export { extractBillDetails };
 
 export const formatName_FN_MI_LN = (FN, MI, LN) => {
     const middleInitial = MI ? `${MI.charAt(0)}.` : "";
-    return `${FN} ${middleInitial} ${LN}`.replace(/\s+/g, " ").trim();
+    return `${FN ? FN : "—"} ${middleInitial} ${LN ? LN : "—"}`.replace(/\s+/g, " ").trim();
 };
 export const formatName_FN_MN_LN = (FN, MN, LN) => {
     const middleName = MN ? MN : "";
-    return `${FN} ${middleName} ${LN}`.replace(/\s+/g, " ").trim();
+    return `${FN ? FN : "—"} ${middleName} ${LN ? LN : "—"}`.replace(/\s+/g, " ").trim();
 };
-export const formatDate_Month_Day_Year = (date) => new Date(date).toLocaleDateString("en-US", {
+export const formatDate_Month_Day_Year = (date) => {
+  if (!date) return "—";
+
+  return new Date(date).toLocaleDateString("en-US", {
     month: "long",
     day: "2-digit",
     year: "numeric",
-});
+  });
+};
 
 export const formatBillingMonth_Year = (date) => {
   if (!date) return "—";
@@ -72,7 +76,7 @@ export const formatBillingMonth_Year = (date) => {
 };
 
 export const formatDateComplete = (date) => {
-  if (!date) return "Date unavailable";
+  if (!date) return "—";
 
   return new Date(date).toLocaleString("en-PH", {
     year: "numeric",

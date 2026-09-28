@@ -203,223 +203,115 @@ export const createPowerRateYear = async (year, pdfUrl) => {
       "12": null,
     },
   };
-  try {
-    // -----------------------------
-    // Validate year
-    // -----------------------------
-    if (!year) {
-      return {
-        success: false,
-        message: "Year is required.",
-        data: null,
-      };
-    }
 
-    const numericYear = Number(year);
-
-    if (Number.isNaN(numericYear)) {
-      return {
-        success: false,
-        message: "Year must be a valid number.",
-        data: null,
-      };
-    }
-
-    if (numericYear < 2000 || numericYear > 2100) {
-      return {
-        success: false,
-        message: "Please enter a valid year between 2000 and 2100.",
-        data: null,
-      };
-    }
-
-    // -----------------------------
-    // Validate PDF URL
-    // -----------------------------
-    let formattedPdfUrl = null;
-
-    if (pdfUrl && pdfUrl.trim() !== "") {
-      try {
-        const url = new URL(pdfUrl.trim());
-
-        if (!["http:", "https:"].includes(url.protocol)) {
-          return {
-            success: false,
-            message: "PDF URL must use HTTP or HTTPS.",
-            data: null,
-          };
-        }
-
-        formattedPdfUrl = pdfUrl.trim();
-      } catch {
-        return {
-          success: false,
-          message: "Please enter a valid PDF URL.",
-          data: null,
-        };
-      }
-    }
-
-    // -----------------------------
-    // Check if year already exists
-    // -----------------------------
-    const { data: existingYear, error: checkError } =
-      await supabase
-        .from("power_rates")
-        .select("id, year")
-        .eq("year", numericYear)
-        .maybeSingle();
-
-    if (checkError) {
-      console.error(
-        "Error checking existing power rate year:",
-        checkError
-      );
-
-      return {
-        success: false,
-        message: "Unable to verify if the year already exists.",
-        data: null,
-      };
-    }
-
-    if (existingYear) {
-      return {
-        success: false,
-        message: `Power rate year ${numericYear} already exists.`,
-        data: existingYear,
-      };
-    }
-
-    // -----------------------------
-    // Insert new year
-    // -----------------------------
-    const { data, error } = await supabase
+  // Validate year
+  if (!year) {
+    throw new Error("No Year Provided.");
+  }
+  const numericYear = Number(year);
+  const pdfURLTrim = pdfUrl ? pdfUrl.trim() : null;
+    
+  // Check if year already exists
+  const { data: existingYear, error: checkError } =
+    await supabase
       .from("power_rates")
-      .insert({
-        year: numericYear,
-        pdf_url: formattedPdfUrl,
-        rates: defaultRates,
-      })
-      .select()
-      .single();
+      .select("id, year")
+      .eq("year", numericYear)
+      .maybeSingle();
 
-    if (error) {
-      console.error(
-        "Error creating power rate year:",
-        error
-      );
-
-      return {
-        success: false,
-        message: "Unable to create the power rate year.",
-        data: null,
-        error: error,
-      };
-    }
-
-    // -----------------------------
-    // Success
-    // -----------------------------
-    return {
-      success: true,
-      message: `Power rate year ${numericYear} created successfully.`,
-      data: data,
-    };
-
-  } catch (error) {
-    console.error(
-      "Unexpected error creating power rate year:",
-      error
-    );
-
-    return {
-      success: false,
-      message:
-        "An unexpected error occurred while creating the power rate year.",
-      data: null,
-      error,
-    };
+  if (checkError) {
+    throw checkError;
   }
-};
+  if (existingYear) {
+    throw new Error(`Power Rate Year ${numericYear} Already Exists.`);
+  }
 
-export const createPowerAdvisory = async (imageUrl, order) => {
-  try {
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
-    }
+  // Insert new year
+  const { data, error } = await supabase
+    .from("power_rates")
+    .insert({
+      year: numericYear,
+      pdf_url: pdfURLTrim,
+      rates: defaultRates,
+    })
+    .select()
+    .single();
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
-    }
-
-    const { data, error } = await supabase
-      .from("power_rate_advisories")
-      .insert({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error(
-      "Error creating power rate advisory:",
-      error
-    );
-
+  if (error) {
     throw error;
   }
-};
+  return data;
+};//Ok
 
-export const createGenerationCharge = async (imageUrl, order) => {
-  try {
-    if (!imageUrl) {
-      throw new Error("Image URL is required.");
-    }
+export const createPowerAdvisory = async (postedbyid, imageUrl, order) => {
+  if (!imageUrl) {
+    throw new Error("Image URL is Required.");
+  }
 
-    if (
-      !Number.isInteger(Number(order)) ||
-      Number(order) < 1
-    ) {
-      throw new Error(
-        "Display order must be a positive whole number."
-      );
-    }
+  if (!postedbyid) {
+    throw new Error("Posted by ID is Required.");
+  }
 
-    const { data, error } = await supabase
-      .from("generation_charge")
-      .insert({
-        image_url: imageUrl,
-        display_order: Number(order),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  } catch (error) {
-    console.error(
-      "Error creating generation charge:",
-      error
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
     );
+  }
 
+  const { data, error } = await supabase
+    .from("power_rate_advisories")
+    .insert({
+      posted_by_employee_id: postedbyid,
+      image_url: imageUrl,
+      display_order: Number(order),
+    })
+    .select()
+    .single();
+
+  if (error) {
     throw error;
   }
-};
+
+  return data;
+};//Ok
+
+export const createGenerationCharge = async (postedbyid, imageUrl, order) => {
+  if (!postedbyid) {
+    throw new Error("Posted by ID is Required.");
+  }
+
+  if (!imageUrl) {
+    throw new Error("Image URL is required.");
+  }
+
+  if (
+    !Number.isInteger(Number(order)) ||
+    Number(order) < 1
+  ) {
+    throw new Error(
+      "Display order must be a positive whole number."
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("generation_charge")
+    .insert({
+      image_url: imageUrl,
+      display_order: Number(order),
+      posted_by_employee_id: postedbyid
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};//Ok
 
 export const createLeaveApproverDepartment = async (
   department,
@@ -444,65 +336,42 @@ export const createLeaveApproverDepartment = async (
   return data;
 };
 
-export const createEmployee = async (data) => {
-  try {
-    const { data: newEmployee, error } = await supabase
-      .from("employees")
-      .insert([data])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Create Employee Error:", error);
-
-      // Duplicate record
-      if (error.code === "23505") {
-        if (error.message.includes("user_id")) {
-          return {
-            success: false,
-            message: "This user is already assigned to an employee.",
-            response: error,
-          };
-        }
-
-        if (error.message.includes("empnumber")) {
-          return {
-            success: false,
-            message: "Employee number already exists.",
-            response: error,
-          };
-        }
-
-        return {
-          success: false,
-          message: "Duplicate employee information.",
-          response: error,
-        };
-      }
-
-      return {
-        success: false,
-        message: "Add Employee Failed.",
-        response: error,
-      };
-    }
-
-    return {
-      success: true,
-      message: "Add Employee Successfully.",
-      response: newEmployee,
-    };
-
-  } catch (error) {
-    console.error("Create Employee Exception:", error);
-
-    return {
-      success: false,
-      message: "Add Employee Failed.",
-      response: error,
-    };
+export const createEmployee = async (id) => {
+  if (!id) {
+    throw new Error("User ID is Required.");
   }
-};
+  const { data, error } = await supabase
+    .from("accounts")
+    .insert({
+      user_id: id,
+      role: "USER"
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};//Ok
+
+export const createEmployeeInfo = async (id) => {
+  if (!id) {
+    throw new Error("User ID is Required.");
+  }
+  const { data, error } = await supabase
+    .from("employee")
+    .insert({
+      account_id: id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};//Ok
 
 export const createConsumer = async (id) => {
   if (!id) {
@@ -513,6 +382,7 @@ export const createConsumer = async (id) => {
     .from("accounts")
     .insert({
       user_id: id,
+      role: "CONSUMER"
     })
     .select()
     .single();
@@ -530,7 +400,6 @@ export const createConsumerAccountBinding = async (consumerId, accountNumber, mo
   }
   const servicePeriodEnd = `${month}/01/${year}`;
 
-try {
    // =========================================
     // CHECK IF ACCOUNT NUMBER ALREADY EXISTS
     // INSIDE consumers_boheco_account
@@ -538,7 +407,7 @@ try {
     const { data: existingAccount, error: existingError } =
       await supabase
         .from("consumers_boheco_account")
-        .select("id, consumer_id, account_number")
+        .select("*")
         .eq("account_number", accountNumber)
         .limit(1)
         .maybeSingle();
@@ -558,21 +427,13 @@ try {
     const getLedgerResponse = await getLedger(accountNumber, servicePeriodEnd, netAmount);
 
     if (!getLedgerResponse) {
-      return {
-        success: false,
-        message: "No Record Found, Please Try Again.",
-        data: null,
-      };
+      throw new Error("No Record Found, Please Try Again.");
     }
 
     const resData = getLedgerResponse?.data?.[0];
 
-    if (!resData) {
-      return {
-        success: false,
-        message: "No Record Found, Please Try Again.",
-        data: null,
-      };
+    if (!getLedgerResponse) {
+      throw new Error("No Record Found, Please Try Again.");
     }
 
     // =========================================
@@ -583,7 +444,7 @@ try {
     const { data: addAccountData, error: accountError } = await supabase
       .from("consumers_boheco_account")
       .insert({
-        consumer_id: consumerId,
+        account_id: consumerId,
         account_number: accountNumber,
         service_period_end: servicePeriodEnd,
         net_amount: netAmount,
@@ -593,35 +454,20 @@ try {
       .single();
 
     if (accountError) {
-      // console.error("Add Account Error:", accountError);
-
-      return {
-        success: false,
-        message: "Add Account Failed.",
-        data: null,
-      };
+      throw accountError;
     }
 
-    return {
-      success: true,
-      message: "Add Account Successfully.",
-      data: addAccountData,
-    };
-  } catch (error) {
-    // console.error("Add Account Exception:", error);
-
-    return {
-      success: false,
-      message: "Add Account Failed.",
-      data: null,
-    };
-  }
+    return addAccountData;
 };
 
-export const createPowerInterruption = async (imageUrl, description, type) => {
+export const createPowerInterruption = async (postedbyid, imageUrl, description, type) => {
   const cleanImageUrl = imageUrl?.trim();
   const cleanType = type?.trim();
   const cleanDescription = description?.trim();
+
+  if (!postedbyid) {
+    throw new Error("Posted by ID is Required.");
+  }
 
   if (!cleanImageUrl) {
     throw new Error("Image URL is required to create a power interruption.");
@@ -639,6 +485,7 @@ export const createPowerInterruption = async (imageUrl, description, type) => {
       image_url: cleanImageUrl,
       type: cleanType,
       description: cleanDescription,
+      posted_by_employee_id: postedbyid
     })
     .select()
     .single();
@@ -649,7 +496,7 @@ export const createPowerInterruption = async (imageUrl, description, type) => {
   }
 
   return data;
-};
+};//Ok
 
 export const createNotice = async (cleanTitle, cleanFileUrl, uploadedImageUrl, ID) => {
   if (!cleanTitle) {

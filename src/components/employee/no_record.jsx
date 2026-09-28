@@ -1,9 +1,9 @@
 const NoRecord = () => {
   const message = "No Record Found";
-  return (
-    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-lg p-8 text-center">
 
+  return (
+    <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
         {/* Icon */}
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
           <svg

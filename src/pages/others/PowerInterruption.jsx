@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getPowerInterruption } from "../../services/getservices";
-import { formatDateComplete } from "../../utils/utils";
+import { formatDateComplete, formatName_FN_MI_LN } from "../../utils/utils";
+import { UserRound, Clock3, MessageSquareText } from "lucide-react";
 
 const PowerInteruption = () => {
   const [powerInterruptions, setPowerInterruptions] = useState({
@@ -281,16 +282,33 @@ const PowerInterruptionSection = ({
 
               {/* IMAGE INFORMATION */}
               <div className="absolute inset-x-0 bottom-0 p-5">
-                <p className="text-xs font-medium text-white/70">
-                  Posted {formatDateComplete(activeItem.created_at)}
-                </p>
+                <div className="flex flex-col gap-1 text-[10px] text-white/70">
+                  <div className="mt-1 flex items-start gap-1.5 text-[11px] text-white">
+                    <MessageSquareText className="mt-0.5 h-3 w-3 shrink-0 text-white/70" />
+                    <h3 className="line-clamp-2">
+                      {activeItem.description ||
+                        (isschedule
+                          ? "Schedule Power Interruption"
+                          : "Unschedule Power Interruption")}
+                    </h3>
+                  </div>
 
-                <h3 className="mt-1 line-clamp-2 text-lg font-semibold text-white md:text-xl">
-                  {activeItem.description ||
-                    (isschedule
-                      ? "schedule power interruption"
-                      : "Unschedule power interruption")}
-                </h3>
+                  <div className="flex items-center gap-1.5">
+                    <UserRound className="h-3 w-3 shrink-0" />
+                    <span>
+                      {formatName_FN_MI_LN(
+                        activeItem?.posted_by_employee_id?.firstname,
+                        activeItem?.posted_by_employee_id?.middlename,
+                        activeItem?.posted_by_employee_id?.lastname
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Clock3 className="h-3 w-3 shrink-0" />
+                    <span>{formatDateComplete(activeItem.created_at)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -365,16 +383,33 @@ const PowerInterruptionSection = ({
 
                     {/* Details */}
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-medium text-stone-800">
-                        {item.description ||
-                          (isschedule
-                            ? "schedule power interruption"
-                            : "Unschedule power interruption")}
-                      </p>
+                      <div className="flex items-start gap-1.5">
+                        <MessageSquareText className="mt-0.5 h-[11px] w-[11px] shrink-0 text-stone-400" />
+                        <p className="line-clamp-2 text-[10px] font-normal text-stone-800">
+                          {item.description ||
+                            (isschedule
+                              ? "Schedule Power Interruption"
+                              : "Unschedule Power Interruption")}
+                        </p>
+                      </div>
 
-                      <p className="mt-1 text-xs text-stone-400">
-                        {formatDateComplete(item.created_at)}
-                      </p>
+                      <div className="mt-1.5 flex flex-col gap-0.5 text-[8px] text-stone-400">
+                        <div className="flex items-center gap-1.5">
+                          <UserRound className="h-[10px] w-[10px] shrink-0" />
+                          <span>
+                            {formatName_FN_MI_LN(
+                              item?.posted_by_employee_id?.firstname,
+                              item?.posted_by_employee_id?.middlename,
+                              item?.posted_by_employee_id?.lastname
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Clock3 className="h-[10px] w-[10px] shrink-0" />
+                          <span>{formatDateComplete(item.created_at)}</span>
+                        </div>
+                      </div>
                     </div>
                   </button>
                 );

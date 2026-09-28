@@ -13,9 +13,9 @@ import { getEmployeeByUserId } from "../../services/getservices";
 
 // UI Components
 import ProfileTab from "../../components/employee/ProfileTab";
-import LeaveCreditsTab from "../../components/employee/LeaveCreditsTab";
-import MemoTab from "../../components/employee/MemoTab";
-import OfficeOrderTab from "../../components/employee/OfficeOrderTab";
+import LeaveCreditsTab from "../../components/employee/leave/LeaveCreditsTab";
+import MemoTab from "../../components/employee/memotab/MemoTab";
+import OfficeOrderTab from "../../components/employee/officeorder/OfficeOrderTab";
 import Profile from "../../components/employee/Profile";
 
 const tabs = [
@@ -69,7 +69,6 @@ function Dashboard() {
     () => employee?.employee?.employee_leave_balances || [],
     [employee?.employee?.employee_leave_balances]
   );
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
@@ -182,7 +181,7 @@ function Dashboard() {
       try {
         const refreshedEmployee = await getEmployeeByUserId(user.id);
         setEmployee({ ...employee, ...refreshedEmployee });
-        
+
         // write debug info
         setLastUpdateResult((prev) => ({
           ...prev,

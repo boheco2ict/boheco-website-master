@@ -177,7 +177,7 @@ const BillInquiry = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 pb-16 pt-20 sm:px-6 lg:px-10">
-      <main className="mx-auto max-w-4xl">
+      <main className="mx-auto mt-10 max-w-4xl">
 
         {/* =====================================================
             MAIN CARD
@@ -213,7 +213,7 @@ const BillInquiry = () => {
                 <h1 className="mt-6 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">
                   Retrieve your
                   <span className="block text-amber-400">
-                    BOHECO II bill
+                    BOHECO II Bill
                   </span>
                   instantly.
                 </h1>
