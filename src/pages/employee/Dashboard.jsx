@@ -17,7 +17,6 @@ import LeaveCreditsTab from "../../components/employee/leave/LeaveCreditsTab";
 import MemoTab from "../../components/employee/memotab/MemoTab";
 import OfficeOrderTab from "../../components/employee/officeorder/OfficeOrderTab";
 import Profile from "../../components/employee/Profile";
-import { use } from "react";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: FaUser },
@@ -182,7 +181,7 @@ function Dashboard() {
       try {
         const refreshedEmployee = await getEmployeeByUserId(user.id);
         setEmployee({ ...employee, ...refreshedEmployee });
-        
+
         // write debug info
         setLastUpdateResult((prev) => ({
           ...prev,
