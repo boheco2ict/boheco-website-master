@@ -238,7 +238,7 @@ export const getLeaveApproverByDepartment = async (department) => {
   const employeeIdEmail = data.employee_id_email;
 
   const approverIDs = employeeIdEmail.map(
-    (employee) => Number(employee.account_id)
+    (employee) => Number(employee.id)
   );
   const approverEmails = employeeIdEmail.map(
     (employee) => employee.email
@@ -259,7 +259,7 @@ const getLeaveApproverByDepartment_Name = async (IDs) => {
   const { data, error } = await supabase
     .from("employee")
     .select("firstname, middlename, lastname")
-    .in("account_id", IDs);
+    .in("id", IDs);
 
   if (error) {
     throw error;
