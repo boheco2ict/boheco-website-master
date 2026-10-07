@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { getLedger } from "./getservices"; 
+import { getLedger } from "./getservices";
 
 export const createMemo = async (memoName, memoDescription, memoUrl, individualTarget, batchEmployeeIds, recipientType, memoCreatorID) => {
   const memoNameTrim = memoName.trim();
@@ -210,7 +210,7 @@ export const createPowerRateYear = async (year, pdfUrl) => {
   }
   const numericYear = Number(year);
   const pdfURLTrim = pdfUrl ? pdfUrl.trim() : null;
-    
+
   // Check if year already exists
   const { data: existingYear, error: checkError } =
     await supabase
